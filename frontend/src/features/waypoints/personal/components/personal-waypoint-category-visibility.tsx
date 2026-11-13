@@ -2,7 +2,8 @@ import { useMemo, useState } from 'react'
 import type { Ref } from 'react'
 import type { PersonalWaypointCategoryOption } from '../../../../domain/waypoints/personal/personal-waypoint-category-visibility'
 import { Button } from '../../../../ui/button'
-import { ChevronDownIcon, ChevronRightIcon } from '../../../../ui/icons'
+import { IconButton } from '../../../../ui/button'
+import { ChevronDownIcon, ChevronRightIcon, CloseIcon, MapIcon } from '../../../../ui/icons'
 import { SearchField } from '../../../../ui/search-field'
 
 export function PersonalWaypointCategoryVisibility({
@@ -58,14 +59,14 @@ export function PersonalWaypointCategoryVisibility({
         <small>{waypointCount} {placeLabel}</small>
         <ChevronRightIcon aria-hidden="true" />
       </button>
-      <label className="personal-waypoint-category-toggle">
-        <input
-          type="checkbox"
-          checked={visible}
-          aria-label={`Show ${category} markers`}
-          onChange={(event) => onSetCategoryVisible(category, event.target.checked)}
-        />
-      </label>
+      <IconButton
+        className="personal-waypoint-category-toggle"
+        label={`Show ${category} markers`}
+        icon={visible ? <MapIcon /> : <CloseIcon />}
+        variant={visible ? 'secondary' : 'ghost'}
+        pressed={visible}
+        onClick={() => onSetCategoryVisible(category, !visible)}
+      />
     </div>
   }
 
@@ -100,11 +101,11 @@ export function PersonalWaypointCategoryVisibility({
         />
       </div>
       <div className="personal-waypoint-category-options" role="group" aria-label="Category places and map visibility">
-        {visibleSelectedCategories.length > 0 && <section className="personal-waypoint-category-group" aria-labelledby="personal-waypoint-selected-categories-heading">
+        {visibleSelectedCategories.length > 0 && <section className="personal-waypoint-visibility-group" aria-labelledby="personal-waypoint-selected-categories-heading">
           <h3 id="personal-waypoint-selected-categories-heading">Selected</h3>
           {visibleSelectedCategories.map(renderCategory)}
         </section>}
-        {visibleUnselectedCategories.length > 0 && <section className="personal-waypoint-category-group" aria-labelledby="personal-waypoint-all-categories-heading">
+        {visibleUnselectedCategories.length > 0 && <section className="personal-waypoint-visibility-group" aria-labelledby="personal-waypoint-all-categories-heading">
           <h3 id="personal-waypoint-all-categories-heading">All categories</h3>
           {visibleUnselectedCategories.map(renderCategory)}
         </section>}

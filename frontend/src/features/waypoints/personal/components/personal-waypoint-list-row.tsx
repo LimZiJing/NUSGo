@@ -1,49 +1,57 @@
 import { useCallback } from 'react'
-import type { KeyboardEvent, Ref } from 'react'
+import type { KeyboardEvent, MouseEvent, Ref } from 'react'
 import type { PersonalWaypoint } from '../../../../domain/waypoints/personal/personal-waypoint'
 import { useSortable } from '@dnd-kit/react/sortable'
-import { IconButton, Button } from '../../../../ui/button'
+import { IconButton } from '../../../../ui/button'
 import { SavedListRow } from '../../../../ui/saved-list-row'
-import { CloseIcon, GripVerticalIcon, MapPinIcon } from '../../../../ui/icons'
+import { CloseIcon, GripVerticalIcon } from '../../../../ui/icons'
+import { PersonalWaypointMarkerGlyph } from './personal-waypoint-marker-glyph'
+import { personalWaypointMarkerColorClass } from './personal-waypoint-marker-color'
 
 interface PersonalWaypointListRowProps {
   readonly waypoint: PersonalWaypoint
+  /** Shows the reorder grip and remove action; only Edit list turns this on. */
   readonly editing: boolean
   readonly handleDisabled: boolean
   readonly onRemove: (waypointId: string) => void
-  readonly onFocusWaypoint?: (waypoint: PersonalWaypoint) => void
-  readonly onDirections?: (waypoint: PersonalWaypoint) => void
+  readonly onOpenDetails: (waypoint: PersonalWaypoint, trigger: HTMLElement) => void
   readonly onHandleRef?: (waypointId: string, element: HTMLButtonElement | null) => void
   readonly rowRef?: Ref<HTMLLIElement>
   readonly handleRef?: (element: HTMLButtonElement | null) => void
   readonly isDragging?: boolean
-  readonly index: number
   readonly keyboardReordering?: boolean
-  readonly onHandleKeyDown?: (waypointId: string, index: number, event: KeyboardEvent<HTMLButtonElement>) => void
+  readonly onHandleKeyDown?: (waypointId: string, event: KeyboardEvent<HTMLButtonElement>) => void
   readonly handleDescriptionId: string
 }
 
+/**
+ * One saved place. In normal browsing the row has exactly one job — open this place's details —
+ * so it carries no menu and no per-row action icons. Edit list adds the drag grip and Remove,
+ * which are ordering/editing affordances rather than place actions.
+ */
 export function PersonalWaypointListRow({
   waypoint,
   editing,
   handleDisabled,
   onRemove,
-  onFocusWaypoint,
-  onDirections,
+  onOpenDetails,
   onHandleRef,
   rowRef,
   handleRef,
   isDragging = false,
-  index,
   keyboardReordering = false,
   onHandleKeyDown,
   handleDescriptionId,
 }: PersonalWaypointListRowProps) {
-  const label = `${waypoint.name}, ${waypoint.category}`
+  const label = waypoint.name
   const setHandleRef = useCallback((element: HTMLButtonElement | null): void => {
     handleRef?.(element)
     onHandleRef?.(waypoint.id, element)
   }, [handleRef, onHandleRef, waypoint.id])
+
+  const openDetails = (event: MouseEvent<HTMLButtonElement>): void => {
+    onOpenDetails(waypoint, event.currentTarget)
+  }
 
   return (
     <SavedListRow
@@ -56,38 +64,28 @@ export function PersonalWaypointListRow({
           label={`Reorder ${label}`}
           icon={<GripVerticalIcon />}
           onClick={() => undefined}
-          onKeyDown={(event) => onHandleKeyDown?.(waypoint.id, index, event)}
+          onKeyDown={(event) => onHandleKeyDown?.(waypoint.id, event)}
           ariaDescribedBy={handleDescriptionId}
           ariaKeyShortcuts="Space Enter ArrowUp ArrowDown Escape"
           dataKeyboardReordering={keyboardReordering}
           disabled={handleDisabled}
           ref={setHandleRef}
         />}
-        <span className="personal-waypoint-pin"><MapPinIcon /></span>
+        <span className={`personal-waypoint-pin ${personalWaypointMarkerColorClass(waypoint.markerColor)}`} data-marker-icon={waypoint.markerIcon} aria-hidden="true">
+          <PersonalWaypointMarkerGlyph markerIcon={waypoint.markerIcon} size={15} />
+        </span>
       </>}
       title={waypoint.name}
-      subtitle={waypoint.category}
-      onSelect={onFocusWaypoint ? () => onFocusWaypoint(waypoint) : undefined}
-      selectLabel={`Show ${label} on map`}
+      // No subtitle: in a grouped collection the category is already the heading above this row.
+      onSelect={openDetails}
+      selectLabel={`Open ${label} details`}
       trailing={editing ? (
-        <div className="personal-waypoint-row-actions">
-          <IconButton
-            className="personal-waypoint-remove"
-            label={`Remove ${label}`}
-            icon={<CloseIcon />}
-            onClick={() => onRemove(waypoint.id)}
-          />
-        </div>
-      ) : onDirections ? (
-        <div className="personal-waypoint-row-actions">
-          <Button
-            className="personal-waypoint-directions"
-            label="Directions"
-            ariaLabel={`Directions to ${label}`}
-            variant="ghost"
-            onClick={() => onDirections(waypoint)}
-          />
-        </div>
+        <IconButton
+          className="personal-waypoint-remove"
+          label={`Remove ${label}`}
+          icon={<CloseIcon />}
+          onClick={() => onRemove(waypoint.id)}
+        />
       ) : undefined}
     />
   )
@@ -97,14 +95,13 @@ export function PersonalWaypointSortableListRow({
   waypoint,
   index,
   ...props
-}: PersonalWaypointListRowProps) {
+}: PersonalWaypointListRowProps & { readonly index: number }) {
   const { ref, handleRef, isDragging } = useSortable({ id: waypoint.id, index })
 
   return (
     <PersonalWaypointListRow
       {...props}
       waypoint={waypoint}
-      index={index}
       rowRef={ref}
       handleRef={handleRef}
       isDragging={isDragging}

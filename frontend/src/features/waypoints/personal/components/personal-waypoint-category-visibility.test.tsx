@@ -15,7 +15,7 @@ const categories: readonly PersonalWaypointCategoryOption[] = [
 afterEach(cleanup)
 
 describe('PersonalWaypointCategoryVisibility', () => {
-  it('separates category navigation from map visibility checkboxes', async () => {
+  it('separates category navigation from map visibility controls', async () => {
     const user = userEvent.setup()
     const onOpenCategory = vi.fn()
     const onSetCategoryVisible = vi.fn()
@@ -37,13 +37,15 @@ describe('PersonalWaypointCategoryVisibility', () => {
     expect(screen.getByRole('heading', { name: 'Selected' })).toBeTruthy()
     expect(screen.getByRole('heading', { name: 'All categories' })).toBeTruthy()
     expect(screen.getByRole('button', { name: 'Open Food & drink, 2 places' })).toBeTruthy()
-    expect((screen.getByRole('checkbox', { name: 'Show Study markers' }) as HTMLInputElement).checked).toBe(false)
+    // A hidden category still has a visibility control, and it is a toggle button, not a row action.
+    expect(screen.getByRole('button', { name: 'Show Study markers' })).toBeTruthy()
+    expect(screen.queryByRole('checkbox')).toBeNull()
 
     await user.click(screen.getByRole('button', { name: 'Open Food & drink, 2 places' }))
     expect(onOpenCategory).toHaveBeenCalledWith('Food & drink')
     expect(onSetCategoryVisible).not.toHaveBeenCalled()
 
-    await user.click(screen.getByRole('checkbox', { name: 'Show Rest spot markers' }))
+    await user.click(screen.getByRole('button', { name: 'Show Rest spot markers' }))
     expect(onSetCategoryVisible).toHaveBeenCalledWith('Rest spot', false)
     expect(onOpenCategory).toHaveBeenCalledOnce()
   })

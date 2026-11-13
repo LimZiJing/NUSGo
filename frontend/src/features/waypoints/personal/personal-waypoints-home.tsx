@@ -5,6 +5,7 @@ import type { PersonalWaypoint } from '../../../domain/waypoints/personal/person
 import { useLayoutEffect, useRef, useState } from 'react'
 import type { Ref } from 'react'
 import { Button } from '../../../ui/button'
+import { GhostBackButton } from '../../../ui/ghost-back-button'
 import { PersonalWaypointCategoryVisibility } from './components/personal-waypoint-category-visibility'
 import { PersonalWaypointList } from './components/personal-waypoint-list'
 
@@ -12,8 +13,7 @@ export function PersonalWaypointsHome({
   readResult,
   status,
   onAdd,
-  onFocusWaypoint,
-  onDirectionsWaypoint,
+  onOpenDetails,
   onSearchFilterChange,
   editing,
   onRemove,
@@ -40,8 +40,7 @@ export function PersonalWaypointsHome({
   readonly readResult: PersonalWaypointStoreReadResult
   readonly status: string | null
   readonly onAdd: () => void
-  readonly onFocusWaypoint: (waypoint: PersonalWaypoint) => void
-  readonly onDirectionsWaypoint?: (waypoint: PersonalWaypoint) => void
+  readonly onOpenDetails: (waypoint: PersonalWaypoint, trigger: HTMLElement) => void
   readonly onSearchFilterChange?: (active: boolean) => void
   readonly editing: boolean
   readonly onRemove: (waypointId: string) => void
@@ -126,12 +125,8 @@ export function PersonalWaypointsHome({
       <>
         {activeCategory
           ? <div className="personal-waypoint-category-back">
-            <Button
-              label="Back to categories"
-              variant="ghost"
-              onClick={onBackToCategories}
-              ref={categoryBackButtonRef}
-            />
+            {/* The app restores focus to this control when returning from a category. */}
+            <GhostBackButton label="Back to categories" onClick={onBackToCategories} ref={categoryBackButtonRef} />
           </div>
           : null}
         {!activeCategory && categoryVisibilityStatus && <p className="personal-waypoints-status personal-waypoints-status-problem" role="status">
@@ -155,8 +150,8 @@ export function PersonalWaypointsHome({
             onCancel={onCancelCategoryVisibilityChanges}
             onDone={onDoneCategoryVisibilityChanges}
           /> : undefined}
-          onFocusWaypoint={onFocusWaypoint}
-          onDirections={onDirectionsWaypoint}
+          onOpenDetails={onOpenDetails}
+          onOpenCategory={onOpenCategory}
           onSearchFilterChange={onSearchFilterChange}
           onRemove={onRemove}
           onMove={onMove}

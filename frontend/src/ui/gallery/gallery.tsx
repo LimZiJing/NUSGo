@@ -2,6 +2,7 @@ import { useEffect, useState, type ReactNode } from 'react'
 import { getRouteContrastTextColor } from '../../domain/transit/route-color'
 import { Button, IconButton, type ButtonVariant, type ControlSize, type IconButtonVariant } from '../button'
 import { Chip } from '../chip'
+import { DisclosureHeader } from '../disclosure-header'
 import { CloseIcon, NavigationIcon, SearchIcon } from '../icons'
 import { MenuItem } from '../menu-item'
 import { Pill } from '../pill'
@@ -116,6 +117,29 @@ export function GalleryPanel({ theme }: { readonly theme: GalleryTheme }) {
             onClick={noop}
           />
         ), ICON_VARIANTS)}
+      />
+      <StateGrid
+        title="DisclosureHeader"
+        rows={[
+          {
+            label: 'collapsed, opens a view',
+            render: () => (
+              <DisclosureHeader label="Work" detail="3 places" expanded={false} onToggle={noop} onOpen={noop} />
+            ),
+          },
+          {
+            label: 'expanded',
+            render: () => (
+              <DisclosureHeader label="Work" detail="3 places" expanded onToggle={noop} onOpen={noop} />
+            ),
+          },
+          {
+            label: 'expand disabled by search',
+            render: () => (
+              <DisclosureHeader label="Work" detail="3 places" expanded expandDisabled onToggle={noop} onOpen={noop} />
+            ),
+          },
+        ]}
       />
       <StateGrid
         title="MenuItem"

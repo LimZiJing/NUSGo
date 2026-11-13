@@ -5,11 +5,28 @@
   min-width: 0;
 }
 
+/* The field owns its own box so every caller gets the same control without re-declaring border,
+   height or radius. Callers set width/layout only. */
 .search-field input {
   width: 100%;
   min-width: 0;
+  min-height: var(--control-height-md);
   box-sizing: border-box;
-  padding-left: 40px;
+  padding: var(--space-2) var(--space-3) var(--space-2) 40px;
+  border: 1px solid var(--control-border);
+  border-radius: var(--radius-control);
+  color: var(--text-primary);
+  background: var(--surface-control);
+  font: inherit;
+}
+
+.search-field input::placeholder {
+  color: var(--text-muted);
+}
+
+.search-field input:focus-visible {
+  outline: var(--focus-outline);
+  outline-offset: var(--focus-ring-offset);
 }
 
 .search-field-icon {

@@ -642,7 +642,7 @@ describe('More surface', () => {
     expect(document.activeElement).toBe(screen.getByRole('button', { name: 'More' }))
   })
 
-  it.each(['trigger', 'menu item'])('keeps the expanded mobile waypoint sheet open when Escape closes the options menu from its %s', async (focusTarget) => {
+  it.each(['Edit list', 'Clear all'])('keeps the expanded mobile waypoint sheet open when Escape comes from the %s header action', async (actionLabel) => {
     mockMobileViewport()
     localStorage.setItem('navus:personal-waypoints:v1', JSON.stringify({ version: 1, waypoints: [{
       id: '00000000-0000-4000-8000-000000000021',
@@ -661,28 +661,23 @@ describe('More surface', () => {
     await user.click(screen.getByRole('button', { name: 'My waypoints' }))
     const sheet = document.querySelector('.more-panel-surface')
     expect(sheet?.getAttribute('data-detent')).toBe('full')
-    const trigger = screen.getByRole('button', { name: 'Waypoint list options' })
-    await user.click(trigger)
-    if (focusTarget === 'menu item') screen.getByRole('button', { name: 'Edit list' }).focus()
+    // The collection's commands are always-visible header buttons now, not a popup menu.
+    const trigger = screen.getByRole('button', { name: actionLabel })
+    trigger.focus()
 
     await user.keyboard('{Escape}')
 
-    expect(screen.queryByRole('group', { name: 'Waypoint list actions' })).toBeNull()
-    expect(trigger.getAttribute('aria-expanded')).toBe('false')
-    expect(document.activeElement).toBe(trigger)
-    expect(sheet?.getAttribute('data-page')).toBe('waypoints')
-    expect(sheet?.getAttribute('data-detent')).toBe('full')
-
-    await user.keyboard('{Escape}')
-
-    expect(sheet?.getAttribute('data-detent')).toBe('partial')
+    // Escape from a header action steps back one More page; it never tears down the whole sheet.
+    expect(sheet?.getAttribute('data-open')).toBe('true')
+    expect(sheet?.getAttribute('data-page')).toBe('menu')
+    expect(document.activeElement).toBe(screen.getByRole('button', { name: 'Close More' }))
 
     await user.keyboard('{Escape}')
 
     expect(sheet?.getAttribute('data-open')).toBe('false')
   })
 
-  it.each(['trigger', 'menu item'])('closes only the waypoint options menu on Escape from its %s', async (focusTarget) => {
+  it.each(['Edit list', 'Clear all'])('closes only the waypoints page on Escape from the %s header action', async (actionLabel) => {
     localStorage.setItem('navus:personal-waypoints:v1', JSON.stringify({ version: 1, waypoints: [{
       id: '00000000-0000-4000-8000-000000000021',
       name: 'Quiet bench',
@@ -698,17 +693,17 @@ describe('More surface', () => {
 
     await user.click(screen.getByRole('button', { name: 'More' }))
     await user.click(screen.getByRole('button', { name: 'My waypoints' }))
-    const trigger = screen.getByRole('button', { name: 'Waypoint list options' })
-    await user.click(trigger)
-    if (focusTarget === 'menu item') screen.getByRole('button', { name: 'Edit list' }).focus()
+    const trigger = screen.getByRole('button', { name: actionLabel })
+    trigger.focus()
 
     await user.keyboard('{Escape}')
 
-    expect(screen.queryByRole('group', { name: 'Waypoint list actions' })).toBeNull()
-    expect(trigger.getAttribute('aria-expanded')).toBe('false')
-    expect(document.activeElement).toBe(trigger)
-    expect(document.querySelector('.more-panel-surface')?.getAttribute('data-page')).toBe('waypoints')
+    // Escape leaves the waypoints page for the More menu and keeps the panel open; the saved
+    // place is untouched and the header actions are gone with their page.
+    expect(screen.queryByRole('button', { name: 'Clear all' })).toBeNull()
+    expect(document.querySelector('.more-panel-surface')?.getAttribute('data-page')).toBe('menu')
     expect(document.querySelector('.more-panel-surface')?.getAttribute('data-open')).toBe('true')
+    expect(JSON.parse(localStorage.getItem('navus:personal-waypoints:v1') ?? '{}').waypoints).toHaveLength(1)
   })
 
   it('uses the shared Directions action from the list and details', async () => {
@@ -729,10 +724,12 @@ describe('More surface', () => {
 
     await user.click(screen.getByRole('button', { name: 'More' }))
     await user.click(screen.getByRole('button', { name: 'My waypoints' }))
-    await user.click(screen.getByRole('button', { name: 'Show Quiet bench, Rest spot on map' }))
-    expect(appHarness.commands.focusPersonalWaypoint).toHaveBeenCalledWith(waypoint)
+    // Groups start collapsed; the row itself is now only a way into details.
+    await user.click(screen.getByRole('button', { name: 'Expand Rest spot' }))
+    await user.click(screen.getByRole('button', { name: 'Open Quiet bench details' }))
+    expect(document.querySelector('.more-panel-surface')?.getAttribute('data-page')).toBe('waypoint-details')
 
-    await user.click(screen.getByRole('button', { name: 'Directions to Quiet bench, Rest spot' }))
+    await user.click(screen.getByRole('button', { name: 'Directions' }))
     expect(appHarness.commands.navigateToEndpoint).toHaveBeenCalledWith(expect.objectContaining({
       kind: 'personal-waypoint',
       id: waypoint.id,
@@ -825,7 +822,9 @@ describe('More surface', () => {
     await user.click(screen.getByRole('button', { name: 'Plan' }))
     await user.click(screen.getByRole('button', { name: 'More' }))
     await user.click(screen.getByRole('button', { name: 'My waypoints' }))
-    await user.click(screen.getByRole('button', { name: 'Directions to Quiet bench, Rest spot' }))
+    await user.click(screen.getByRole('button', { name: 'Expand Rest spot' }))
+    await user.click(screen.getByRole('button', { name: 'Open Quiet bench details' }))
+    await user.click(screen.getByRole('button', { name: 'Directions' }))
 
     expect(document.querySelector('.more-panel-surface')?.getAttribute('data-open')).toBe('false')
     expect(document.activeElement?.closest('.plan-sheet')).toBeTruthy()
@@ -854,10 +853,9 @@ describe('More surface', () => {
 
     await user.click(screen.getByRole('button', { name: 'More' }))
     await user.click(screen.getByRole('button', { name: 'My waypoints' }))
-    await user.click(screen.getByRole('button', { name: 'Waypoint list options' }))
     await user.click(screen.getByRole('button', { name: 'Edit list' }))
-    const waypointsList = screen.getByRole('list', { name: 'Saved Personal Waypoints' })
-    const handle = within(waypointsList).getByRole('button', { name: 'Reorder Quiet bench, Rest spot' })
+    const waypointsList = screen.getByRole('list', { name: 'Saved places' })
+    const handle = within(waypointsList).getByRole('button', { name: 'Reorder Quiet bench' })
     handle.focus()
     await user.keyboard('{Space}')
     await user.keyboard('{ArrowDown}')
@@ -865,8 +863,9 @@ describe('More surface', () => {
 
     expect(waypointsList.getAttribute('data-editing')).toBe('true')
     expect(screen.getByText('Reordering Quiet bench canceled.')).toBeTruthy()
+    // Rows no longer repeat the category: the group heading above them already names it.
     expect(within(waypointsList).getAllByRole('listitem').map((row) => row.textContent?.trim()))
-      .toEqual(['Quiet benchRest spot', 'Library seatRest spot'])
+      .toEqual(['Quiet bench', 'Library seat'])
     expect(JSON.parse(localStorage.getItem('navus:personal-waypoints:v1') ?? '{}').waypoints.map(({ id }: { id: string }) => id))
       .toEqual([firstWaypoint.id, secondWaypoint.id])
   })
@@ -902,10 +901,23 @@ describe('More surface', () => {
     const panel = document.querySelector('.more-panel-surface')
     expect(screen.getByRole('button', { name: 'Add waypoint' })).toBeTruthy()
 
+    // Map visibility is a themed toggle button now, not a native checkbox. Its state is only a
+    // draft while the picker is open, so it shows as the category moving into the "All categories"
+    // group rather than being saved.
+    const visibilityPicker = () => within(screen.getByRole('group', { name: 'Category places and map visibility' }))
+    const visibilityGroupName = (category: string): string | null => visibilityPicker()
+      .getByRole('button', { name: `Show ${category} markers` })
+      .closest('.personal-waypoint-visibility-group')
+      ?.querySelector('h3')?.textContent ?? null
     await user.click(screen.getByRole('button', { name: /Categories/ }))
-    await user.click(screen.getByRole('checkbox', { name: 'Show Food & drink markers' }))
+    expect(visibilityGroupName('Food & drink')).toBe('Selected')
+    await user.click(screen.getByRole('button', { name: 'Show Food & drink markers' }))
+    expect(visibilityGroupName('Food & drink')).toBe('All categories')
     expect(localStorage.getItem(categoryVisibilityKey)).toBeNull()
-    await user.click(screen.getByRole('button', { name: 'Open Rest spot, 1 place' }))
+    // The picker and the list's group heading both offer "Open Rest spot, 1 place"; this test is
+    // about opening the category from the picker.
+    await user.click(within(screen.getByRole('group', { name: 'Category places and map visibility' }))
+      .getByRole('button', { name: 'Open Rest spot, 1 place' }))
 
     expect(panel?.getAttribute('data-page')).toBe('waypoints')
     expect(screen.getByRole('region', { name: 'Saved places in Rest spot' })).toBeTruthy()
@@ -913,20 +925,24 @@ describe('More surface', () => {
     expect(screen.queryByText('Campus cafe')).toBeNull()
     expect(screen.queryByRole('button', { name: 'Add waypoint' })).toBeNull()
 
-    await user.click(screen.getByRole('button', { name: 'Show Quiet bench, Rest spot on map' }))
-    expect(appHarness.commands.focusPersonalWaypoint).toHaveBeenCalledWith(quietBench)
+    // Places are navigational now: the row opens that place's details, and the camera focus that
+    // used to live on a per-row "show on map" action is part of opening details (see #669).
+    await user.click(screen.getByRole('button', { name: 'Open Quiet bench details' }))
+    expect(panel?.getAttribute('data-page')).toBe('waypoint-details')
+
+    await user.click(screen.getByRole('button', { name: 'Back to previous view' }))
     expect(panel?.getAttribute('data-page')).toBe('waypoints')
-    expect(screen.getByRole('region', { name: 'Saved places in Rest spot' })).toBeTruthy()
 
     await user.click(screen.getByRole('button', { name: 'Back to categories' }))
-    expect((screen.getByRole('checkbox', { name: 'Show Food & drink markers' }) as HTMLInputElement).checked)
-      .toBe(false)
+    expect(visibilityGroupName('Food & drink')).toBe('All categories')
     await user.click(screen.getByRole('button', { name: 'Cancel' }))
     expect(localStorage.getItem(categoryVisibilityKey)).toBeNull()
 
     await user.click(screen.getByRole('button', { name: /Categories/ }))
-    expect((screen.getByRole('checkbox', { name: 'Show Food & drink markers' }) as HTMLInputElement).checked)
-      .toBe(true)
+    expect(visibilityGroupName('Food & drink')).toBe('Selected')
+    // The toggle exposes its state to assistive technology as a pressed button.
+    expect(screen.getByRole('button', { name: 'Show Food & drink markers' }).getAttribute('aria-pressed'))
+      .toBe('true')
   })
 
   it('opens category waypoint details, edits the record, and confirms deletion', async () => {
@@ -947,7 +963,8 @@ describe('More surface', () => {
     await user.click(screen.getByRole('button', { name: 'More' }))
     await user.click(screen.getByRole('button', { name: 'My waypoints' }))
     await user.click(screen.getByRole('button', { name: /Categories/ }))
-    await user.click(screen.getByRole('button', { name: 'Open Rest spot, 1 place' }))
+    await user.click(within(screen.getByRole('group', { name: 'Category places and map visibility' }))
+      .getByRole('button', { name: 'Open Rest spot, 1 place' }))
     const mapTrigger = selectPersonalWaypointFromMap(waypoint.id)
 
     const panel = document.querySelector('.more-panel-surface')
@@ -1001,7 +1018,8 @@ describe('More surface', () => {
     await user.click(screen.getByRole('button', { name: 'More' }))
     await user.click(screen.getByRole('button', { name: 'My waypoints' }))
     await user.click(screen.getByRole('button', { name: /Categories/ }))
-    await user.click(screen.getByRole('button', { name: 'Open Rest spot, 1 place' }))
+    await user.click(within(screen.getByRole('group', { name: 'Category places and map visibility' }))
+      .getByRole('button', { name: 'Open Rest spot, 1 place' }))
     const mapTrigger = selectPersonalWaypointFromMap(waypoint.id)
     await user.click(screen.getByRole('button', { name: 'Edit waypoint' }))
     await user.clear(screen.getByLabelText('Name'))
@@ -1249,12 +1267,10 @@ describe('More surface', () => {
 
     await user.click(screen.getByRole('button', { name: 'More' }))
     await user.click(screen.getByRole('button', { name: 'My waypoints' }))
-    await user.click(screen.getByRole('button', { name: 'Waypoint list options' }))
     await user.click(screen.getByRole('button', { name: 'Edit list' }))
-    const waypointsList = screen.getByRole('list', { name: 'Saved Personal Waypoints' })
+    const waypointsList = screen.getByRole('list', { name: 'Saved places' })
     expect(waypointsList.getAttribute('data-editing')).toBe('true')
 
-    await user.click(screen.getByRole('button', { name: 'Waypoint list options' }))
     await user.click(screen.getByRole('button', { name: 'Clear all' }))
     expect(confirm).toHaveBeenCalledWith(
       'Clear all personal waypoints, including places hidden by filters?',
@@ -1266,15 +1282,17 @@ describe('More surface', () => {
     await user.type(screen.getByLabelText('Category'), 'Food')
     await user.click(screen.getByRole('button', { name: 'Save waypoint' }))
 
-    await user.click(screen.getByRole('button', { name: 'Waypoint list options' }))
-    const createdWaypointsList = screen.getByRole('list', { name: 'Saved Personal Waypoints' })
+    // Groups start collapsed, so a freshly created place's group must be expanded before its list
+    // is reachable.
+    await user.click(screen.getByRole('button', { name: 'Expand all' }))
+    const createdWaypointsList = screen.getByRole('list', { name: 'Saved places' })
     expect(createdWaypointsList.getAttribute('data-editing')).toBe('false')
 
     await user.click(screen.getByRole('button', { name: 'Edit list' }))
     expect(createdWaypointsList.getAttribute('data-editing')).toBe('true')
     await user.click(screen.getByRole('button', { name: 'Add waypoint' }))
     await user.click(screen.getByRole('button', { name: 'Cancel' }))
-    expect(screen.getByRole('list', { name: 'Saved Personal Waypoints' }).getAttribute('data-editing')).toBe('false')
+    expect(screen.getByRole('list', { name: 'Saved places' }).getAttribute('data-editing')).toBe('false')
 
     confirm.mockRestore()
     vi.unstubAllGlobals()
@@ -1393,13 +1411,12 @@ describe('More surface', () => {
     expect(sheet?.getAttribute('data-page')).toBe('waypoints')
     expect(sheet?.getAttribute('data-detent')).toBe('full')
     expect(screen.queryByRole('button', { name: /More actions for Quiet bench/ })).toBeNull()
-    const waypointsList = screen.getByRole('list', { name: 'Saved Personal Waypoints' })
-    await user.click(screen.getByRole('button', { name: 'Waypoint list options' }))
+    // Edit mode expands every group, so query the list after entering it.
     await user.click(screen.getByRole('button', { name: 'Edit list' }))
+    const waypointsList = screen.getByRole('list', { name: 'Saved places' })
     expect(waypointsList.getAttribute('data-editing')).toBe('true')
-    expect(screen.getByRole('button', { name: 'Reorder Quiet bench, Rest spot' }).hasAttribute('disabled'))
+    expect(screen.getByRole('button', { name: 'Reorder Quiet bench' }).hasAttribute('disabled'))
       .toBe(true)
-    await user.click(screen.getByRole('button', { name: 'Waypoint list options' }))
     await user.click(screen.getByRole('button', { name: 'Done' }))
 
     await user.click(screen.getByRole('button', { name: 'Back to previous view' }))

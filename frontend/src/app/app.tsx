@@ -287,9 +287,6 @@ function App() {
     updatePersonalWaypointDraft({ coordinate })
     commands.panToCoordinate([coordinate.longitude, coordinate.latitude])
   }, [commands, updatePersonalWaypointDraft])
-  const focusPersonalWaypoint = useCallback((waypoint: PersonalWaypoint): void => {
-    commands.focusPersonalWaypoint(waypoint)
-  }, [commands])
   const returnFromWaypointDetails = useCallback((focusTarget?: HTMLElement | null): void => {
     const returnTarget = personalWaypointDetails?.returnTarget
     // Restore the originating control after the details page has closed.
@@ -1095,8 +1092,12 @@ function App() {
               readResult={personalWaypoints.readResult}
               status={personalWaypoints.statusKind === 'problem' ? personalWaypoints.status : null}
               onAdd={beginWaypointCreation}
-              onFocusWaypoint={focusPersonalWaypoint}
-              onDirectionsWaypoint={navigateToPersonalWaypoint}
+              onOpenDetails={(waypoint, trigger) => openPersonalWaypointDetails(
+                waypoint.id,
+                'waypoints',
+                moreSheetDetent,
+                trigger,
+              )}
               onSearchFilterChange={setHasPersonalWaypointSearchFilter}
               editing={isEditingPersonalWaypoints}
               onRemove={removePersonalWaypoint}

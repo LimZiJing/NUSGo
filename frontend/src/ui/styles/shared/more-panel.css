@@ -112,6 +112,9 @@
   flex: 0 0 auto;
   padding: 4px 3px;
   font-size: var(--font-size-sm);
+  /* Header commands are secondary to the page title: muted, not accent-coloured, so the heading
+     stays the strongest element in the bar. */
+  color: var(--text-secondary);
 }
 
 .more-panel-content-scroll {

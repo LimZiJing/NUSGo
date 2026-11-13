@@ -5,27 +5,43 @@ import userEvent from '@testing-library/user-event'
 import { afterEach, describe, expect, it, vi } from 'vitest'
 import { PersonalWaypointListActions } from './personal-waypoint-list-actions'
 
-afterEach(cleanup)
+afterEach(() => {
+  cleanup()
+  vi.unstubAllGlobals()
+})
 
 describe('PersonalWaypointListActions', () => {
-  it('keeps list editing and Clear all in the overflow menu', async () => {
+  it('shows Edit list and Clear all as plain commands with no overflow menu', async () => {
     const user = userEvent.setup()
     const onToggleEditing = vi.fn()
-    const onClearAll = vi.fn()
     render(
       <PersonalWaypointListActions
         editing={false}
         hasSearchFilter={false}
         onToggleEditing={onToggleEditing}
-        onClearAll={onClearAll}
+        onClearAll={() => undefined}
       />,
     )
 
-    await user.click(screen.getByRole('button', { name: 'Waypoint list options' }))
-    await user.click(screen.getByRole('button', { name: 'Edit list' }))
+    expect(screen.queryByRole('button', { name: 'Waypoint list options' })).toBeNull()
+    expect(screen.getByRole('button', { name: 'Clear all' })).toBeTruthy()
 
+    await user.click(screen.getByRole('button', { name: 'Edit list' }))
     expect(onToggleEditing).toHaveBeenCalledOnce()
-    expect(screen.queryByRole('button', { name: 'Clear all' })).toBeNull()
+  })
+
+  it('swaps Edit list for Done while editing', () => {
+    render(
+      <PersonalWaypointListActions
+        editing
+        hasSearchFilter={false}
+        onToggleEditing={() => undefined}
+        onClearAll={() => undefined}
+      />,
+    )
+
+    expect(screen.getByRole('button', { name: 'Done' })).toBeTruthy()
+    expect(screen.queryByRole('button', { name: 'Edit list' })).toBeNull()
   })
 
   it('confirms Clear all and disables it while search is active', async () => {
@@ -42,7 +58,6 @@ describe('PersonalWaypointListActions', () => {
       />,
     )
 
-    await user.click(screen.getByRole('button', { name: 'Waypoint list options' }))
     expect((screen.getByRole('button', { name: 'Clear all' }) as HTMLButtonElement).disabled).toBe(true)
 
     view.rerender(
@@ -60,8 +75,26 @@ describe('PersonalWaypointListActions', () => {
     expect(onClearAll).not.toHaveBeenCalled()
 
     confirm.mockReturnValue(true)
-    await user.click(screen.getByRole('button', { name: 'Waypoint list options' }))
     await user.click(screen.getByRole('button', { name: 'Clear all' }))
     expect(onClearAll).toHaveBeenCalledOnce()
+  })
+
+  it('does not confirm or clear while search is active', async () => {
+    const user = userEvent.setup()
+    const onClearAll = vi.fn()
+    const confirm = vi.fn().mockReturnValue(true)
+    vi.stubGlobal('confirm', confirm)
+    render(
+      <PersonalWaypointListActions
+        editing={false}
+        hasSearchFilter
+        onToggleEditing={() => undefined}
+        onClearAll={onClearAll}
+      />,
+    )
+
+    await user.click(screen.getByRole('button', { name: 'Clear all' }))
+    expect(confirm).not.toHaveBeenCalled()
+    expect(onClearAll).not.toHaveBeenCalled()
   })
 })

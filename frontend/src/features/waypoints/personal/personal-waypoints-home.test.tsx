@@ -3,7 +3,7 @@
 import { cleanup, render, screen, waitFor } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import { useState } from 'react'
-import { afterEach, describe, expect, it, vi } from 'vitest'
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import type { PersonalWaypoint } from '../../../domain/waypoints/personal/personal-waypoint'
 import type { PersonalWaypointStoreReadResult } from '../../../domain/waypoints/personal/personal-waypoint-store'
 import { PersonalWaypointsHome } from './personal-waypoints-home'
@@ -28,7 +28,7 @@ const readyResult: PersonalWaypointStoreReadResult = {
 
 const noop = () => undefined
 const waypointHomeCallbacks = {
-  onFocusWaypoint: noop,
+  onOpenDetails: noop,
   categoryOptions: [],
   hiddenCategories: [],
   draftHiddenCategories: [],
@@ -72,7 +72,14 @@ function StatefulPersonalWaypointsHome() {
   )
 }
 
-afterEach(cleanup)
+afterEach(() => {
+  cleanup()
+  vi.unstubAllGlobals()
+})
+
+beforeEach(() => {
+  window.localStorage.clear()
+})
 
 describe('PersonalWaypointsHome', () => {
   it('keeps the panel concise and announces edit mode without visible instructions', async () => {
@@ -132,28 +139,32 @@ describe('PersonalWaypointsHome', () => {
       />,
     )
 
-    expect((screen.getByRole('checkbox', { name: 'Show Food & drink markers' }) as HTMLInputElement).checked).toBe(false)
-    expect(screen.getByText('Cafe')).toBeTruthy()
-    expect(screen.getByText('Quiet bench')).toBeTruthy()
+    const foodToggle = screen.getByRole('button', { name: 'Show Food & drink markers' })
+    expect(foodToggle.getAttribute('aria-label')).toBe('Show Food & drink markers')
+    // Group headings stay readable while the category visibility panel is open; that panel renders
+    // its own category links, so the headings are selected through the shared header rows.
+    const headingLabels = [...document.querySelectorAll('.disclosure-header-open')]
+      .map((element) => element.getAttribute('aria-label'))
+    expect(headingLabels).toEqual(['Open Food & drink, 1 place', 'Open Rest spot, 1 place'])
 
-    await user.click(screen.getByRole('checkbox', { name: 'Show Food & drink markers' }))
+    await user.click(foodToggle)
     expect(onSetCategoryVisible).toHaveBeenCalledWith('Food & drink', true)
     await user.click(screen.getByRole('button', { name: 'Clear' }))
     expect(onClearCategoryVisibilityChanges).toHaveBeenCalledWith(['Food & drink', 'Rest spot'])
   })
 
-  it('shows a place on the map from its flat row and offers Directions separately', async () => {
+  it('opens place details from the row and opens a category from its heading', async () => {
     const user = userEvent.setup()
-    const onFocusWaypoint = vi.fn()
-    const onDirectionsWaypoint = vi.fn()
+    const onOpenDetails = vi.fn()
+    const onOpenCategory = vi.fn()
     render(
       <PersonalWaypointsHome
         {...waypointHomeCallbacks}
         readResult={readyResult}
         status={null}
         onAdd={() => undefined}
-        onFocusWaypoint={onFocusWaypoint}
-        onDirectionsWaypoint={onDirectionsWaypoint}
+        onOpenDetails={onOpenDetails}
+        onOpenCategory={onOpenCategory}
         editing={false}
         onRemove={() => undefined}
         onMove={() => true}
@@ -167,10 +178,13 @@ describe('PersonalWaypointsHome', () => {
     expect(screen.queryByRole('heading', { name: 'All places 1' })).toBeNull()
     expect(screen.queryByRole('button', { name: 'Edit Quiet bench, Rest spot' })).toBeNull()
 
-    await user.click(screen.getByRole('button', { name: 'Show Quiet bench, Rest spot on map' }))
-    expect(onFocusWaypoint).toHaveBeenCalledWith(waypoint)
-    await user.click(screen.getByRole('button', { name: 'Directions to Quiet bench, Rest spot' }))
-    expect(onDirectionsWaypoint).toHaveBeenCalledWith(waypoint)
+    await user.click(screen.getByRole('button', { name: 'Open Rest spot, 1 place' }))
+    expect(onOpenCategory).toHaveBeenCalledWith('Rest spot')
+
+    await user.click(screen.getByRole('button', { name: 'Expand Rest spot' }))
+    const rowButton = screen.getByRole('button', { name: 'Open Quiet bench details' })
+    await user.click(rowButton)
+    expect(onOpenDetails).toHaveBeenCalledWith(waypoint, rowButton)
   })
 
   it('shows only the selected category and keeps Add waypoint on the main screen', async () => {
@@ -222,7 +236,7 @@ describe('PersonalWaypointsHome', () => {
     const user = userEvent.setup()
     render(<StatefulPersonalWaypointsHome />)
 
-    await user.click(screen.getByRole('button', { name: 'Remove Quiet bench, Rest spot' }))
+    await user.click(screen.getByRole('button', { name: 'Remove Quiet bench' }))
 
     const emptyState = screen.getByText('No saved waypoints yet. Add a waypoint to start your list.')
     expect(document.activeElement).toBe(emptyState)

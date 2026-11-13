@@ -16,6 +16,7 @@
 @import './controls/segmented-control.css';
 @import './controls/select.css';
 @import '../disclosure-chevron.css';
+@import '../disclosure-header.css';
 @import './controls/ghost-back-button.css';
 @import './controls/search-field.css';
 @import './controls/scroll-area.css';

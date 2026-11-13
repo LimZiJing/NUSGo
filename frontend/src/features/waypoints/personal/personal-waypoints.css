@@ -170,27 +170,14 @@
   z-index: 3;
   display: flex;
   min-width: 0;
-  align-items: start;
-  gap: 8px;
+  align-items: stretch;
+  gap: var(--space-2);
 }
 
-.personal-waypoint-list-search {
-  min-width: 0;
+/* The search field shares the row with the Categories control and never pushes it off-screen. */
+.personal-waypoint-list-controls > .search-field {
   flex: 1 1 auto;
-}
-
-.personal-waypoint-list-search .search-field {
-  min-height: 39px;
-  border-radius: 11px;
-  background: var(--surface);
-}
-
-.personal-waypoint-list-search input {
-  min-height: 39px;
-  border: 1px solid var(--border-card);
-  border-radius: 11px;
-  color: var(--text-primary);
-  background: var(--surface);
+  min-width: 0;
 }
 
 .personal-waypoint-list-filter-note {
@@ -219,11 +206,11 @@
 
 .personal-waypoint-pin {
   display: grid;
-  width: 30px;
-  height: 30px;
-  flex: 0 0 30px;
+  width: 28px;
+  height: 28px;
+  flex: 0 0 28px;
   place-items: center;
-  border-radius: 9px;
+  border-radius: var(--radius-control);
   color: var(--accent);
   background: var(--accent-soft);
 }
@@ -256,60 +243,18 @@
   justify-content: flex-end;
 }
 
-.personal-waypoint-row-actions {
+/* The collection's own commands sit in the More header as quiet, muted text actions so they do not
+   compete with the page title. The ghost variant colours itself with the accent, so these set the
+   colour on the button rather than on the wrapper. */
+.personal-waypoint-list-actions {
   display: flex;
   flex: 0 0 auto;
-  gap: 4px;
+  align-items: center;
+  gap: var(--space-2);
 }
 
-.personal-waypoint-list-actions {
-  position: relative;
-  flex: 0 0 auto;
-  line-height: 0;
-}
-
-.personal-waypoint-list-actions-trigger {
-  width: 36px;
-  min-width: 36px;
-  min-height: 36px;
-  padding: 0;
-  border: 1px solid var(--border-card);
-  border-radius: var(--radius-control);
+.personal-waypoint-list-actions .button[data-variant='ghost'] {
   color: var(--text-secondary);
-  background: var(--surface);
-}
-
-.personal-waypoint-list-actions-trigger svg { width: 18px; height: 18px; }
-
-.personal-waypoint-list-actions-trigger:focus-visible {
-  outline: var(--focus-outline);
-  outline-offset: var(--focus-ring-offset);
-}
-
-.personal-waypoint-list-actions-menu {
-  position: absolute;
-  z-index: 20;
-  inset-block-start: calc(100% + 5px);
-  inset-inline-end: 0;
-  width: 170px;
-  padding: 4px;
-  border: 1px solid var(--border-card);
-  border-radius: var(--radius-control);
-  background: var(--surface-card);
-  box-shadow: var(--shadow-md);
-  line-height: normal;
-}
-
-.personal-waypoint-row-actions .button.icon-button {
-  width: 36px;
-  min-width: 36px;
-  min-height: 36px;
-}
-
-.personal-waypoint-directions {
-  min-height: 36px;
-  padding: 4px 8px;
-  white-space: nowrap;
 }
 
 .personal-waypoint-remove { color: var(--text-error-strong); }
@@ -323,6 +268,36 @@
 }
 
 .personal-waypoint-list-empty p { margin: 0; }
+
+/* Grouped collection. A group is one card; its heading carries the name, one count and the shared
+   disclosure chevron, and the rows inside are separated by a subtle rule rather than by their own
+   borders, so nesting stays shallow instead of boxing every row. */
+.personal-waypoint-groups {
+  display: grid;
+  gap: var(--space-2);
+}
+
+.personal-waypoint-category-group {
+  border: 1px solid var(--border-card);
+  border-radius: var(--radius-card);
+  background: var(--surface-card);
+}
+
+.personal-waypoint-category-group > .disclosure-header {
+  padding-inline: var(--space-3);
+}
+
+.personal-waypoint-category-group > div > .personal-waypoint-list-rows {
+  max-height: none;
+  border-top: 1px solid var(--border-subtle);
+}
+
+/* Expand all / Collapse all are secondary utilities, not competing calls to action. */
+.personal-waypoint-groups-actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: var(--space-1);
+}
 
 .personal-waypoint-form label { font-weight: 600; }
 .personal-waypoint-form label span { color: var(--text-secondary); font-weight: 400; }
@@ -727,20 +702,6 @@
 
 .personal-waypoint-category-search { padding: 0 10px 8px; }
 
-.personal-waypoint-category-search .search-field {
-  min-height: 38px;
-  border-radius: 10px;
-  background: var(--surface);
-}
-
-.personal-waypoint-category-search input {
-  min-height: 38px;
-  border: 1px solid var(--border-card);
-  border-radius: 10px;
-  color: var(--text-primary);
-  background: var(--surface);
-}
-
 .personal-waypoint-category-options {
   max-height: min(260px, 38vh);
   overflow-y: auto;
@@ -749,11 +710,11 @@
   scrollbar-width: thin;
 }
 
-.personal-waypoint-category-group { padding: 0 10px; }
+.personal-waypoint-visibility-group { padding: 0 10px; }
 
-.personal-waypoint-category-group + .personal-waypoint-category-group { margin-top: 2px; }
+.personal-waypoint-visibility-group + .personal-waypoint-visibility-group { margin-top: 2px; }
 
-.personal-waypoint-category-group h3 {
+.personal-waypoint-visibility-group h3 {
   margin: 0;
   padding: 8px 4px 3px;
   color: var(--text-secondary);

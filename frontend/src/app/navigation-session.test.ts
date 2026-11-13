@@ -63,6 +63,8 @@ function createMapDouble(ready: Promise<void> = Promise.resolve()) {
     setPersonalWaypointPlacement: vi.fn(),
     setPersonalWaypoints: vi.fn(),
     focusPersonalWaypoint: vi.fn(),
+    captureCamera: vi.fn(() => ({ center: [0, 0] as const, zoom: 0, bearing: 0, pitch: 0 })),
+    restoreCamera: vi.fn(),
     panToCoordinate: vi.fn(),
     dismissStopPopup: vi.fn(() => false),
     dismissPopup: vi.fn(() => false),
@@ -335,8 +337,15 @@ describe('navigation session', () => {
     const onSelect = vi.fn()
 
     session.setPersonalWaypoints([waypoint], true, onSelect)
+    expect(dependencies.map.setPersonalWaypoints).toHaveBeenCalledWith([waypoint], true, onSelect, undefined)
 
-    expect(dependencies.map.setPersonalWaypoints).toHaveBeenCalledWith([waypoint], true, onSelect)
+    session.setPersonalWaypoints([waypoint], true, onSelect, waypoint.id)
+    expect(dependencies.map.setPersonalWaypoints).toHaveBeenLastCalledWith(
+      [waypoint],
+      true,
+      onSelect,
+      waypoint.id,
+    )
     expect(dependencies.map.resetView).not.toHaveBeenCalled()
     expect(dependencies.map.refitRoute).not.toHaveBeenCalled()
   })
@@ -357,9 +366,41 @@ describe('navigation session', () => {
 
     session.focusPersonalWaypoint(waypoint)
 
-    expect(dependencies.map.focusPersonalWaypoint).toHaveBeenCalledWith(waypoint)
+    expect(dependencies.map.focusPersonalWaypoint).toHaveBeenCalledWith(waypoint, undefined)
     expect(dependencies.map.resetView).not.toHaveBeenCalled()
     expect(dependencies.map.refitRoute).not.toHaveBeenCalled()
+  })
+
+  it('passes the caller occlusion through when focusing a Personal Waypoint', () => {
+    const dependencies = createDependencies()
+    const session = createNavigationSession(dependencies)
+    const waypoint = {
+      id: '00000000-0000-4000-8000-000000000001',
+      name: 'Quiet bench',
+      category: 'Rest spot',
+      coordinate: { longitude: 103.78, latitude: 1.29 },
+      markerColor: 'blue' as const,
+      markerIcon: 'dot' as const,
+      createdAt: '2026-10-26T00:00:00.000Z',
+      updatedAt: '2026-10-26T00:00:00.000Z',
+    }
+    const occlusion = { top: 0, right: 0, bottom: 320, left: 0 }
+
+    session.focusPersonalWaypoint(waypoint, occlusion)
+
+    expect(dependencies.map.focusPersonalWaypoint).toHaveBeenCalledWith(waypoint, occlusion)
+  })
+
+  it('captures and restores the camera through the map session', () => {
+    const dependencies = createDependencies()
+    const session = createNavigationSession(dependencies)
+    const snapshot = { center: [103.78, 1.29] as const, zoom: 16, bearing: 12, pitch: 30 }
+
+    session.restoreCamera(snapshot)
+
+    expect(dependencies.map.restoreCamera).toHaveBeenCalledWith(snapshot)
+    expect(session.captureCamera()).toEqual({ center: [0, 0], zoom: 0, bearing: 0, pitch: 0 })
+    expect(dependencies.map.captureCamera).toHaveBeenCalledTimes(1)
   })
 
   it('pans the map to a coordinate without resetting the view', () => {
@@ -2405,7 +2446,7 @@ describe('navigation session', () => {
 
     expect(dependencies.locationTracker.enable).toHaveBeenCalledOnce()
     expect(session.getState().location).toEqual(locationState)
-    expect(dependencies.map.setCurrentLocation).toHaveBeenCalledWith(locationState.latestFix, true)
+    expect(dependencies.map.setCurrentLocation).toHaveBeenCalledWith(locationState.latestFix, true, true)
     expect(session.getState().tripRequest).toBe(initialTripRequest)
     expect(dependencies.map.resetView).not.toHaveBeenCalled()
     expect(dependencies.map.setViewportInsets).not.toHaveBeenCalled()
@@ -2413,12 +2454,38 @@ describe('navigation session', () => {
 
     session.hideLocationMarker()
     expect(session.getState().locationMarkerVisible).toBe(false)
-    expect(dependencies.map.setCurrentLocation).toHaveBeenLastCalledWith(locationState.latestFix, false)
+    expect(dependencies.map.setCurrentLocation).toHaveBeenLastCalledWith(locationState.latestFix, false, false)
     expect(dependencies.locationTracker.disable).not.toHaveBeenCalled()
 
     session.showLocationMarker()
     expect(session.getState().locationMarkerVisible).toBe(true)
-    expect(dependencies.map.setCurrentLocation).toHaveBeenLastCalledWith(locationState.latestFix, true)
+    expect(dependencies.map.setCurrentLocation).toHaveBeenLastCalledWith(locationState.latestFix, true, true)
+  })
+
+  it('marks a stale or failed location as untrusted while keeping an active fix trusted', () => {
+    const dependencies = createDependencies()
+    const locationTracker = dependencies.locationTracker as ReturnType<typeof createLocationTrackerDouble>
+    const session = createNavigationSession(dependencies)
+    const fix = { longitude: 103.7844, latitude: 1.2933, accuracy: 12, timestamp: 1_000 }
+
+    locationTracker.emit({ status: 'tracking', latestFix: fix })
+    expect(dependencies.map.setCurrentLocation).toHaveBeenLastCalledWith(fix, true, true)
+
+    // The dot stays drawn, but a stale fix may no longer stand in for the origin circle.
+    locationTracker.emit({ status: 'stale', latestFix: fix })
+    expect(dependencies.map.setCurrentLocation).toHaveBeenLastCalledWith(fix, true, false)
+
+    locationTracker.emit({ status: 'unavailable', latestFix: null })
+    expect(dependencies.map.setCurrentLocation).toHaveBeenLastCalledWith(null, true, false)
+
+    // Hiding the dot reports an untrusted, invisible stand-in whatever the fix says.
+    locationTracker.emit({ status: 'tracking', latestFix: fix })
+    session.hideLocationMarker()
+    expect(dependencies.map.setCurrentLocation).toHaveBeenLastCalledWith(fix, false, false)
+    session.showLocationMarker()
+    expect(dependencies.map.setCurrentLocation).toHaveBeenLastCalledWith(fix, true, true)
+
+    session.dispose()
   })
 
   it('uses an active device fix as the frozen Current location origin without venue data', async () => {

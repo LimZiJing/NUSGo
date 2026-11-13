@@ -711,24 +711,38 @@
   background: var(--surface-raised);
 }
 
-.trip-endpoint-marker {
-  width: 18px;
-  height: 18px;
-  border: 3px solid #fff;
-  border-radius: 50% 50% 50% 0;
-  box-shadow: 0 1px 4px rgb(15 23 42 / 55%);
+/* Journey endpoints. The origin is a plain grey circle so it can sit under the blue Current
+   location dot without competing with it; the destination is the red member of the shared pin
+   family with a dark centre. Both read from theme tokens, so every theme keeps the same roles. */
+.trip-endpoint-marker-origin {
   box-sizing: border-box;
-  transform: rotate(-45deg);
+  width: 14px;
+  height: 14px;
+  border: 1px solid var(--map-endpoint-origin-edge);
+  border-radius: 50%;
+  background: var(--map-endpoint-origin-fill);
+  box-shadow: 0 1px 3px var(--map-pin-shadow);
 }
 
-.trip-endpoint-marker-origin,
-.origin-marker {
-  background: #15803d;
+.legend-marker.origin-marker {
+  box-sizing: border-box;
+  border: 1px solid var(--map-endpoint-origin-edge);
+  background: var(--map-endpoint-origin-fill);
 }
 
-.trip-endpoint-marker-destination,
-.destination-marker {
-  background: #dc2626;
+.legend-marker.destination-marker {
+  position: relative;
+  box-sizing: border-box;
+  border: 1px solid var(--map-endpoint-destination-edge);
+  background: var(--map-endpoint-destination-fill);
+}
+
+.legend-marker.destination-marker::after {
+  position: absolute;
+  inset: 2px;
+  border-radius: 50%;
+  background: var(--map-endpoint-destination-centre);
+  content: '';
 }
 
 .map .maplibregl-popup-content {

@@ -1,5 +1,6 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 import { createMapSession } from './session'
+import { JOURNEY_ROUTE_SOURCE_ID } from './path-layers'
 import {
   createTransferTransitNetwork,
   createValidTransitNetwork,
@@ -117,7 +118,10 @@ vi.mock('maplibre-gl', () => {
     readonly panBy = vi.fn()
     readonly getZoom = vi.fn(() => 15)
     readonly getBearing = vi.fn(() => 0)
+    readonly getPitch = vi.fn(() => 0)
+    readonly getCenter = vi.fn(() => ({ lng: 103.8, lat: 1.3 }))
     readonly flyTo = vi.fn()
+    readonly easeTo = vi.fn()
     readonly zoomIn = vi.fn()
     readonly zoomOut = vi.fn()
     readonly queryRenderedFeatures = vi.fn(() => [])
@@ -536,7 +540,7 @@ function createBusPath(): Path {
 
 describe('MapSession', () => {
   it('updates, hides, shows, and removes the current-location marker without moving the camera', async () => {
-    vi.stubGlobal('document', { createElement: () => new FakeElement() })
+    vi.stubGlobal('document', { createElement: () => new FakeElement(), createElementNS: () => new FakeElement() })
     const session = createMapSession({
       container: {} as HTMLElement,
       onMapError: vi.fn(),
@@ -562,21 +566,21 @@ describe('MapSession', () => {
     }
     const secondFix: DeviceLocationFix = { ...firstFix, longitude: 103.785, timestamp: 2_000 }
 
-    session.setCurrentLocation(firstFix, true)
+    session.setCurrentLocation(firstFix, true, true)
     const marker = map.addedMarkers.at(-1)
     expect(marker?.element.className).toBe('current-location-marker')
     expect(marker?.element.attributes.get('aria-label')).toBe('Current location')
     expect(marker?.coordinate).toEqual([firstFix.longitude, firstFix.latitude])
 
-    session.setCurrentLocation(secondFix, true)
+    session.setCurrentLocation(secondFix, true, true)
     expect(marker?.coordinate).toEqual([secondFix.longitude, secondFix.latitude])
 
-    session.setCurrentLocation(secondFix, false)
+    session.setCurrentLocation(secondFix, false, false)
     expect(marker?.remove).toHaveBeenCalledOnce()
-    session.setCurrentLocation(secondFix, true)
-    session.setCurrentLocation(null, true)
+    session.setCurrentLocation(secondFix, true, true)
+    session.setCurrentLocation(null, true, false)
     expect(marker?.remove).toHaveBeenCalledTimes(2)
-    session.setCurrentLocation(secondFix, true)
+    session.setCurrentLocation(secondFix, true, true)
     expect(map.flyTo).not.toHaveBeenCalled()
     expect(map.fitBounds).not.toHaveBeenCalled()
 
@@ -594,6 +598,79 @@ describe('MapSession', () => {
     session.dispose()
     expect(currentLocationMarker.classes.has('current-location-marker-pulsing')).toBe(false)
     expect(marker?.remove).toHaveBeenCalledTimes(3)
+  })
+
+  it('suppresses only the origin circle while the visible dot marks it, and never the Path', async () => {
+    vi.stubGlobal('document', { createElement: () => new FakeElement(), createElementNS: () => new FakeElement() })
+    const session = createMapSession({
+      container: {} as HTMLElement,
+      onMapError: vi.fn(),
+      onEmptyMapClick: vi.fn(),
+    })
+    await session.ready
+
+    const map = fakeMapState.maps.at(-1) as {
+      readonly addedMarkers: Array<{
+        readonly element: FakeElement
+        readonly coordinate: unknown
+        readonly remove: ReturnType<typeof vi.fn>
+      }>
+      readonly sourceData: globalThis.Map<string, { data: unknown; setData: ReturnType<typeof vi.fn> }>
+    }
+    const venues = {
+      ONE: { roomName: 'One', location: { x: 103.7812, y: 1.2961 } },
+      TWO: { roomName: 'Two', location: { x: 103.79, y: 1.31 } },
+    }
+    const request = {
+      origin: { kind: 'current-location' as const, coordinate: { longitude: 103.7812, latitude: 1.2961 } },
+      destination: { kind: 'venue' as const, id: 'TWO' },
+    }
+    // `addedMarkers` keeps removed markers, so count only the endpoints still on the map.
+    const endpointMarkers = () => map.addedMarkers.filter(({ element, remove }) => (
+      remove.mock.calls.length === 0
+      && (element.className.startsWith('trip-endpoint-marker')
+        || element.className.includes('trip-endpoint-marker-'))
+    ))
+
+    session.setTripRequest(request, venues, null)
+    expect(endpointMarkers()).toHaveLength(2)
+
+    // Inside 20 m the dot stands in, so only the grey circle disappears.
+    session.setCurrentLocation({ longitude: 103.7812, latitude: 1.29615, accuracy: 8, timestamp: 1 }, true, true)
+    expect(endpointMarkers()).toHaveLength(1)
+    expect(endpointMarkers()[0]?.element.className).toContain('trip-endpoint-marker-destination')
+    expect(endpointMarkers()[0]?.coordinate).toEqual([103.79, 1.31])
+
+    // Beyond 20 m the circle comes back, still on the endpoint's own captured coordinate.
+    session.setCurrentLocation({ longitude: 103.7812, latitude: 1.2965, accuracy: 8, timestamp: 2 }, true, true)
+    expect(endpointMarkers()).toHaveLength(2)
+    const origin = endpointMarkers().find(({ element }) => element.className.includes('trip-endpoint-marker-origin'))
+    expect(origin?.coordinate).toEqual([103.7812, 1.2961])
+
+    // Hiding the dot or distrusting a stale fix restores the circle as well.
+    session.setCurrentLocation({ longitude: 103.7812, latitude: 1.29615, accuracy: 8, timestamp: 3 }, false, true)
+    expect(endpointMarkers()).toHaveLength(2)
+    session.setCurrentLocation({ longitude: 103.7812, latitude: 1.29615, accuracy: 8, timestamp: 3 }, true, false)
+    expect(endpointMarkers()).toHaveLength(2)
+
+    // Re-applying the same selected request keeps the same endpoints and never rewrites the Path.
+    // The source only exists once a journey is drawn, so draw one first; asserting on a missing
+    // source would compare `undefined` to `undefined` and pass no matter what the session did.
+    session.setJourneyOptions([{ candidateKey: 'selected', path: createPath() }], 'selected')
+    // Replace the drawn route once with a different Path object, so the assertion below runs
+    // against a source that demonstrably accepts writes.
+    session.setJourneyOptions([{ candidateKey: 'selected', path: createPath() }], 'selected')
+    const pathSource = map.sourceData.get(JOURNEY_ROUTE_SOURCE_ID)
+    expect(pathSource).toBeDefined()
+    expect(pathSource?.setData).toHaveBeenCalled()
+    pathSource?.setData.mockClear()
+
+    session.setTripRequest(request, venues, null)
+    expect(endpointMarkers()).toHaveLength(2)
+    expect(pathSource?.setData).not.toHaveBeenCalled()
+
+    session.dispose()
+    vi.unstubAllGlobals()
   })
 
   it('focuses location and reset targets at the padded visible centre without applying the inset twice', async () => {
@@ -678,7 +755,7 @@ describe('MapSession', () => {
   })
 
   it('dismisses only a shuttle-stop popup through the stop-specific command', async () => {
-    vi.stubGlobal('document', { createElement: () => new FakeElement() })
+    vi.stubGlobal('document', { createElement: () => new FakeElement(), createElementNS: () => new FakeElement() })
     const closeEndpointPopup = vi.fn()
     fakeMapState.popupCloseButton = { click: closeEndpointPopup }
     const session = createMapSession({
@@ -702,7 +779,7 @@ describe('MapSession', () => {
   })
 
   it('preserves a valid route presentation across transit reloads without refitting', async () => {
-    vi.stubGlobal('document', { createElement: () => new FakeElement() })
+    vi.stubGlobal('document', { createElement: () => new FakeElement(), createElementNS: () => new FakeElement() })
     const session = createMapSession({
       container: {} as HTMLElement,
       onMapError: vi.fn(),
@@ -755,7 +832,7 @@ describe('MapSession', () => {
   })
 
   it('renders and clears the selected Journey independently of transit layers', async () => {
-    vi.stubGlobal('document', { createElement: () => new FakeElement() })
+    vi.stubGlobal('document', { createElement: () => new FakeElement(), createElementNS: () => new FakeElement() })
     const session = createMapSession({
       container: {} as HTMLElement,
       onMapError: vi.fn(),
@@ -789,7 +866,7 @@ describe('MapSession', () => {
   })
 
   it('fits every option with overlay insets, keeps the camera on selection, and refits on command', async () => {
-    vi.stubGlobal('document', { createElement: () => new FakeElement() })
+    vi.stubGlobal('document', { createElement: () => new FakeElement(), createElementNS: () => new FakeElement() })
     const session = createMapSession({
       container: {} as HTMLElement,
       onMapError: vi.fn(),
@@ -838,7 +915,7 @@ describe('MapSession', () => {
   })
 
   it('hides planned Journey layers and endpoint markers outside Plan and restores them without replanning', async () => {
-    vi.stubGlobal('document', { createElement: () => new FakeElement() })
+    vi.stubGlobal('document', { createElement: () => new FakeElement(), createElementNS: () => new FakeElement() })
     const session = createMapSession({
       container: {} as HTMLElement,
       onMapError: vi.fn(),
@@ -882,7 +959,7 @@ describe('MapSession', () => {
   })
 
   it('forwards rendered Journey route clicks through the MapSession callback', async () => {
-    vi.stubGlobal('document', { createElement: () => new FakeElement() })
+    vi.stubGlobal('document', { createElement: () => new FakeElement(), createElementNS: () => new FakeElement() })
     vi.stubGlobal('Element', class {})
     const onJourneyOptionSelected = vi.fn()
     const onEmptyMapClick = vi.fn()
@@ -917,7 +994,7 @@ describe('MapSession', () => {
   })
 
   it('waits for initial overlay measurements before fitting a new result', async () => {
-    vi.stubGlobal('document', { createElement: () => new FakeElement() })
+    vi.stubGlobal('document', { createElement: () => new FakeElement(), createElementNS: () => new FakeElement() })
     const session = createMapSession({
       container: {} as HTMLElement,
       onMapError: vi.fn(),
@@ -946,7 +1023,7 @@ describe('MapSession', () => {
   })
 
   it('limits Journey fit breathing room on short mobile viewports', async () => {
-    vi.stubGlobal('document', { createElement: () => new FakeElement() })
+    vi.stubGlobal('document', { createElement: () => new FakeElement(), createElementNS: () => new FakeElement() })
     const session = createMapSession({
       container: {} as HTMLElement,
       onMapError: vi.fn(),
@@ -975,7 +1052,7 @@ describe('MapSession', () => {
   })
 
   it('highlights only stops traversed by each bus leg with its Route color', async () => {
-    vi.stubGlobal('document', { createElement: () => new FakeElement() })
+    vi.stubGlobal('document', { createElement: () => new FakeElement(), createElementNS: () => new FakeElement() })
     const session = createMapSession({
       container: {} as HTMLElement,
       onMapError: vi.fn(),
@@ -1058,7 +1135,7 @@ describe('MapSession', () => {
   })
 
   it('replaces route browsing with Journey legs and restores the prior route and stop interactions', async () => {
-    vi.stubGlobal('document', { createElement: () => new FakeElement() })
+    vi.stubGlobal('document', { createElement: () => new FakeElement(), createElementNS: () => new FakeElement() })
     const session = createMapSession({
       container: {} as HTMLElement,
       onMapError: vi.fn(),
@@ -1116,7 +1193,7 @@ describe('MapSession', () => {
   })
 
   it('restores route browsing when MapLibre rejects Journey layers', async () => {
-    vi.stubGlobal('document', { createElement: () => new FakeElement() })
+    vi.stubGlobal('document', { createElement: () => new FakeElement(), createElementNS: () => new FakeElement() })
     const onMapError = vi.fn()
     const session = createMapSession({
       container: {} as HTMLElement,
@@ -1156,7 +1233,7 @@ describe('MapSession', () => {
   })
 
   it('replaces pending route framing when the selected route is missing from reloaded data', async () => {
-    vi.stubGlobal('document', { createElement: () => new FakeElement() })
+    vi.stubGlobal('document', { createElement: () => new FakeElement(), createElementNS: () => new FakeElement() })
     const session = createMapSession({
       container: {} as HTMLElement,
       onMapError: vi.fn(),
@@ -1200,7 +1277,7 @@ describe('MapSession', () => {
   })
 
   it('fits the replacement route when the selected route changes during reload', async () => {
-    vi.stubGlobal('document', { createElement: () => new FakeElement() })
+    vi.stubGlobal('document', { createElement: () => new FakeElement(), createElementNS: () => new FakeElement() })
     const session = createMapSession({
       container: {} as HTMLElement,
       onMapError: vi.fn(),
@@ -1229,7 +1306,7 @@ describe('MapSession', () => {
   })
 
   it('queues the latest venue fit and cancels pending framing on clear or dispose', async () => {
-    vi.stubGlobal('document', { createElement: () => new FakeElement() })
+    vi.stubGlobal('document', { createElement: () => new FakeElement(), createElementNS: () => new FakeElement() })
     const session = createMapSession({
       container: {} as HTMLElement,
       onMapError: vi.fn(),
@@ -1286,7 +1363,7 @@ describe('MapSession', () => {
   })
 
   it('refits the selected venue immediately with the current insets, then leaves later inset reports alone', async () => {
-    vi.stubGlobal('document', { createElement: () => new FakeElement() })
+    vi.stubGlobal('document', { createElement: () => new FakeElement(), createElementNS: () => new FakeElement() })
     const session = createMapSession({
       container: {} as HTMLElement,
       onMapError: vi.fn(),
@@ -1326,7 +1403,7 @@ describe('MapSession', () => {
   })
 
   it('marks every part of a selected building and fits the camera to all of them once insets are known', async () => {
-    vi.stubGlobal('document', { createElement: () => new FakeElement() })
+    vi.stubGlobal('document', { createElement: () => new FakeElement(), createElementNS: () => new FakeElement() })
     const session = createMapSession({
       container: {} as HTMLElement,
       onMapError: vi.fn(),
@@ -1362,7 +1439,7 @@ describe('MapSession', () => {
   })
 
   it('uses measured insets for route, endpoint, zoom, and reset camera actions', async () => {
-    vi.stubGlobal('document', { createElement: () => new FakeElement() })
+    vi.stubGlobal('document', { createElement: () => new FakeElement(), createElementNS: () => new FakeElement() })
     const session = createMapSession({
       container: {} as HTMLElement,
       onMapError: vi.fn(),
@@ -1425,7 +1502,7 @@ describe('MapSession', () => {
   })
 
   it('fits a route after focusing a venue beneath mobile sheets', async () => {
-    vi.stubGlobal('document', { createElement: () => new FakeElement() })
+    vi.stubGlobal('document', { createElement: () => new FakeElement(), createElementNS: () => new FakeElement() })
     const session = createMapSession({
       container: {} as HTMLElement,
       onMapError: vi.fn(),
@@ -1466,7 +1543,7 @@ describe('MapSession', () => {
   })
 
   it('focuses a validated route stop above the sheet and opens its popup', async () => {
-    vi.stubGlobal('document', { createElement: () => new FakeElement() })
+    vi.stubGlobal('document', { createElement: () => new FakeElement(), createElementNS: () => new FakeElement() })
     const session = createMapSession({
       container: {} as HTMLElement,
       onMapError: vi.fn(),
@@ -1497,7 +1574,7 @@ describe('MapSession', () => {
   })
 
   it('focuses a Stops pin in the exposed map without opening a popup', async () => {
-    vi.stubGlobal('document', { createElement: () => new FakeElement() })
+    vi.stubGlobal('document', { createElement: () => new FakeElement(), createElementNS: () => new FakeElement() })
     const session = createMapSession({
       container: {} as HTMLElement,
       onMapError: vi.fn(),
@@ -1566,7 +1643,7 @@ describe('MapSession', () => {
   })
 
   it('clears a mobile route highlight without fitting all routes', async () => {
-    vi.stubGlobal('document', { createElement: () => new FakeElement() })
+    vi.stubGlobal('document', { createElement: () => new FakeElement(), createElementNS: () => new FakeElement() })
     const session = createMapSession({
       container: {} as HTMLElement,
       onMapError: vi.fn(),
@@ -1586,7 +1663,7 @@ describe('MapSession', () => {
   })
 
   it('replaces endpoint markers from the current immutable transit index and clears them', async () => {
-    vi.stubGlobal('document', { createElement: () => new FakeElement() })
+    vi.stubGlobal('document', { createElement: () => new FakeElement(), createElementNS: () => new FakeElement() })
     const session = createMapSession({
       container: {} as HTMLElement,
       onMapError: vi.fn(),
@@ -1647,7 +1724,7 @@ describe('MapSession', () => {
   })
 
   it('moves and clears the temporary Personal Waypoint marker', () => {
-    vi.stubGlobal('document', { createElement: () => new FakeElement() })
+    vi.stubGlobal('document', { createElement: () => new FakeElement(), createElementNS: () => new FakeElement() })
     const onDrag = vi.fn()
     const session = createMapSession({
       container: {} as HTMLElement,
@@ -1657,6 +1734,7 @@ describe('MapSession', () => {
     const map = fakeMapState.maps.at(-1) as {
       addedMarkers: Array<{
         options: { anchor?: string }
+        element: FakeElement
         coordinate: unknown
         draggable: boolean
         setLngLat(coordinate: unknown): void
@@ -1670,8 +1748,14 @@ describe('MapSession', () => {
     expect(marker.coordinate).toEqual([103.78, 1.29])
     expect(marker.draggable).toBe(true)
     expect(marker.options.anchor).toBe('bottom')
+    // The placement pin is the shared teardrop family with a crosshair glyph and no popup.
+    const placementElement = marker.element
+    expect(placementElement.className).toBe('map-pin')
+    expect(placementElement.dataset.variant).toBe('placement')
+    expect(placementElement.attributes.get('aria-hidden')).toBe('true')
     marker.setLngLat([103.79, 1.3])
     marker.fire('dragend')
+    // Dragging reports the marker's own geographic coordinate, so the pin tip and value agree.
     expect(onDrag).toHaveBeenCalledWith([103.79, 1.3])
 
     session.setPersonalWaypointPlacement([103.8, 1.31], false, onDrag)
@@ -1807,8 +1891,109 @@ describe('MapSession', () => {
     vi.unstubAllGlobals()
   })
 
+  it('centers a saved Personal Waypoint in the area a caller-provided occlusion leaves visible', () => {
+    vi.stubGlobal('document', {
+      createElement: () => new FakeElement(),
+      createElementNS: () => new FakeElement(),
+    })
+    const session = createMapSession({
+      container: {} as HTMLElement,
+      onMapError: vi.fn(),
+      onEmptyMapClick: vi.fn(),
+    })
+    const map = fakeMapState.maps.at(-1) as { flyTo: ReturnType<typeof vi.fn> }
+    const waypoint: PersonalWaypoint = {
+      id: '00000000-0000-4000-8000-000000000001',
+      name: 'Quiet bench',
+      category: 'Rest spot',
+      coordinate: { longitude: 103.78, latitude: 1.29 },
+      markerColor: 'blue',
+      markerIcon: 'dot',
+      createdAt: '2026-10-26T00:00:00.000Z',
+      updatedAt: '2026-10-26T00:00:00.000Z',
+    }
+
+    // The waypoint details sheet covers the bottom 60% of the mobile screen.
+    session.setPersonalWaypoints([waypoint], true, vi.fn())
+    session.focusPersonalWaypoint(waypoint, { top: 0, right: 0, bottom: 518, left: 0 })
+
+    expect(map.flyTo).toHaveBeenLastCalledWith(expect.objectContaining({
+      center: [103.78, 1.29],
+      offset: [0, -259],
+      essential: true,
+    }))
+    session.dispose()
+    vi.unstubAllGlobals()
+  })
+
+  it('captures the exact camera and restores centre, zoom, bearing and pitch', () => {
+    vi.stubGlobal('document', {
+      createElement: () => new FakeElement(),
+      createElementNS: () => new FakeElement(),
+    })
+    const session = createMapSession({
+      container: {} as HTMLElement,
+      onMapError: vi.fn(),
+      onEmptyMapClick: vi.fn(),
+    })
+    const map = fakeMapState.maps.at(-1) as {
+      readonly getCenter: ReturnType<typeof vi.fn>
+      readonly getZoom: ReturnType<typeof vi.fn>
+      readonly getBearing: ReturnType<typeof vi.fn>
+      readonly getPitch: ReturnType<typeof vi.fn>
+      readonly easeTo: ReturnType<typeof vi.fn>
+    }
+
+    map.getCenter.mockReturnValue({ lng: 103.7764, lat: 1.2966 })
+    map.getZoom.mockReturnValue(17.25)
+    map.getBearing.mockReturnValue(-32)
+    map.getPitch.mockReturnValue(45)
+
+    const snapshot = session.captureCamera()
+
+    expect(snapshot).toEqual({
+      center: [103.7764, 1.2966],
+      zoom: 17.25,
+      bearing: -32,
+      pitch: 45,
+    })
+    expect(map.easeTo).not.toHaveBeenCalled()
+
+    session.restoreCamera(snapshot)
+
+    expect(map.easeTo).toHaveBeenCalledWith({
+      center: [103.7764, 1.2966],
+      zoom: 17.25,
+      bearing: -32,
+      pitch: 45,
+      duration: 400,
+    })
+    session.dispose()
+    vi.unstubAllGlobals()
+  })
+
+  it('stops camera captures and restores after disposal', () => {
+    vi.stubGlobal('document', {
+      createElement: () => new FakeElement(),
+      createElementNS: () => new FakeElement(),
+    })
+    const session = createMapSession({
+      container: {} as HTMLElement,
+      onMapError: vi.fn(),
+      onEmptyMapClick: vi.fn(),
+    })
+    const map = fakeMapState.maps.at(-1) as { readonly easeTo: ReturnType<typeof vi.fn> }
+
+    session.dispose()
+    // A disposed session still answers with a harmless camera rather than throwing.
+    expect(session.captureCamera()).toEqual({ center: [0, 0], zoom: 0, bearing: 0, pitch: 0 })
+    session.restoreCamera({ center: [103.78, 1.29], zoom: 16, bearing: 0, pitch: 0 })
+    expect(map.easeTo).not.toHaveBeenCalled()
+    vi.unstubAllGlobals()
+  })
+
   it('replaces transit installations and makes disposal idempotent', async () => {
-    vi.stubGlobal('document', { createElement: () => new FakeElement() })
+    vi.stubGlobal('document', { createElement: () => new FakeElement(), createElementNS: () => new FakeElement() })
     const session = createMapSession({
       container: {} as HTMLElement,
       onMapError: vi.fn(),

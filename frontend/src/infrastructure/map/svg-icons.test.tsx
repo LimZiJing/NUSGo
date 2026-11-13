@@ -7,7 +7,9 @@ import {
   ArmchairIcon,
   CircleDotIcon,
   CoffeeIcon,
+  CrosshairIcon,
   FavoriteIcon,
+  MapPinIcon,
   NavigationIcon,
   TreePineIcon,
 } from '../../ui/icons'
@@ -39,6 +41,8 @@ const icons: readonly { name: MapSvgIconName; reactIcon: ReactElement }[] = [
     }),
   },
   { name: 'navigation', reactIcon: createElement(NavigationIcon) },
+  { name: 'crosshair', reactIcon: createElement(CrosshairIcon) },
+  { name: 'map-pin', reactIcon: createElement(MapPinIcon) },
 ]
 
 function attributesOf(element: Element): Record<string, string> {

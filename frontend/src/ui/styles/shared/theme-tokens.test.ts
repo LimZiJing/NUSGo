@@ -202,3 +202,47 @@ describe('control token contrast', () => {
     }
   })
 })
+
+describe('journey endpoint tokens', () => {
+  const themes = ['light', 'dark', 'matcha', 'sakura', 'nus'] as const
+  const endpointTokens = [
+    '--map-endpoint-origin-fill',
+    '--map-endpoint-origin-edge',
+    '--map-endpoint-destination-fill',
+    '--map-endpoint-destination-edge',
+    '--map-endpoint-destination-centre',
+  ] as const
+
+  it('defines the grey origin and red destination roles in every theme', () => {
+    for (const themeName of themes) {
+      const tokenNames = readCustomPropertyNames(readStyleFile(`themes/${themeName}.css`))
+
+      for (const token of endpointTokens) {
+        expect(tokenNames, `${themeName}: ${token}`).toContain(token)
+      }
+    }
+  })
+
+  it('keeps the origin circle and destination pin visible against each theme surface', () => {
+    for (const themeName of themes) {
+      const styles = readStyleFile(`themes/${themeName}.css`)
+      const ratioOf = (foreground: string, background: string) => contrastRatio(
+        resolveColour(styles, foreground),
+        resolveColour(styles, background),
+      )
+
+      // Both markers sit on the map surface, so each fill must stand out from it as a graphic
+      // object (WCAG 1.4.11 needs 3:1 for non-text boundaries).
+      expect(ratioOf('--map-endpoint-origin-fill', '--surface'), `${themeName}: origin on surface`)
+        .toBeGreaterThanOrEqual(3)
+      expect(ratioOf('--map-endpoint-destination-fill', '--surface'), `${themeName}: destination on surface`)
+        .toBeGreaterThanOrEqual(3)
+      // The dark centre keeps the destination readable as a pin head rather than a red blob.
+      expect(ratioOf('--map-endpoint-destination-centre', '--map-endpoint-destination-fill'),
+        `${themeName}: destination centre on destination fill`).toBeGreaterThanOrEqual(3)
+      // The light rim separates both markers from whatever the basemap draws underneath.
+      expect(ratioOf('--map-endpoint-destination-edge', '--map-endpoint-destination-fill'),
+        `${themeName}: destination edge on destination fill`).toBeGreaterThanOrEqual(3)
+    }
+  })
+})

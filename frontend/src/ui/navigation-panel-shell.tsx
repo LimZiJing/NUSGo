@@ -10,6 +10,7 @@ import {
 } from 'react'
 import { MobileSheet } from './mobile/mobile-sheet/mobile-sheet'
 import type { MobileSheetDetent } from './mobile/mobile-sheet/mobile-sheet-detent'
+import type { MobileSheetPartialExtent } from './mobile/mobile-sheet/mobile-sheet-snap-points'
 
 interface NavigationPanelShellProps {
   readonly className: string
@@ -17,6 +18,8 @@ interface NavigationPanelShellProps {
   readonly summary?: string
   readonly controlsId: string
   readonly detent: MobileSheetDetent
+  /** Overrides how much of the screen the partial detent covers; omit for the shared 50%. */
+  readonly partialExtent?: MobileSheetPartialExtent
   readonly enabled?: boolean
   readonly active?: boolean
   readonly portalContainer?: HTMLElement | null
@@ -37,6 +40,7 @@ export function NavigationPanelShell({
   summary,
   controlsId,
   detent,
+  partialExtent,
   enabled = true,
   active = true,
   portalContainer,
@@ -93,6 +97,7 @@ export function NavigationPanelShell({
         active={active}
         portalContainer={portalContainer ?? null}
         detent={detent}
+        partialExtent={partialExtent}
         onDetentChange={onDetentChange}
         onButtonRef={assignHandleRef}
         onPanelRef={assignPanelRef}

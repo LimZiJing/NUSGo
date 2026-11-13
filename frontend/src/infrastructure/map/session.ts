@@ -2,6 +2,7 @@ import type { LoadedTransitData } from '../../app/contracts/data'
 import type { ShuttleVehiclePosition } from '@nusgo/shared'
 import { Marker } from 'maplibre-gl'
 import type {
+  MapCameraSnapshot,
   MapCoordinate,
   MapRouteSelection,
   MapSession,
@@ -19,6 +20,11 @@ import type { VenueLocation } from '@nusgo/shared/venue/types'
 import { applyBasemapPresentation } from './basemap'
 import { watchBasemapTheme } from './basemap-theme'
 import { createTripEndpointMarkers, type TripEndpointMarkers } from './endpoint-markers'
+import { getTripEndpointCoordinate } from '../../domain/trip/endpoint-location'
+import {
+  isOriginDuplicatedByCurrentLocation,
+  type CurrentLocationStandIn,
+} from '../../domain/trip/origin-proximity'
 import { createMapLifecycle } from './lifecycle'
 import { createLiveBusMarkers } from './live-bus-markers'
 import {
@@ -27,9 +33,10 @@ import {
   type ShuttleStopMarkers,
 } from './shuttle-stops'
 import { createTransitRouteLayers, type TransitRouteLayers } from './transit'
-import { BUILDING_PART_HIGHLIGHT_COLOR, createVenueMarker, type VenueMarker } from './venue-markers'
+import { createVenueMarker, type VenueMarker } from './venue-markers'
 import { createPathLayers, type JourneyRouteLayers } from './path-layers'
 import { createCurrentLocationMarker, type CurrentLocationMarker } from './current-location-marker'
+import { createMapPin, MAP_PIN_ANCHOR } from './map-pin'
 import { createPersonalWaypointMarkers, type PersonalWaypointMarkers } from './personal-waypoint-markers'
 import type { TransitIndex } from '../../domain/transit'
 import type { BuildingEntry, BuildingIndex } from '../../domain/venue/building-index'
@@ -110,6 +117,8 @@ export function createMapSession(options: MapSessionOptions): MapSession {
   let visibleCenterZoomEnabled = false
   let transitData: LoadedTransitData | null = null
   let currentTripRequest: TripRequest | null = null
+  // The dot's own fix and visibility, so a nearby origin circle can defer to it.
+  let currentLocationState: CurrentLocationStandIn = { fix: null, visible: false, trusted: false }
   let currentVenues: VenueLocationMap = {}
   let currentBuildings: BuildingIndex | null = null
   let currentTransitIndex: TransitIndex | null = null
@@ -177,6 +186,16 @@ export function createMapSession(options: MapSessionOptions): MapSession {
       (viewportInsets.left - viewportInsets.right) / 2,
       (viewportInsets.top - viewportInsets.bottom) / 2,
     ]
+
+  // User-initiated camera moves stay `essential`, so the preference is honoured here instead:
+  // under reduced motion the camera jumps to the target without animating.
+  const getCameraMotionDuration = (duration: number): number => (
+    typeof window !== 'undefined' &&
+    typeof window.matchMedia === 'function' &&
+    window.matchMedia('(prefers-reduced-motion: reduce)').matches
+      ? 0
+      : duration
+  )
 
   const flyToStop = (stopId: string, zoom: number, popupOffset: number): void => {
     const stop = currentTransitIndex?.stopById.get(stopId)
@@ -298,12 +317,24 @@ export function createMapSession(options: MapSessionOptions): MapSession {
   const syncEndpointMarkers = (): void => {
     clearEndpointMarkers()
     if (!planLayersVisible || !currentTripRequest) return
+    const originCoordinate = currentTripRequest.origin
+      ? getTripEndpointCoordinate(currentTripRequest.origin, {
+          venues: currentVenues,
+          buildings: currentBuildings,
+          transitIndex: currentTransitIndex,
+        })
+      : null
     endpointMarkers = createTripEndpointMarkers(
       map,
       currentTripRequest,
       currentVenues,
       currentTransitIndex,
       currentBuildings,
+      {
+        // The visible Current location dot already marks this spot, so the grey circle would only
+        // stack a second marker on it.
+        hideOrigin: isOriginDuplicatedByCurrentLocation(originCoordinate, currentLocationState),
+      },
     )
   }
 
@@ -600,9 +631,14 @@ export function createMapSession(options: MapSessionOptions): MapSession {
       fitJourneyOptions(selected)
     },
 
-    setCurrentLocation(fix: DeviceLocationFix | null, visible: boolean) {
+    setCurrentLocation(fix: DeviceLocationFix | null, visible: boolean, trusted: boolean) {
       if (disposed) return
       currentLocationMarker.setLocation(fix, visible)
+      const previous = currentLocationState
+      currentLocationState = { fix, visible, trusted }
+      // Only the origin circle depends on this, and only when the answer actually changed.
+      if (previous.fix === fix && previous.visible === visible && previous.trusted === trusted) return
+      syncEndpointMarkers()
     },
 
     focusCurrentLocation(fix: DeviceLocationFix) {
@@ -665,10 +701,8 @@ export function createMapSession(options: MapSessionOptions): MapSession {
       }
 
       if (!personalWaypointMarker) {
-        const element = document.createElement('div')
-        element.className = 'personal-waypoint-placement-marker'
-        element.setAttribute('aria-hidden', 'true')
-        personalWaypointMarker = new Marker({ anchor: 'bottom', element, draggable: editable })
+        const { element } = createMapPin({ variant: 'placement', glyph: 'crosshair' })
+        personalWaypointMarker = new Marker({ anchor: MAP_PIN_ANCHOR, element, draggable: editable })
           .setLngLat([coordinate[0], coordinate[1]])
           .addTo(map)
         personalWaypointDragHandler = () => {
@@ -683,21 +717,54 @@ export function createMapSession(options: MapSessionOptions): MapSession {
       }
     },
 
-    setPersonalWaypoints(waypoints, visible, onSelect) {
+    setPersonalWaypoints(waypoints, visible, onSelect, selectedWaypointId) {
       if (disposed) return
-      personalWaypointMarkers.setWaypoints(waypoints, visible, onSelect)
+      personalWaypointMarkers.setWaypoints(waypoints, visible, onSelect, selectedWaypointId)
     },
 
-    focusPersonalWaypoint(waypoint: PersonalWaypoint) {
+    focusPersonalWaypoint(waypoint: PersonalWaypoint, occlusion?: MapViewportInsets) {
       if (disposed) return
       pendingCameraFit = null
       personalWaypointMarkers.focusWaypoint(waypoint)
+      // The More panel that holds waypoint details is not one of the sheets this session measures,
+      // so the caller passes the occlusion it actually covers instead of relying on viewport insets.
+      // While MapLibre padding is active it already centres on the visible area.
+      const offset: [number, number] = occlusion && !visibleCenterZoomEnabled
+        ? [
+          (occlusion.left - occlusion.right) / 2,
+          (occlusion.top - occlusion.bottom) / 2,
+        ]
+        : getFitOffset()
       map.flyTo({
         center: [waypoint.coordinate.longitude, waypoint.coordinate.latitude],
         zoom: Math.max(map.getZoom(), 16),
-        duration: 500,
-        offset: getFitOffset(),
+        duration: getCameraMotionDuration(500),
+        offset,
         essential: true,
+      })
+    },
+
+    captureCamera() {
+      if (disposed) return { center: [0, 0], zoom: 0, bearing: 0, pitch: 0 }
+      const { lng, lat } = map.getCenter()
+      return {
+        center: [lng, lat],
+        zoom: map.getZoom(),
+        bearing: map.getBearing(),
+        pitch: map.getPitch(),
+      }
+    },
+
+    restoreCamera(snapshot: MapCameraSnapshot) {
+      if (disposed) return
+      pendingCameraFit = null
+      // The camera returns exactly as it was, so pitch and bearing come back with the centre.
+      map.easeTo({
+        center: [snapshot.center[0], snapshot.center[1]],
+        zoom: snapshot.zoom,
+        bearing: snapshot.bearing,
+        pitch: snapshot.pitch,
+        duration: getCameraMotionDuration(400),
       })
     },
 
@@ -765,7 +832,7 @@ export function createMapSession(options: MapSessionOptions): MapSession {
       if (disposed) return
 
       clearVenueMarker()
-      const marker = createVenueMarker(map, venue)
+      const marker = createVenueMarker(map, venue, { label: `Selected location: ${venue.roomName}` })
       if (!marker || !venue.location) return
 
       selectedVenueMarker = marker
@@ -791,7 +858,11 @@ export function createMapSession(options: MapSessionOptions): MapSession {
         const marker = createVenueMarker(
           map,
           { roomName: building.name, location },
-          isHighlighted(location) ? BUILDING_PART_HIGHLIGHT_COLOR : undefined,
+          {
+            // Without a highlighted part every part is equally the selected location.
+            selected: highlighted === undefined || isHighlighted(location),
+            label: `Selected location: ${building.name}`,
+          },
         )
         return marker ? [marker] : []
       })

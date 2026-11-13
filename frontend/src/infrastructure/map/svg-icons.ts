@@ -1,7 +1,7 @@
 const SVG_NAMESPACE = 'http://www.w3.org/2000/svg'
 
 interface SvgIconNode {
-  readonly tag: 'circle' | 'path' | 'polygon'
+  readonly tag: 'circle' | 'line' | 'path' | 'polygon'
   readonly attributes: Readonly<Record<string, string>>
 }
 
@@ -31,6 +31,17 @@ const iconNodes = {
   ],
   navigation: [
     { tag: 'polygon', attributes: { points: '3 11 22 2 13 21 11 13 3 11' } },
+  ],
+  crosshair: [
+    { tag: 'circle', attributes: { cx: '12', cy: '12', r: '10' } },
+    { tag: 'line', attributes: { x1: '22', x2: '18', y1: '12', y2: '12' } },
+    { tag: 'line', attributes: { x1: '6', x2: '2', y1: '12', y2: '12' } },
+    { tag: 'line', attributes: { x1: '12', x2: '12', y1: '6', y2: '2' } },
+    { tag: 'line', attributes: { x1: '12', x2: '12', y1: '22', y2: '18' } },
+  ],
+  'map-pin': [
+    { tag: 'path', attributes: { d: 'M20 10c0 4.993-5.539 10.193-7.399 11.799a1 1 0 0 1-1.202 0C9.539 20.193 4 14.993 4 10a8 8 0 0 1 16 0' } },
+    { tag: 'circle', attributes: { cx: '12', cy: '10', r: '3' } },
   ],
 } satisfies Record<string, readonly SvgIconNode[]>
 

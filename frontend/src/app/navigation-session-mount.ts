@@ -147,10 +147,14 @@ export interface NavigationSessionCommands {
     waypoints: Parameters<NavigationSession['setPersonalWaypoints']>[0],
     visible: boolean,
     onSelect: Parameters<NavigationSession['setPersonalWaypoints']>[2],
+    selectedWaypointId?: Parameters<NavigationSession['setPersonalWaypoints']>[3],
   ) => void
   readonly focusPersonalWaypoint: (
     waypoint: Parameters<NavigationSession['focusPersonalWaypoint']>[0],
+    occlusion?: Parameters<NavigationSession['focusPersonalWaypoint']>[1],
   ) => void
+  readonly captureCamera: () => Parameters<NavigationSession['restoreCamera']>[0]
+  readonly restoreCamera: (snapshot: Parameters<NavigationSession['restoreCamera']>[0]) => void
   readonly panToCoordinate: (
     coordinate: Parameters<NavigationSession['panToCoordinate']>[0],
   ) => void
@@ -209,10 +213,12 @@ function createNavigationSessionCommands(
     setPersonalWaypointPlacement: (coordinate, editable, onChange) => (
       session?.setPersonalWaypointPlacement(coordinate, editable, onChange)
     ),
-    setPersonalWaypoints: (waypoints, visible, onSelect) => (
-      session?.setPersonalWaypoints(waypoints, visible, onSelect)
+    setPersonalWaypoints: (waypoints, visible, onSelect, selectedWaypointId) => (
+      session?.setPersonalWaypoints(waypoints, visible, onSelect, selectedWaypointId)
     ),
-    focusPersonalWaypoint: (waypoint) => session?.focusPersonalWaypoint(waypoint),
+    focusPersonalWaypoint: (waypoint, occlusion) => session?.focusPersonalWaypoint(waypoint, occlusion),
+    captureCamera: () => session?.captureCamera() ?? { center: [0, 0], zoom: 0, bearing: 0, pitch: 0 },
+    restoreCamera: (snapshot) => session?.restoreCamera(snapshot),
     panToCoordinate: (coordinate) => session?.panToCoordinate(coordinate),
     dismissStopPopup: () => session?.dismissStopPopup() ?? false,
     dismissMapPopup: () => session?.dismissMapPopup() ?? false,

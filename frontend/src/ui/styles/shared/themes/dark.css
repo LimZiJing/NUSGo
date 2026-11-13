@@ -46,6 +46,19 @@
     --personal-waypoint-marker-cyan: #4aa6dc;
     --personal-waypoint-marker-purple: #9656eb;
     --personal-waypoint-marker-gray: #b7b7b7;
+    --map-pin-fill-neutral: #3a3d48;
+    --map-pin-glyph-ink: #0f172a;
+    --map-pin-glyph-paper: #fff;
+    --map-pin-glyph-on-neutral: #f3f4f6;
+    --map-pin-halo: rgb(96 165 250 / 30%);
+    --map-pin-shadow: rgb(0 0 0 / 45%);
+    /* Journey endpoints: a grey origin circle and a red destination pin whose centre
+       stays dark in every theme. */
+    --map-endpoint-origin-fill: #b9c0cb;
+    --map-endpoint-origin-edge: #16171d;
+    --map-endpoint-destination-edge: #fff;
+    --map-endpoint-destination-fill: #f43f3f;
+    --map-endpoint-destination-centre: #0b1220;
 
     --border-default: #2e303a;
     --border-subtle: #24252b;

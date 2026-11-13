@@ -60,6 +60,14 @@ export interface MapViewportInsets {
   readonly left: number
 }
 
+/** An exact MapLibre camera position, so a temporary workflow can return to it unchanged. */
+export interface MapCameraSnapshot {
+  readonly center: MapCoordinate
+  readonly zoom: number
+  readonly bearing: number
+  readonly pitch: number
+}
+
 export type MapResetTarget =
   | { readonly kind: 'venue'; readonly center: MapCoordinate; readonly zoom: number }
   | { readonly kind: 'route'; readonly routeId: string }
@@ -113,7 +121,12 @@ export interface MapSession {
   ): void
   fitJourneyRoutes(): void
   fitSelectedJourney(): void
-  setCurrentLocation(fix: DeviceLocationFix | null, visible: boolean): void
+  /**
+   * Draws the blue Current location dot. `trusted` carries the shared location policy: an untrusted
+   * or stale fix keeps the dot but never stands in for a nearby origin circle. It is required
+   * rather than defaulted, so a new caller has to state the policy instead of inheriting trust.
+   */
+  setCurrentLocation(fix: DeviceLocationFix | null, visible: boolean, trusted: boolean): void
   focusCurrentLocation(fix: DeviceLocationFix): void
   /**
    * Post-render synchronization point for measured map overlays. Implementations
@@ -136,9 +149,17 @@ export interface MapSession {
     waypoints: readonly PersonalWaypoint[],
     visible: boolean,
     onSelect: (waypointId: string, trigger: HTMLButtonElement) => void,
+    selectedWaypointId?: string | null,
   ): void
-  /** Shows a saved Personal Waypoint marker and centers it while keeping existing overlays in view. */
-  focusPersonalWaypoint(waypoint: PersonalWaypoint): void
+  /**
+   * Shows a saved Personal Waypoint marker and centers it, keeping the map area left visible by
+   * `occlusion` (which may include a panel the session does not measure itself) in view.
+   */
+  focusPersonalWaypoint(waypoint: PersonalWaypoint, occlusion?: MapViewportInsets): void
+  /** Reads the exact camera position without moving it. */
+  captureCamera(): MapCameraSnapshot
+  /** Returns to a captured camera position, without animation when reduced motion is preferred. */
+  restoreCamera(snapshot: MapCameraSnapshot): void
   /** Moves the camera to a coordinate without changing zoom, keeping existing overlays in view. */
   panToCoordinate(coordinate: MapCoordinate): void
   /** Closes the active bus-stop popup, returning whether one was open. */

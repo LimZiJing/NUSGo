@@ -14,6 +14,7 @@ import {
   Compass,
   Coffee,
   CircleDot,
+  Crosshair,
   DoorOpen,
   Download,
   EllipsisVertical,
@@ -30,6 +31,8 @@ import {
   MoreHorizontal,
   Navigation,
   Palette,
+  Pencil,
+  Plus,
   Moon,
   RotateCw,
   Route,
@@ -38,6 +41,7 @@ import {
   Star,
   Sun,
   TreePine,
+  Trash2,
   X,
 } from 'lucide-react'
 import type { LucideIcon } from 'lucide-react'
@@ -50,6 +54,14 @@ function renderDecorativeIcon(Icon: LucideIcon, props: IconProps) {
 
 export function ArrowDownUpIcon(props: IconProps) {
   return renderDecorativeIcon(ArrowDownUp, props)
+}
+
+export function EditIcon(props: IconProps) {
+  return renderDecorativeIcon(Pencil, props)
+}
+
+export function TrashIcon(props: IconProps) {
+  return renderDecorativeIcon(Trash2, props)
 }
 
 export function ArrowRightIcon(props: IconProps) {
@@ -108,6 +120,10 @@ export function CircleDotIcon(props: IconProps) {
   return renderDecorativeIcon(CircleDot, props)
 }
 
+export function CrosshairIcon(props: IconProps) {
+  return renderDecorativeIcon(Crosshair, props)
+}
+
 export function EllipsisVerticalIcon(props: IconProps) {
   return renderDecorativeIcon(EllipsisVertical, props)
 }
@@ -156,8 +172,16 @@ export function PaletteIcon(props: IconProps) {
   return renderDecorativeIcon(Palette, props)
 }
 
+export function PlusIcon(props: IconProps) {
+  return renderDecorativeIcon(Plus, props)
+}
+
 export function RouteIcon(props: IconProps) {
   return renderDecorativeIcon(Route, props)
+}
+
+export function UndoIcon(props: IconProps) {
+  return renderDecorativeIcon(RotateCw, props)
 }
 
 export function MoonIcon(props: IconProps) {

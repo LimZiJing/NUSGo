@@ -22,13 +22,10 @@ import { CommunityWaypointSubmissionError } from '../../../domain/waypoints/comm
 import { Button } from '../../../ui/button'
 import {
   AlertCircleIcon,
-  PrinterIcon,
   BuildingIcon,
-  CupSodaIcon,
-  DropletsIcon,
   SearchIcon,
-  ToiletIcon,
 } from '../../../ui/icons'
+import { CommunityWaypointCategoryIcon } from './community-waypoint-category-icon'
 import './community-waypoint-submission-form.css'
 
 interface SubmissionFields {
@@ -43,13 +40,6 @@ type SubmissionField = keyof SubmissionFields | 'coordinate'
 type SubmissionErrors = Partial<Record<SubmissionField, string>>
 type FormStatus = 'editing' | 'submitting' | 'received'
 type LocationStatus = 'locating' | 'ready' | 'required'
-
-const CATEGORY_ICONS = {
-  water_cooler: DropletsIcon,
-  printing: PrinterIcon,
-  toilet: ToiletIcon,
-  vending_machine: CupSodaIcon,
-} satisfies Record<ActiveCommunityWaypointCategory, typeof DropletsIcon>
 
 function SubmissionField({
   id,
@@ -87,9 +77,12 @@ function SubmissionField({
   )
 }
 
-function initialFields(waypoint: CommunityWaypoint | null): SubmissionFields {
+function initialFields(
+  waypoint: CommunityWaypoint | null,
+  initialCategory: ActiveCommunityWaypointCategory | null,
+): SubmissionFields {
   return {
-    category: waypoint?.category ?? '',
+    category: waypoint?.category ?? initialCategory ?? '',
     building: waypoint?.building ?? '',
     floor: waypoint?.floor === undefined ? '' : String(waypoint.floor),
     explanation: '',
@@ -194,6 +187,7 @@ function errorMessage(error: unknown, isCorrection: boolean): string {
 
 export function CommunityWaypointSubmissionForm({
   waypoint,
+  initialCategory = null,
   coordinate,
   locationStatus,
   locationAccuracy,
@@ -204,6 +198,7 @@ export function CommunityWaypointSubmissionForm({
   onPendingChange,
 }: {
   readonly waypoint: CommunityWaypoint | null
+  readonly initialCategory?: ActiveCommunityWaypointCategory | null
   readonly coordinate: WaypointCoordinate
   readonly locationStatus: LocationStatus
   readonly locationAccuracy: number | null
@@ -213,7 +208,7 @@ export function CommunityWaypointSubmissionForm({
   readonly onBack: () => void
   readonly onPendingChange?: (pending: boolean) => void
 }) {
-  const [fields, setFields] = useState(() => initialFields(waypoint))
+  const [fields, setFields] = useState(() => initialFields(waypoint, initialCategory))
   const [status, setStatus] = useState<FormStatus>('editing')
   const [errors, setErrors] = useState<SubmissionErrors>({})
   const [submissionError, setSubmissionError] = useState<string | null>(null)
@@ -362,25 +357,22 @@ export function CommunityWaypointSubmissionForm({
         >
           <legend>Choose a category</legend>
           <div className="community-waypoint-category-options">
-            {COMMUNITY_WAYPOINT_CATEGORIES.map(({ value, label }) => {
-              const Icon = CATEGORY_ICONS[value]
-              return (
-                <label key={value} className="community-waypoint-category-option">
-                  <input
-                    type="radio"
-                    name="category"
-                    value={value}
-                    checked={fields.category === value}
-                    required
-                    onChange={(event) => updateField('category', event.target.value)}
-                  />
-                  <span className="community-waypoint-category-card">
-                    <Icon size={23} />
-                    <span>{label}</span>
-                  </span>
-                </label>
-              )
-            })}
+            {COMMUNITY_WAYPOINT_CATEGORIES.map(({ value, label }) => (
+              <label key={value} className="community-waypoint-category-option">
+                <input
+                  type="radio"
+                  name="category"
+                  value={value}
+                  checked={fields.category === value}
+                  required
+                  onChange={(event) => updateField('category', event.target.value)}
+                />
+                <span className="community-waypoint-category-card">
+                  <CommunityWaypointCategoryIcon category={value} size={23} />
+                  <span>{label}</span>
+                </span>
+              </label>
+            ))}
           </div>
           {errors.category && <p id="community-submission-category-error" className="community-waypoint-field-error">
             <AlertCircleIcon className="community-waypoint-field-error-icon" size={14} />

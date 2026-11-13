@@ -1,10 +1,16 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import {
-  COMMUNITY_WAYPOINT_READABLE_CATEGORIES,
   type CommunityWaypoint,
   type CommunityWaypointCategory,
 } from '@nusgo/shared/waypoints/community'
-import { filterCommunityWaypointsByCategory, getCommunityWaypointCategoryOptions } from './community-waypoint-discovery'
+import {
+  filterCommunityWaypointsByCategory,
+  getCommunityWaypointCategoryOptions,
+} from './community-waypoint-discovery'
+import {
+  readCommunityWaypointVisibleCategories,
+  writeCommunityWaypointVisibleCategories,
+} from './community-waypoint-visibility-storage'
 
 export type CommunityWaypointLoader = (signal: AbortSignal) => Promise<readonly CommunityWaypoint[]>
 
@@ -15,11 +21,13 @@ export interface CommunityWaypointDiscovery {
   readonly waypoints: readonly CommunityWaypoint[]
   readonly visibleWaypoints: readonly CommunityWaypoint[]
   readonly categoryOptions: ReturnType<typeof getCommunityWaypointCategoryOptions>
-  readonly visibleCategories: readonly CommunityWaypointCategory[]
+  readonly draftVisibleCategories: readonly CommunityWaypointCategory[]
+  readonly hasPendingVisibilityChanges: boolean
+  readonly visibilitySaveStatus: string | null
   readonly selectedWaypoint: CommunityWaypoint | null
   toggleCategory(category: CommunityWaypointCategory): void
-  showAllCategories(): void
-  showWaypointList(): void
+  saveVisibilitySelection(): void
+  showCategoryPanel(): void
   selectWaypoint(id: string, trigger?: HTMLButtonElement): void
   clearSelectedWaypoint(): void
   retry(): void
@@ -30,15 +38,30 @@ type LoadedState =
   | { readonly attempt: number; readonly status: 'failed' }
   | { readonly attempt: number; readonly status: 'ready'; readonly waypoints: readonly CommunityWaypoint[] }
 
-const INITIAL_CATEGORIES = COMMUNITY_WAYPOINT_READABLE_CATEGORIES.map(({ value }) => value)
+interface CategorySelection {
+  readonly saved: readonly CommunityWaypointCategory[]
+  readonly draft: readonly CommunityWaypointCategory[]
+}
+
 const EMPTY_WAYPOINTS: readonly CommunityWaypoint[] = []
+
+function sameCategories(
+  first: readonly CommunityWaypointCategory[],
+  second: readonly CommunityWaypointCategory[],
+): boolean {
+  return first.length === second.length && first.every((category) => second.includes(category))
+}
 
 export function useCommunityWaypointDiscovery(
   load: CommunityWaypointLoader,
 ): CommunityWaypointDiscovery {
   const [loaded, setLoaded] = useState<LoadedState>({ attempt: 0, status: 'loading' })
   const [loadAttempt, setLoadAttempt] = useState(0)
-  const [visibleCategories, setVisibleCategories] = useState<readonly CommunityWaypointCategory[]>(INITIAL_CATEGORIES)
+  const [selection, setSelection] = useState<CategorySelection>(() => {
+    const saved = readCommunityWaypointVisibleCategories()
+    return { saved, draft: saved }
+  })
+  const [visibilitySaveStatus, setVisibilitySaveStatus] = useState<string | null>(null)
   const [selectedWaypointId, setSelectedWaypointId] = useState<string | null>(null)
   const returnFocusTarget = useRef<HTMLButtonElement | null>(null)
 
@@ -63,22 +86,32 @@ export function useCommunityWaypointDiscovery(
     [waypoints],
   )
   const visibleWaypoints = useMemo(
-    () => filterCommunityWaypointsByCategory(waypoints, visibleCategories),
-    [visibleCategories, waypoints],
+    () => filterCommunityWaypointsByCategory(waypoints, selection.draft),
+    [selection.draft, waypoints],
   )
   const selectedWaypoint = waypoints.find(({ id }) => id === selectedWaypointId) ?? null
+  const hasPendingVisibilityChanges = !sameCategories(selection.saved, selection.draft)
 
   const toggleCategory = useCallback((category: CommunityWaypointCategory): void => {
-    setVisibleCategories((current) => current.includes(category)
-      ? current.filter((item) => item !== category)
-      : [...current, category])
+    setSelection((current) => ({
+      ...current,
+      draft: current.draft.includes(category)
+        ? current.draft.filter((item) => item !== category)
+        : [...current.draft, category],
+    }))
+    setVisibilitySaveStatus(null)
   }, [])
 
-  const showAllCategories = useCallback((): void => {
-    setVisibleCategories(INITIAL_CATEGORIES)
-  }, [])
+  const saveVisibilitySelection = useCallback((): void => {
+    const saved = [...selection.draft]
+    const persisted = writeCommunityWaypointVisibleCategories(saved)
+    setSelection({ saved, draft: saved })
+    setVisibilitySaveStatus(persisted
+      ? 'Selection saved.'
+      : 'Selection saved for this session only.')
+  }, [selection.draft])
 
-  const showWaypointList = useCallback((): void => {
+  const showCategoryPanel = useCallback((): void => {
     returnFocusTarget.current = null
     setSelectedWaypointId(null)
   }, [])
@@ -107,11 +140,13 @@ export function useCommunityWaypointDiscovery(
     waypoints,
     visibleWaypoints,
     categoryOptions,
-    visibleCategories,
+    draftVisibleCategories: selection.draft,
+    hasPendingVisibilityChanges,
+    visibilitySaveStatus,
     selectedWaypoint,
     toggleCategory,
-    showAllCategories,
-    showWaypointList,
+    saveVisibilitySelection,
+    showCategoryPanel,
     selectWaypoint,
     clearSelectedWaypoint,
     retry,

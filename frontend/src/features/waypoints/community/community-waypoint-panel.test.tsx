@@ -1,9 +1,10 @@
 // @vitest-environment jsdom
 
-import { cleanup, render, screen, waitFor } from '@testing-library/react'
+import { useEffect, useRef } from 'react'
+import { cleanup, render, screen, waitFor, within } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import { afterEach, describe, expect, it, vi } from 'vitest'
-import type { CommunityWaypoint } from '@nusgo/shared/waypoints/community'
+import type { ActiveCommunityWaypointCategory, CommunityWaypoint } from '@nusgo/shared/waypoints/community'
 import { CommunityWaypointPanel } from './community-waypoint-panel'
 import { useCommunityWaypointDiscovery, type CommunityWaypointLoader } from './use-community-waypoint-discovery'
 
@@ -29,60 +30,124 @@ const waypoints: readonly CommunityWaypoint[] = [
   },
 ]
 
+const VISIBILITY_KEY = 'navus:community-waypoint-visible-categories:v1'
+
 afterEach(() => {
   cleanup()
+  localStorage.clear()
   vi.restoreAllMocks()
 })
 
 function DiscoveryHarness({
   load,
-  onSelectWaypoint = () => undefined,
   onSuggestCorrection = () => undefined,
   onSuggestWaypoint = () => undefined,
+  onVisibleWaypointsChange,
+  selectWaypointOnMount,
 }: {
   readonly load: CommunityWaypointLoader
-  readonly onSelectWaypoint?: (id: string) => void
   readonly onSuggestCorrection?: (id: string, trigger: HTMLButtonElement) => void
-  readonly onSuggestWaypoint?: (trigger: HTMLButtonElement) => void
+  readonly onSuggestWaypoint?: (trigger: HTMLButtonElement, category: ActiveCommunityWaypointCategory) => void
+  readonly onVisibleWaypointsChange?: (waypoints: readonly CommunityWaypoint[]) => void
+  readonly selectWaypointOnMount?: string
 }) {
   const discovery = useCommunityWaypointDiscovery(load)
+  const { selectWaypoint } = discovery
+  const mapMarkerRef = useRef<HTMLButtonElement>(null)
+
+  useEffect(() => {
+    if (selectWaypointOnMount) {
+      selectWaypoint(selectWaypointOnMount, mapMarkerRef.current ?? undefined)
+    }
+  }, [selectWaypoint, selectWaypointOnMount])
+
+  useEffect(() => {
+    onVisibleWaypointsChange?.(discovery.visibleWaypoints)
+  }, [discovery.visibleWaypoints, onVisibleWaypointsChange])
+
   return (
-    <CommunityWaypointPanel
-      discovery={discovery}
-      onSelectWaypoint={onSelectWaypoint}
-      onSuggestCorrection={onSuggestCorrection}
-      onSuggestWaypoint={onSuggestWaypoint}
-    />
+    <>
+      <button ref={mapMarkerRef} type="button">Mock map marker</button>
+      <CommunityWaypointPanel
+        discovery={discovery}
+        onSuggestCorrection={onSuggestCorrection}
+        onSuggestWaypoint={onSuggestWaypoint}
+      />
+    </>
   )
 }
 
 describe('CommunityWaypointPanel', () => {
-  it('filters approved Community Waypoints and restores keyboard focus after opening details', async () => {
+  it('previews category visibility changes on the map and saves the selection', async () => {
     const user = userEvent.setup()
-    const load = vi.fn(async () => waypoints)
-    const onSelectWaypoint = vi.fn()
-    const onSuggestCorrection = vi.fn()
-    render(<DiscoveryHarness load={load} onSelectWaypoint={onSelectWaypoint} onSuggestCorrection={onSuggestCorrection} />)
+    const onVisibleWaypointsChange = vi.fn()
+    render(
+      <DiscoveryHarness
+        load={async () => waypoints}
+        onVisibleWaypointsChange={onVisibleWaypointsChange}
+      />,
+    )
 
-    await screen.findByRole('button', {
-      name: 'Open details for Water cooler · Stephen Riady Centre · Floor 1',
+    const waterSwitch = await screen.findByRole('switch', { name: 'Show Water cooler on map' })
+    const saveButton = screen.getByRole('button', { name: 'Save Community Waypoint categories' })
+    expect(screen.queryByText(/waypoints across/)).toBeNull()
+    expect(waterSwitch.getAttribute('aria-checked')).toBe('false')
+    expect(screen.getByRole('switch', { name: 'Show Printing / photocopying on map' }).getAttribute('aria-checked')).toBe('false')
+    expect(saveButton.hasAttribute('disabled')).toBe(true)
+    expect(screen.queryByRole('list', { name: 'Approved Community Waypoints' })).toBeNull()
+
+    await user.click(waterSwitch)
+    expect(waterSwitch.getAttribute('aria-checked')).toBe('true')
+    expect(saveButton.hasAttribute('disabled')).toBe(false)
+    expect(onVisibleWaypointsChange.mock.calls.at(-1)?.[0]).toEqual([waypoints[0]])
+
+    await user.click(saveButton)
+    await waitFor(() => {
+      expect(onVisibleWaypointsChange.mock.calls.at(-1)?.[0]).toEqual([waypoints[0]])
     })
-    expect(screen.getByRole('button', { name: 'Open details for Printing / photocopying' })).toBeTruthy()
-    const waterFilter = screen.getByRole('button', { name: 'Water cooler, 1 waypoint' })
-    expect(waterFilter.getAttribute('aria-pressed')).toBe('true')
-    await user.click(waterFilter)
+    expect(screen.getByText('Selection saved.')).toBeTruthy()
+    expect(saveButton.hasAttribute('disabled')).toBe(true)
+    expect(localStorage.getItem(VISIBILITY_KEY)).toBe('["water_cooler"]')
 
-    expect(screen.queryByRole('button', { name: /Open details for Water cooler/ })).toBeNull()
-    expect(screen.getByRole('button', { name: 'Open details for Printing / photocopying' })).toBeTruthy()
-    await user.click(screen.getByRole('button', { name: 'Printing / photocopying, 1 waypoint' }))
-    expect(screen.getByText('No matches.')).toBeTruthy()
-    await user.click(screen.getByRole('button', { name: 'Show all waypoints' }))
+    await user.click(waterSwitch)
+    expect(onVisibleWaypointsChange.mock.calls.at(-1)?.[0]).toEqual([])
+    expect(localStorage.getItem(VISIBILITY_KEY)).toBe('["water_cooler"]')
+    await user.click(saveButton)
+    expect(localStorage.getItem(VISIBILITY_KEY)).toBe('[]')
+    expect(saveButton.hasAttribute('disabled')).toBe(true)
+  })
 
-    const row = screen.getByRole('button', { name: /Open details for Water cooler/ })
-    await user.click(row)
-    expect(onSelectWaypoint).toHaveBeenCalledWith('cw-water-001')
-    expect(screen.getByRole('heading', { name: waypoints[0]?.displayLabel })).toBeTruthy()
-    expect(screen.getByText('Stephen Riady Centre · Floor 1')).toBeTruthy()
+  it('keeps category actions available when the approved dataset is empty', async () => {
+    const user = userEvent.setup()
+    const onSuggestWaypoint = vi.fn()
+    render(<DiscoveryHarness load={async () => []} onSuggestWaypoint={onSuggestWaypoint} />)
+
+    const switches = await screen.findAllByRole('switch')
+    expect(switches).toHaveLength(4)
+    expect(screen.queryByText(/waypoints across/)).toBeNull()
+    const suggestButton = screen.getByRole('button', { name: 'Suggest Water cooler location' })
+    await user.click(suggestButton)
+    expect(onSuggestWaypoint).toHaveBeenCalledWith(suggestButton, 'water_cooler')
+  })
+
+  it('opens marker details and restores focus to the marker after Back', async () => {
+    const user = userEvent.setup()
+    const onSuggestCorrection = vi.fn()
+    render(
+      <DiscoveryHarness
+        load={async () => waypoints}
+        onSuggestCorrection={onSuggestCorrection}
+        selectWaypointOnMount="cw-water-001"
+      />,
+    )
+
+    expect(await screen.findByRole('heading', {
+      name: waypoints[0]?.displayLabel,
+    })).toBeTruthy()
+    expect(screen.getByText('Stephen Riady Centre')).toBeTruthy()
+    const detailPanel = screen.getByRole('region', { name: waypoints[0]?.displayLabel })
+    expect(within(detailPanel).getByText('Water cooler')).toBeTruthy()
+    expect(screen.getByText('Floor 1')).toBeTruthy()
     expect(screen.getByText('Beside the east stairwell.')).toBeTruthy()
     expect(screen.queryByText('Accessibility')).toBeNull()
     expect(screen.getByText('NUS Campus Facilities')).toBeTruthy()
@@ -90,24 +155,10 @@ describe('CommunityWaypointPanel', () => {
 
     await user.click(screen.getByRole('button', { name: 'Suggest a correction' }))
     expect(onSuggestCorrection).toHaveBeenCalledWith('cw-water-001', expect.any(HTMLButtonElement))
-    expect(onSuggestCorrection.mock.calls[0][1]).toBeInstanceOf(HTMLButtonElement)
-    expect(screen.queryByText('Correction submissions are not open yet.')).toBeNull()
 
-    await user.click(screen.getByRole('button', { name: 'Community Waypoints' }))
-    await waitFor(() => expect(document.activeElement).toBe(row))
-  })
-
-  it('offers one direct action instead of empty filters when no Community Waypoints are approved', async () => {
-    const user = userEvent.setup()
-    const onSuggestWaypoint = vi.fn()
-    render(<DiscoveryHarness load={async () => []} onSuggestWaypoint={onSuggestWaypoint} />)
-
-    expect(await screen.findByText('Know a useful campus location? Suggest it for others.')).toBeTruthy()
-    expect(screen.queryByRole('heading')).toBeNull()
-    expect(screen.queryByRole('group', { name: 'Filter by category' })).toBeNull()
-    const suggestButton = screen.getByRole('button', { name: 'Suggest a waypoint' })
-    await user.click(suggestButton)
-    expect(onSuggestWaypoint).toHaveBeenCalledWith(suggestButton)
+    const backButton = screen.getByRole('button', { name: 'Community Waypoints' })
+    await user.click(backButton)
+    await waitFor(() => expect(document.activeElement).toBe(screen.getByRole('button', { name: 'Mock map marker' })))
   })
 
   it('offers retry when approved data fails to load', async () => {
@@ -122,9 +173,7 @@ describe('CommunityWaypointPanel', () => {
     expect(await screen.findByRole('alert')).toBeTruthy()
     expect(logError).toHaveBeenCalledWith('Community waypoint load failed:', loadError)
     await user.click(screen.getByRole('button', { name: 'Try again' }))
-    expect(await screen.findByRole('button', {
-      name: 'Open details for Water cooler · Stephen Riady Centre · Floor 1',
-    })).toBeTruthy()
+    expect(await screen.findByRole('switch', { name: 'Show Water cooler on map' })).toBeTruthy()
     expect(load).toHaveBeenCalledTimes(2)
   })
 })

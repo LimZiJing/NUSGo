@@ -1,31 +1,40 @@
 .community-waypoint-marker {
+  appearance: none;
+  -webkit-appearance: none;
   display: grid;
-  width: 40px;
-  height: 40px;
+  width: 32px;
+  height: 32px;
   place-items: center;
   padding: 0;
   border: 0;
-  color: var(--text-inverse);
   background: transparent;
+  box-shadow: none;
   cursor: pointer;
 }
 
-.community-waypoint-marker-badge {
-  display: grid;
-  width: 27px;
-  height: 27px;
-  place-items: center;
-  border: 2px solid var(--surface-card);
-  border-radius: var(--radius-sm);
-  color: var(--text-inverse);
-  background: var(--accent);
-  box-shadow: var(--shadow-md);
-  transform: rotate(45deg);
+.community-waypoint-marker:hover,
+.community-waypoint-marker:active {
+  background: transparent;
+  box-shadow: none;
 }
 
-.community-waypoint-marker-token {
-  font: 700 var(--font-size-xs)/1 var(--sans);
-  transform: rotate(-45deg);
+.community-waypoint-marker-icon {
+  display: grid;
+  width: 20px;
+  height: 20px;
+  place-items: center;
+  box-sizing: border-box;
+  border: 2px solid var(--surface-card);
+  border-radius: 50%;
+  color: var(--accent-contrast);
+  background: var(--accent);
+  box-shadow: var(--shadow-sm);
+}
+
+.community-waypoint-marker-glyph {
+  width: 12px;
+  height: 12px;
+  stroke: currentColor;
 }
 
 .community-waypoint-marker:focus-visible {

@@ -18,6 +18,12 @@
   min-height: 0;
 }
 
+.community-waypoint-browser {
+  overflow-y: auto;
+  overscroll-behavior-y: contain;
+  padding-bottom: var(--space-2);
+}
+
 .community-waypoint-browser[hidden] {
   display: none;
 }
@@ -33,173 +39,344 @@
   outline: none;
 }
 
+.community-waypoint-details > .button[data-back-button-mode='inline'] {
+  align-self: flex-start;
+  min-height: var(--control-height-lg);
+  gap: var(--space-2);
+  padding: var(--space-2) var(--space-3);
+  border-color: var(--border-control);
+  border-radius: var(--radius-control-lg);
+  color: var(--text-primary);
+  background: var(--surface-control);
+  font-weight: 600;
+}
+
 .community-waypoint-status,
-.community-waypoint-empty,
 .community-waypoint-load-error p,
-.community-waypoint-correction-action p {
+.community-waypoint-save-status {
   margin: 0;
   color: var(--text-secondary);
   font-size: var(--font-size-sm);
   line-height: 1.4;
 }
 
-.community-waypoint-empty-state {
-  display: grid;
-  flex: 1 1 auto;
-  align-content: center;
-  align-content: safe center;
-  justify-items: center;
-  min-height: 0;
+.community-waypoint-categories {
+  display: flex;
+  flex: 0 0 auto;
+  flex-direction: column;
   gap: var(--space-2);
-  padding: var(--space-4) 4px;
-  color: var(--text-muted);
-  text-align: center;
-  font: 600 var(--font-size-lg)/1.3 var(--sans);
-}
-
-.community-waypoint-empty-state p {
-  margin: 0;
-}
-
-.community-waypoint-empty-icon {
-  width: 32px;
-  height: 32px;
-  stroke-width: 1.75;
-  stroke-linecap: round;
-}
-
-.community-waypoint-filters {
-  display: grid;
-  gap: var(--space-2);
+  min-width: 0;
   margin: 0;
   padding: 0;
   border: 0;
 }
 
-.community-waypoint-filters legend {
+.community-waypoint-categories legend {
   margin-bottom: var(--space-2);
-  color: var(--text-primary);
+  color: var(--text-secondary);
   font-size: var(--font-size-sm);
   font-weight: 600;
 }
 
-.community-waypoint-filter-list {
-  display: flex;
-  flex-wrap: wrap;
+.community-waypoint-category-list {
+  display: grid;
+  flex: 0 0 auto;
+  grid-auto-rows: auto;
   gap: var(--space-2);
 }
 
-.community-waypoint-filter,
-.community-waypoint-show-all {
-  display: inline-flex;
-  min-height: var(--control-height-sm);
+.community-waypoint-category-row {
+  display: grid;
+  grid-template-columns: 36px minmax(0, 1fr) var(--control-height-sm) 44px;
+  min-height: 56px;
   align-items: center;
-  justify-content: center;
   gap: var(--space-2);
   box-sizing: border-box;
-  padding: 6px 10px;
-  border: 1px solid var(--border-control);
-  border-radius: var(--radius-pill);
+  padding: 7px var(--space-2);
+  border: 1px solid var(--border-card);
+  border-radius: var(--radius-control-lg);
   color: var(--text-primary);
   background: var(--surface-raised);
-  font: 600 var(--font-size-sm)/1.2 var(--sans);
+}
+
+.community-waypoint-category-row.is-selected {
+  border-color: var(--accent);
+  background: var(--accent-soft);
+}
+
+.community-waypoint-category-icon {
+  display: grid;
+  width: 36px;
+  height: 36px;
+  place-items: center;
+  border-radius: var(--radius-control);
+  color: var(--text-secondary);
+  background: var(--surface-control);
+}
+
+.community-waypoint-category-row.is-selected .community-waypoint-category-icon {
+  color: var(--accent);
+}
+
+.community-waypoint-category-icon svg {
+  width: 19px;
+  height: 19px;
+  stroke-width: 1.8;
+}
+
+.community-waypoint-category-copy {
+  display: flex;
+  min-width: 0;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--space-2);
+}
+
+.community-waypoint-category-label {
+  overflow: hidden;
+  color: var(--text-primary);
+  font-size: var(--font-size-sm);
+  font-weight: 600;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.community-waypoint-category-count {
+  display: grid;
+  min-width: 24px;
+  height: 24px;
+  flex: 0 0 auto;
+  place-items: center;
+  padding: 0 6px;
+  border-radius: var(--radius-pill);
+  color: var(--text-secondary);
+  background: var(--surface-control);
+  font-size: var(--font-size-xs);
+  font-variant-numeric: tabular-nums;
+}
+
+.community-waypoint-suggest,
+.community-waypoint-suggest-placeholder {
+  width: var(--control-height-sm);
+  height: var(--control-height-sm);
+}
+
+.community-waypoint-suggest {
+  border-color: var(--border-success);
+  color: var(--text-success-strong);
+  background: var(--status-success-surface);
+}
+
+.community-waypoint-suggest:hover {
+  background: color-mix(in srgb, var(--status-success) 16%, var(--status-success-surface));
+}
+
+.community-waypoint-suggest svg {
+  width: 17px;
+  height: 17px;
+}
+
+.community-waypoint-switch {
+  position: relative;
+  width: 44px;
+  height: 36px;
+  justify-self: end;
+  padding: 0;
+  border: 0;
+  border-radius: var(--radius-pill);
+  background: transparent;
   cursor: pointer;
 }
 
-.community-waypoint-filter[aria-pressed='true'] {
+.community-waypoint-switch::before,
+.community-waypoint-switch::after {
+  position: absolute;
+  content: '';
+  transition: background-color var(--motion-duration-fast) var(--motion-ease-standard),
+    transform var(--motion-duration-fast) var(--motion-ease-standard);
+}
+
+.community-waypoint-switch::before {
+  top: 5px;
+  left: 0;
+  width: 44px;
+  height: 26px;
+  border: 1px solid var(--control-border);
+  border-radius: var(--radius-pill);
+  background: var(--surface-control);
+}
+
+.community-waypoint-switch::after {
+  top: 9px;
+  left: 4px;
+  width: 18px;
+  height: 18px;
+  border-radius: 50%;
+  background: var(--text-secondary);
+}
+
+.community-waypoint-switch[aria-checked='true']::before {
   border-color: var(--accent);
-  color: var(--text-primary);
-  background: var(--surface-subtle);
-  box-shadow: inset 0 0 0 1px var(--accent);
+  background: var(--accent);
 }
 
-.community-waypoint-filter-count {
-  min-width: 1.25em;
-  color: var(--text-secondary);
-  font-variant-numeric: tabular-nums;
-  text-align: center;
+.community-waypoint-switch[aria-checked='true']::after {
+  transform: translateX(18px);
+  background: var(--surface-raised);
 }
 
-.community-waypoint-list {
-  display: grid;
-  flex: 1 1 auto;
-  align-content: start;
-  min-height: 0;
-  margin: 0;
-  padding: 0;
-  overflow-y: auto;
-  list-style: none;
+.community-waypoint-switch:focus-visible {
+  outline: 3px solid var(--focus-ring-strong);
+  outline-offset: 2px;
 }
 
-.community-waypoint-list li + li {
+.community-waypoint-save {
+  display: flex;
+  flex: 0 0 auto;
+  align-items: center;
+  justify-content: flex-end;
+  gap: var(--space-2);
+  margin-top: 0;
+  padding-top: var(--space-3);
   border-top: 1px solid var(--border-subtle);
 }
 
-.community-waypoint-row {
-  display: flex;
-  width: 100%;
-  min-height: 52px;
-  align-items: center;
-  box-sizing: border-box;
-  padding: 8px 4px;
-  border: 0;
-  color: var(--text-primary);
-  background: transparent;
-  text-align: left;
-  cursor: pointer;
+.community-waypoint-save-status:empty {
+  display: none;
 }
 
-.community-waypoint-row-copy {
-  display: grid;
-  min-width: 0;
-  gap: 3px;
-}
-
-.community-waypoint-row-copy strong {
-  overflow-wrap: anywhere;
-  font-size: var(--font-size-sm);
-  font-weight: 600;
-}
-
-.community-waypoint-row-copy span {
-  color: var(--text-secondary);
-  font-size: var(--font-size-xs);
-}
-
-.community-waypoint-row:hover,
-.community-waypoint-row:focus-visible {
-  background: var(--surface-subtle);
+.community-waypoint-save-status[data-error='true'] {
+  color: var(--text-error-strong);
 }
 
 .community-waypoint-details-scroll {
   display: grid;
   align-content: start;
-  gap: var(--space-3);
+  gap: var(--space-4);
   min-height: 0;
   overflow-y: auto;
   padding-bottom: var(--space-2);
 }
 
-.community-waypoint-facts {
-  display: grid;
-  gap: var(--space-2);
-  margin: 0;
+.community-waypoint-details-identity {
+  display: flex;
+  min-width: 0;
+  align-items: center;
+  gap: var(--space-3);
 }
 
-.community-waypoint-facts > div {
+.community-waypoint-details-identity-icon {
   display: grid;
-  gap: 2px;
+  width: var(--control-height-lg);
+  height: var(--control-height-lg);
+  flex: 0 0 var(--control-height-lg);
+  place-items: center;
+  border-radius: var(--radius-card);
+  color: var(--accent);
+  background: var(--accent-soft);
 }
 
-.community-waypoint-facts dt {
+.community-waypoint-details-identity-copy {
+  display: grid;
+  min-width: 0;
+  gap: var(--space-1);
+}
+
+.community-waypoint-details h3 {
+  font-size: var(--font-size-2xl);
+  line-height: 1.15;
+  overflow-wrap: anywhere;
+}
+
+.community-waypoint-details-category,
+.community-waypoint-details-floor {
+  display: inline-flex;
+  width: fit-content;
+  max-width: 100%;
+  align-items: center;
+  gap: var(--space-1);
+  padding: var(--space-1) var(--space-2);
+  border: 1px solid var(--border-control);
+  border-radius: var(--radius-pill);
   color: var(--text-secondary);
+  background: var(--surface-muted);
+  font-size: var(--font-size-xs);
+  font-weight: 600;
+  line-height: 1.25;
+  overflow-wrap: anywhere;
+}
+
+.community-waypoint-details-floor svg {
+  flex: 0 0 14px;
+}
+
+.community-waypoint-details-fields {
+  display: grid;
+  gap: var(--space-3);
+}
+
+.community-waypoint-note {
+  display: grid;
+  gap: var(--space-1);
+  padding: var(--space-3);
+  border: 1px solid var(--border-card);
+  border-radius: var(--radius-card);
+  background: var(--surface-card);
+}
+
+.community-waypoint-note-title {
+  display: flex;
+  align-items: center;
+  gap: var(--space-1);
+  margin: 0;
+  color: var(--text-muted);
   font-size: var(--font-size-xs);
   font-weight: 600;
 }
 
-.community-waypoint-facts dd {
+.community-waypoint-note-title svg {
+  flex: 0 0 14px;
+}
+
+.community-waypoint-note p {
   margin: 0;
   color: var(--text-primary);
+  font-size: var(--font-size-md);
+  line-height: 1.45;
+  overflow-wrap: anywhere;
+}
+
+.community-waypoint-metadata {
+  display: grid;
+  margin: 0;
+  overflow: hidden;
+  border: 1px solid var(--border-card);
+  border-radius: var(--radius-card);
+  background: var(--surface-raised);
+}
+
+.community-waypoint-metadata > div {
+  display: grid;
+  grid-template-columns: minmax(88px, 0.4fr) minmax(0, 1fr);
+  align-items: start;
+  gap: var(--space-2);
+  padding: var(--space-2) var(--space-3);
+}
+
+.community-waypoint-metadata > div + div {
+  border-top: 1px solid var(--border-subtle);
+}
+
+.community-waypoint-metadata dt {
+  color: var(--text-muted);
+  font-size: var(--font-size-xs);
+  font-weight: 600;
+}
+
+.community-waypoint-metadata dd {
+  min-width: 0;
+  margin: 0;
+  color: var(--text-secondary);
   font-size: var(--font-size-sm);
   line-height: 1.4;
   overflow-wrap: anywhere;
@@ -217,11 +394,9 @@
   gap: var(--space-2);
 }
 
-.community-waypoint-filter:focus-visible,
-.community-waypoint-show-all:focus-visible,
-.community-waypoint-row:focus-visible,
-.community-waypoint-correction-action .button:focus-visible,
-.community-waypoint-load-error .button:focus-visible {
+.community-waypoint-suggest:focus-visible,
+.community-waypoint-load-error .button:focus-visible,
+.community-waypoint-correction-action .button:focus-visible {
   outline: 3px solid var(--focus-ring-strong);
   outline-offset: 2px;
 }
@@ -232,13 +407,10 @@
     font-size: var(--font-size-2xl);
   }
 
-  .community-waypoint-filter-list {
+  .community-waypoint-category-row {
+    grid-template-columns: 36px minmax(0, 1fr) var(--control-height-sm) 44px;
+    min-height: 58px;
     gap: 6px;
-  }
-
-  .community-waypoint-filter,
-  .community-waypoint-show-all {
-    min-height: 40px;
-    padding-inline: 9px;
+    padding-inline: 7px;
   }
 }

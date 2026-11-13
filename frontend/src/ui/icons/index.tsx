@@ -34,6 +34,7 @@ import {
   MoreHorizontal,
   Navigation,
   Palette,
+  Plus,
   Moon,
   RotateCw,
   Route,
@@ -175,6 +176,9 @@ export function NavigationIcon(props: IconProps) {
 
 export function PaletteIcon(props: IconProps) {
   return renderDecorativeIcon(Palette, props)
+}
+export function PlusIcon(props: IconProps) {
+  return renderDecorativeIcon(Plus, props)
 }
 
 export function RouteIcon(props: IconProps) {

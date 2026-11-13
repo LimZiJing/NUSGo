@@ -71,8 +71,9 @@ describe('createCommunityWaypointMarkers', () => {
 
     expect(button?.type).toBe('button')
     expect(button?.dataset.category).toBe('water_cooler')
+    expect(button?.dataset.hoverTreatment).toBe('custom')
     expect(button?.getAttribute('aria-label')).toBe('Open details for Water cooler')
-    expect(button?.querySelector('.community-waypoint-marker-token')?.textContent).toBe('W')
+    expect(button?.querySelector('.community-waypoint-marker-icon svg')?.classList.contains('lucide-droplets')).toBe(true)
     expect(markerState.instances[0]?.coordinates).toEqual([103.78, 1.29])
 
     await user.click(button!)
@@ -83,7 +84,7 @@ describe('createCommunityWaypointMarkers', () => {
     markers.dispose()
   })
 
-  it('uses the printing and photocopying badge token', () => {
+  it('uses the printing and photocopying icon', () => {
     const printingWaypoint: CommunityWaypoint = {
       ...waypoint,
       id: 'cw-printing-001',
@@ -97,7 +98,7 @@ describe('createCommunityWaypointMarkers', () => {
 
     expect(button?.dataset.category).toBe('printing')
     expect(button?.getAttribute('aria-label')).toBe('Open details for Printing / photocopying · Central Library · Floor 2')
-    expect(button?.querySelector('.community-waypoint-marker-token')?.textContent).toBe('PRN')
+    expect(button?.querySelector('.community-waypoint-marker-icon svg')?.classList.contains('lucide-printer')).toBe(true)
     markers.dispose()
   })
 
@@ -119,7 +120,7 @@ describe('createCommunityWaypointMarkers', () => {
     expect(markerState.instances[0]?.coordinates).toEqual([103.79, 1.30])
     expect(button.dataset.category).toBe('toilet')
     expect(button.getAttribute('aria-label')).toBe('Open details for Toilet')
-    expect(button.querySelector('.community-waypoint-marker-token')?.textContent).toBe('T')
+    expect(button.querySelector('.community-waypoint-marker-icon svg')?.classList.contains('lucide-toilet')).toBe(true)
 
     markers.setWaypoints([], onSelect)
     expect(document.querySelector('.community-waypoint-marker')).toBeNull()

@@ -3,6 +3,7 @@ import {
   type CommunityWaypoint,
   type CommunityWaypointCategory,
 } from '@nusgo/shared/waypoints/community'
+import { createMapSvgIcon, type MapSvgIconName } from './svg-icons'
 import './community-waypoint-markers.css'
 
 interface CommunityWaypointMarkerRecord {
@@ -22,11 +23,11 @@ export interface CommunityWaypointMarkers {
   dispose(): void
 }
 
-const CATEGORY_TOKENS: Readonly<Record<CommunityWaypointCategory, string>> = {
-  water_cooler: 'W',
-  printing: 'PRN',
-  toilet: 'T',
-  vending_machine: 'V',
+const CATEGORY_ICONS: Readonly<Record<CommunityWaypointCategory, MapSvgIconName>> = {
+  water_cooler: 'droplets',
+  printing: 'printer',
+  toilet: 'toilet',
+  vending_machine: 'cup-soda',
 }
 
 function updateElement(
@@ -36,8 +37,11 @@ function updateElement(
 ): void {
   if (previous?.category !== waypoint.category) {
     element.dataset.category = waypoint.category
-    const token = element.querySelector<HTMLElement>('.community-waypoint-marker-token')
-    if (token) token.textContent = CATEGORY_TOKENS[waypoint.category]
+    const icon = element.querySelector<HTMLElement>('.community-waypoint-marker-icon')
+    icon?.replaceChildren(createMapSvgIcon(CATEGORY_ICONS[waypoint.category], {
+      className: 'community-waypoint-marker-glyph',
+      size: 13,
+    }))
   }
   if (previous === null || previous.displayLabel !== waypoint.displayLabel) {
     element.setAttribute('aria-label', `Open details for ${waypoint.displayLabel}`)
@@ -48,13 +52,11 @@ function createMarkerElement(waypoint: CommunityWaypoint): HTMLButtonElement {
   const button = document.createElement('button')
   button.type = 'button'
   button.className = 'community-waypoint-marker'
-  const badge = document.createElement('span')
-  badge.className = 'community-waypoint-marker-badge'
-  badge.setAttribute('aria-hidden', 'true')
-  const token = document.createElement('span')
-  token.className = 'community-waypoint-marker-token'
-  badge.append(token)
-  button.append(badge)
+  button.dataset.hoverTreatment = 'custom'
+  const icon = document.createElement('span')
+  icon.className = 'community-waypoint-marker-icon'
+  icon.setAttribute('aria-hidden', 'true')
+  button.append(icon)
   updateElement(button, waypoint, null)
   return button
 }
@@ -100,7 +102,12 @@ export function createCommunityWaypointMarkers(map: Map): CommunityWaypointMarke
           if (!disposed) onSelect(waypoint.id, element)
         }
         element.addEventListener('click', handleClick)
-        const marker = new Marker({ anchor: 'bottom', element }).setLngLat(coordinate).addTo(map)
+        const marker = new Marker({
+          anchor: 'center',
+          element,
+          pitchAlignment: 'viewport',
+          rotationAlignment: 'viewport',
+        }).setLngLat(coordinate).addTo(map)
         markerRecords.set(waypoint.id, {
           marker,
           element,

@@ -90,7 +90,7 @@ describe('loadCommunityWaypoints', () => {
     await expect(pending).rejects.toMatchObject({ name: 'AbortError' })
   })
 
-  it('loads the empty checked-in public dataset', async () => {
+  it('loads the checked-in public dataset', async () => {
     const dataset: unknown = JSON.parse(readFileSync(
       new URL('../../../public/data/community-waypoints.geojson', import.meta.url),
       'utf8',
@@ -99,6 +99,15 @@ describe('loadCommunityWaypoints', () => {
     await expect(loadCommunityWaypoints(
       new AbortController().signal,
       createFetcher(dataset),
-    )).resolves.toEqual([])
+    )).resolves.toEqual([{
+      id: 'cw-17293eac-a98b-4c82-8bbb-b43974b3ca87',
+      category: 'printing',
+      displayLabel: 'Printing / photocopying · PGP MPSH / Minimart · Basement 1',
+      coordinate: { longitude: 103.7811238487892, latitude: 1.290637060820501 },
+      source: 'public_source',
+      updatedAt: '2026-11-13',
+      building: 'PGP MPSH / Minimart',
+      floor: -1,
+    }])
   })
 })

@@ -49,6 +49,7 @@ Run it against a local production build (`npm run build` followed by `npm run pr
 ## More menu and PWA installation
 
 - [ ] More lists My waypoints, Settings, Release notes, and a quiet Download NUSGo row in that order. Confirm the app icon loads at desktop and mobile sizes and Settings behaves as before.
+- [ ] On mobile, open My waypoints, Settings, and Release notes from More. Confirm each submenu has the arrow-only Back button and grab handle; collapse each submenu and verify only the grab pill remains.
 - [ ] Confirm Download NUSGo reveals the existing browser instructions when no native install prompt is available, uses the browser prompt when one is available, and is hidden in an installed app.
 - [ ] Installation announces completion with More closed. Opening an already installed app stays silent; after an observed uninstall, reinstalling announces completion again.
 

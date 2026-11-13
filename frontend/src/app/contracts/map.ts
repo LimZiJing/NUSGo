@@ -123,9 +123,10 @@ export interface MapSession {
   fitSelectedJourney(): void
   /**
    * Draws the blue Current location dot. `trusted` carries the shared location policy: an untrusted
-   * or stale fix keeps the dot but never stands in for a nearby origin circle.
+   * or stale fix keeps the dot but never stands in for a nearby origin circle. It is required
+   * rather than defaulted, so a new caller has to state the policy instead of inheriting trust.
    */
-  setCurrentLocation(fix: DeviceLocationFix | null, visible: boolean, trusted?: boolean): void
+  setCurrentLocation(fix: DeviceLocationFix | null, visible: boolean, trusted: boolean): void
   focusCurrentLocation(fix: DeviceLocationFix): void
   /**
    * Post-render synchronization point for measured map overlays. Implementations

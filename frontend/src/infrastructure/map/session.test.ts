@@ -565,21 +565,21 @@ describe('MapSession', () => {
     }
     const secondFix: DeviceLocationFix = { ...firstFix, longitude: 103.785, timestamp: 2_000 }
 
-    session.setCurrentLocation(firstFix, true)
+    session.setCurrentLocation(firstFix, true, true)
     const marker = map.addedMarkers.at(-1)
     expect(marker?.element.className).toBe('current-location-marker')
     expect(marker?.element.attributes.get('aria-label')).toBe('Current location')
     expect(marker?.coordinate).toEqual([firstFix.longitude, firstFix.latitude])
 
-    session.setCurrentLocation(secondFix, true)
+    session.setCurrentLocation(secondFix, true, true)
     expect(marker?.coordinate).toEqual([secondFix.longitude, secondFix.latitude])
 
-    session.setCurrentLocation(secondFix, false)
+    session.setCurrentLocation(secondFix, false, false)
     expect(marker?.remove).toHaveBeenCalledOnce()
-    session.setCurrentLocation(secondFix, true)
-    session.setCurrentLocation(null, true)
+    session.setCurrentLocation(secondFix, true, true)
+    session.setCurrentLocation(null, true, false)
     expect(marker?.remove).toHaveBeenCalledTimes(2)
-    session.setCurrentLocation(secondFix, true)
+    session.setCurrentLocation(secondFix, true, true)
     expect(map.flyTo).not.toHaveBeenCalled()
     expect(map.fitBounds).not.toHaveBeenCalled()
 

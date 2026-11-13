@@ -631,7 +631,7 @@ export function createMapSession(options: MapSessionOptions): MapSession {
       fitJourneyOptions(selected)
     },
 
-    setCurrentLocation(fix: DeviceLocationFix | null, visible: boolean, trusted = true) {
+    setCurrentLocation(fix: DeviceLocationFix | null, visible: boolean, trusted: boolean) {
       if (disposed) return
       currentLocationMarker.setLocation(fix, visible)
       const previous = currentLocationState

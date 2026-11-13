@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useRef, useState } from 'react'
-import type { WaypointCoordinate } from '../../../../domain/waypoints/waypoint'
+import type { WaypointCoordinate } from '@nusgo/shared/waypoints/waypoint'
 import {
   DEFAULT_PERSONAL_WAYPOINT_COORDINATE,
   DEFAULT_PERSONAL_WAYPOINT_MARKER_COLOR,

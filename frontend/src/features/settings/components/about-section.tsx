@@ -65,7 +65,11 @@ function AboutCardRow({ children, className = '' }: { readonly children: ReactNo
   return <div className={`settings-about-row ${className}`.trim()}>{children}</div>
 }
 
-export function AboutSection({ dataVersion, transitMetadata, buildingSource }: AboutSectionProps) {
+export function AboutSection({
+  dataVersion,
+  transitMetadata,
+  buildingSource,
+}: AboutSectionProps) {
   const buildVersion = dataVersion === LOCAL_DATA_VERSION
     ? 'Development'
     : `Production · ${dataVersion.slice(0, 7)}`

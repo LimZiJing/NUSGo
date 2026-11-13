@@ -3,6 +3,7 @@ import type { LocationTracker } from './contracts/location'
 import type { MapSession, MapSessionOptions } from './contracts/map'
 import type { MapViewportInsets } from './contracts/map'
 import type { ShuttleVehiclePosition } from '@nusgo/shared'
+import type { CommunityWaypoint } from '@nusgo/shared/waypoints/community'
 import type { JourneyPlanningClient } from '../infrastructure/pathfinding/client.ts'
 import type {
   NavigationSession,
@@ -138,19 +139,24 @@ export interface NavigationSessionCommands {
   readonly setViewportInsets: (insets: MapViewportInsets) => void
   readonly setPresentationBottomInset: (bottom: number | null) => void
   readonly setVisibleCenterZoom: (enabled: boolean) => void
-  readonly setPersonalWaypointPlacement: (
-    coordinate: Parameters<NavigationSession['setPersonalWaypointPlacement']>[0],
+  readonly setWaypointPlacement: (
+    coordinate: Parameters<NavigationSession['setWaypointPlacement']>[0],
     editable: boolean,
-    onChange: Parameters<NavigationSession['setPersonalWaypointPlacement']>[2],
+    onChange: Parameters<NavigationSession['setWaypointPlacement']>[2],
   ) => void
   readonly setPersonalWaypoints: (
     waypoints: Parameters<NavigationSession['setPersonalWaypoints']>[0],
     visible: boolean,
     onSelect: Parameters<NavigationSession['setPersonalWaypoints']>[2],
   ) => void
+  readonly setCommunityWaypoints: (
+    waypoints: readonly CommunityWaypoint[],
+    onSelect: (waypointId: string, trigger: HTMLButtonElement) => void,
+  ) => void
   readonly focusPersonalWaypoint: (
     waypoint: Parameters<NavigationSession['focusPersonalWaypoint']>[0],
   ) => void
+  readonly focusCommunityWaypoint: (waypoint: CommunityWaypoint) => void
   readonly panToCoordinate: (
     coordinate: Parameters<NavigationSession['panToCoordinate']>[0],
   ) => void
@@ -206,13 +212,17 @@ function createNavigationSessionCommands(
     setViewportInsets: (insets) => session?.setViewportInsets(insets),
     setPresentationBottomInset: (bottom) => session?.setPresentationBottomInset(bottom),
     setVisibleCenterZoom: (enabled) => session?.setVisibleCenterZoom(enabled),
-    setPersonalWaypointPlacement: (coordinate, editable, onChange) => (
-      session?.setPersonalWaypointPlacement(coordinate, editable, onChange)
+    setWaypointPlacement: (coordinate, editable, onChange) => (
+      session?.setWaypointPlacement(coordinate, editable, onChange)
     ),
     setPersonalWaypoints: (waypoints, visible, onSelect) => (
       session?.setPersonalWaypoints(waypoints, visible, onSelect)
     ),
+    setCommunityWaypoints: (waypoints, onSelect) => (
+      session?.setCommunityWaypoints(waypoints, onSelect)
+    ),
     focusPersonalWaypoint: (waypoint) => session?.focusPersonalWaypoint(waypoint),
+    focusCommunityWaypoint: (waypoint) => session?.focusCommunityWaypoint(waypoint),
     panToCoordinate: (coordinate) => session?.panToCoordinate(coordinate),
     dismissStopPopup: () => session?.dismissStopPopup() ?? false,
     dismissMapPopup: () => session?.dismissMapPopup() ?? false,

@@ -141,7 +141,8 @@ describe('PWA notices', () => {
   })
 
   it('keeps installation available in More after dismissing the banner', async () => {
-    render(<><PwaNotices /><MoreMenu waypointCount={0} onOpenWaypoints={() => {}} onOpenSettings={() => {}} onOpenReleaseNotes={() => {}}
+    render(<><PwaNotices /><MoreMenu waypointCount={0} onOpenWaypoints={() => {}} onSuggestCommunityWaypoint={() => {}}
+      onOpenSettings={() => {}} onOpenReleaseNotes={() => {}}
       installSection={<PwaInstallSection />} /></>)
     const { event, prompt } = dispatchInstallPrompt()
     await userEvent.setup().click(screen.getByRole('button', { name: 'Dismiss install prompt' }))
@@ -153,12 +154,14 @@ describe('PWA notices', () => {
 
   it('shows Download NUSGo as the last quiet More row and hides it after installation', () => {
     render(<MoreMenu waypointCount={0} onOpenWaypoints={() => {}} onOpenSettings={() => {}}
+      onSuggestCommunityWaypoint={() => {}}
       onOpenReleaseNotes={() => {}}
       installSection={<PwaInstallSection />} />)
 
     const rows = screen.getAllByRole('button')
     expect(rows.map((row) => row.getAttribute('aria-label'))).toEqual([
       'My waypoints',
+      'Suggest a waypoint',
       'Settings',
       'Release notes',
       'Download NUSGo',

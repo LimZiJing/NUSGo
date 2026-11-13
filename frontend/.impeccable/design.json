@@ -1,6 +1,6 @@
 {
   "schemaVersion": 2,
-  "generatedAt": "2026-11-05T17:30:04Z",
+  "generatedAt": "2026-11-08T09:49:43Z",
   "title": "Design System: NUSGo",
   "extensions": {
     "colorMeta": {
@@ -8,109 +8,271 @@
         "role": "primary",
         "displayName": "Light accent",
         "canonical": "#1d4ed8",
-        "tonalRamp": ["#000331", "#000c6a", "#0119a9", "#1341cb", "#2e63ee", "#5688fc", "#9ebdfd", "#e7effe"]
+        "tonalRamp": [
+          "#000331",
+          "#000c6a",
+          "#0119a9",
+          "#1341cb",
+          "#2e63ee",
+          "#5688fc",
+          "#9ebdfd",
+          "#e7effe"
+        ]
       },
       "dark-accent": {
         "role": "primary",
         "displayName": "Dark accent",
         "canonical": "#60a5fa",
-        "tonalRamp": ["#000b1f", "#012147", "#023973", "#0454a2", "#2d72c3", "#4c91e4", "#92c1fd", "#e4f0fe"]
+        "tonalRamp": [
+          "#000b1f",
+          "#012147",
+          "#023973",
+          "#0454a2",
+          "#2d72c3",
+          "#4c91e4",
+          "#92c1fd",
+          "#e4f0fe"
+        ]
       },
       "nus-accent": {
         "role": "primary",
         "displayName": "NUS accent",
         "canonical": "#bb4a00",
-        "tonalRamp": ["#190500", "#3c1301", "#622504", "#8b3808", "#b64d13", "#dc6930", "#fda47e", "#ffe9e1"]
+        "tonalRamp": [
+          "#190500",
+          "#3c1301",
+          "#622504",
+          "#8b3808",
+          "#b64d13",
+          "#dc6930",
+          "#fda47e",
+          "#ffe9e1"
+        ]
       },
       "nus-brand-blue": {
         "role": "secondary",
         "displayName": "NUS theme blue",
         "canonical": "#003d7c",
-        "tonalRamp": ["#000b1f", "#012147", "#023974", "#1f5596", "#3d73b6", "#5a91d7", "#92c1fe", "#e4f0ff"]
+        "tonalRamp": [
+          "#000b1f",
+          "#012147",
+          "#023974",
+          "#1f5596",
+          "#3d73b6",
+          "#5a91d7",
+          "#92c1fe",
+          "#e4f0ff"
+        ]
       },
       "nus-brand-orange": {
         "role": "tertiary",
         "displayName": "NUS theme orange",
         "canonical": "#ef7c00",
-        "tonalRamp": ["#160700", "#371802", "#5a2d04", "#81420a", "#ac5700", "#d47117", "#fda76a", "#feeadd"]
+        "tonalRamp": [
+          "#160700",
+          "#371802",
+          "#5a2d04",
+          "#81420a",
+          "#ac5700",
+          "#d47117",
+          "#fda76a",
+          "#feeadd"
+        ]
       },
       "matcha-accent": {
         "role": "primary",
         "displayName": "Matcha accent",
         "canonical": "#3b6347",
-        "tonalRamp": ["#030e06", "#0e2817", "#1c442a", "#386044", "#547d60", "#719b7c", "#9fcaaa", "#e7f2e9"]
+        "tonalRamp": [
+          "#030e06",
+          "#0e2817",
+          "#1c442a",
+          "#386044",
+          "#547d60",
+          "#719b7c",
+          "#9fcaaa",
+          "#e7f2e9"
+        ]
       },
       "sakura-accent": {
         "role": "primary",
         "displayName": "Sakura accent",
         "canonical": "#963b56",
-        "tonalRamp": ["#1c0108", "#41061c", "#6b1032", "#8b314d", "#ac4e68", "#cd6c86", "#fd9db4", "#ffe8ec"]
+        "tonalRamp": [
+          "#1c0108",
+          "#41061c",
+          "#6b1032",
+          "#8b314d",
+          "#ac4e68",
+          "#cd6c86",
+          "#fd9db4",
+          "#ffe8ec"
+        ]
       },
       "rainroom-accent": {
         "role": "primary",
         "displayName": "Rainroom lamplight",
         "canonical": "#f28a24",
-        "tonalRamp": ["#1d0b04", "#3b1608", "#5c220c", "#813311", "#a8481f", "#d66e12", "#f28a24", "#ffe0bf"]
+        "tonalRamp": [
+          "#1d0b04",
+          "#3b1608",
+          "#5c220c",
+          "#813311",
+          "#a8481f",
+          "#d66e12",
+          "#f28a24",
+          "#ffe0bf"
+        ]
       },
       "rainroom-lamplight": {
         "role": "tertiary",
         "displayName": "Rainroom bulb glow",
         "canonical": "#f28a24",
-        "tonalRamp": ["#1d0b04", "#3b1608", "#5c220c", "#813311", "#a8481f", "#d66e12", "#f28a24", "#ffe0bf"]
+        "tonalRamp": [
+          "#1d0b04",
+          "#3b1608",
+          "#5c220c",
+          "#813311",
+          "#a8481f",
+          "#d66e12",
+          "#f28a24",
+          "#ffe0bf"
+        ]
       },
       "rainroom-amber": {
         "role": "tertiary",
         "displayName": "Rainroom amber",
         "canonical": "#e8b466",
-        "tonalRamp": ["#110a02", "#301d00", "#503400", "#734d00", "#976707", "#b48a4a", "#d1b287", "#eee3d3"]
+        "tonalRamp": [
+          "#110a02",
+          "#301d00",
+          "#503400",
+          "#734d00",
+          "#976707",
+          "#b48a4a",
+          "#d1b287",
+          "#eee3d3"
+        ]
       },
       "rainroom-slate": {
         "role": "secondary",
         "displayName": "Rainroom slate blue",
         "canonical": "#152a40",
-        "tonalRamp": ["#050a10", "#0b1521", "#152a40", "#29425c", "#45627e", "#6b88a3", "#a0b6c8", "#dce7ef"]
+        "tonalRamp": [
+          "#050a10",
+          "#0b1521",
+          "#152a40",
+          "#29425c",
+          "#45627e",
+          "#6b88a3",
+          "#a0b6c8",
+          "#dce7ef"
+        ]
       },
       "rainroom-wood": {
         "role": "tertiary",
         "displayName": "Rainroom warm wood",
         "canonical": "#845638",
-        "tonalRamp": ["#110905", "#301c10", "#51321d", "#76492b", "#946547", "#b2886d", "#cfb09d", "#eee2db"]
+        "tonalRamp": [
+          "#110905",
+          "#301c10",
+          "#51321d",
+          "#76492b",
+          "#946547",
+          "#b2886d",
+          "#cfb09d",
+          "#eee2db"
+        ]
       },
       "rainroom-dark-oak": {
         "role": "tertiary",
         "displayName": "Rainroom dark oak",
         "canonical": "#4a3427",
-        "tonalRamp": ["#0d0805", "#24170f", "#3b271b", "#4a3427", "#6b4b35", "#8e6c54", "#bba08b", "#f0e8e2"]
+        "tonalRamp": [
+          "#0d0805",
+          "#24170f",
+          "#3b271b",
+          "#4a3427",
+          "#6b4b35",
+          "#8e6c54",
+          "#bba08b",
+          "#f0e8e2"
+        ]
       },
       "rainroom-moss": {
         "role": "tertiary",
         "displayName": "Rainroom moss",
         "canonical": "#586b50",
-        "tonalRamp": ["#090c08", "#1c2419", "#323f2c", "#495c41", "#65785d", "#879880", "#afbcaa", "#e1e6df"]
+        "tonalRamp": [
+          "#090c08",
+          "#1c2419",
+          "#323f2c",
+          "#495c41",
+          "#65785d",
+          "#879880",
+          "#afbcaa",
+          "#e1e6df"
+        ]
       },
       "rainroom-pine": {
         "role": "tertiary",
         "displayName": "Rainroom pine",
         "canonical": "#5f7b59",
-        "tonalRamp": ["#0a1009", "#1c2d1b", "#384b32", "#5f7b59", "#7e986f", "#a3b697", "#c8d4c1", "#e8eee3"]
+        "tonalRamp": [
+          "#0a1009",
+          "#1c2d1b",
+          "#384b32",
+          "#5f7b59",
+          "#7e986f",
+          "#a3b697",
+          "#c8d4c1",
+          "#e8eee3"
+        ]
       },
       "rainroom-surface": {
         "role": "neutral",
         "displayName": "Rainroom deep blue surface",
         "canonical": "#0c1924",
-        "tonalRamp": ["#050b11", "#0c1924", "#20303c", "#394e5c", "#596d7c", "#82929f", "#b0bdc5", "#e5ebee"]
+        "tonalRamp": [
+          "#050b11",
+          "#0c1924",
+          "#20303c",
+          "#394e5c",
+          "#596d7c",
+          "#82929f",
+          "#b0bdc5",
+          "#e5ebee"
+        ]
       },
       "rainroom-surface-raised": {
         "role": "neutral",
         "displayName": "Rainroom raised blue panel",
         "canonical": "#122330",
-        "tonalRamp": ["#070c12", "#122330", "#253845", "#405767", "#5c7484", "#8498a5", "#b1bec6", "#e5e9ec"]
+        "tonalRamp": [
+          "#070c12",
+          "#122330",
+          "#253845",
+          "#405767",
+          "#5c7484",
+          "#8498a5",
+          "#b1bec6",
+          "#e5e9ec"
+        ]
       },
       "rainroom-surface-step": {
         "role": "neutral",
         "displayName": "Rainroom slate step surface",
         "canonical": "#263a46",
-        "tonalRamp": ["#080d11", "#162a35", "#263a46", "#405564", "#607482", "#8498a4", "#b4c0c8", "#e7ebee"]
+        "tonalRamp": [
+          "#080d11",
+          "#162a35",
+          "#263a46",
+          "#405564",
+          "#607482",
+          "#8498a4",
+          "#b4c0c8",
+          "#e7ebee"
+        ]
       }
     },
     "typographyMeta": {
@@ -253,6 +415,14 @@
       "description": "Compact bus-stop row with an expandable detail affordance.",
       "html": "<article class='ds-stop-card'><button type='button' class='ds-stop-row' aria-expanded='false' aria-controls='arrival-details'><strong>Kent Ridge MRT</strong><span class='ds-card-live'>Live</span><span aria-hidden='true'>⌄</span></button><div id='arrival-details' hidden>Arrival details</div></article>",
       "css": ".ds-stop-card{min-width:0;overflow:hidden;border:1px solid var(--border-card);border-radius:var(--radius-card);background:var(--surface-card);box-shadow:var(--shadow-sm)}.ds-stop-row{display:flex;align-items:center;gap:var(--space-2);width:100%;min-height:var(--control-height-lg);padding:0 var(--space-3);border:0;border-radius:var(--radius-panel);color:var(--text-strong);background:transparent;font:inherit;text-align:left;cursor:pointer}.ds-stop-row strong{flex:1;overflow:hidden;font-size:var(--font-size-sm);font-weight:600;text-overflow:ellipsis;white-space:nowrap}.ds-card-live{color:var(--status-success);font-size:var(--font-size-xs);font-weight:600}.ds-stop-row:focus-visible{outline:var(--focus-outline);outline-offset:calc(-1 * var(--focus-ring-width))}"
+    },
+    {
+      "name": "Community Waypoints Download",
+      "kind": "download",
+      "refersTo": "button-secondary",
+      "description": "Compact square secondary icon button beside its action label in Settings → Waypoints.",
+      "html": "<div class='settings-about-card'><div class='settings-about-row settings-waypoints-download-row'><a class='button icon-button settings-waypoints-download-link' data-variant='secondary' data-size='sm' aria-label='Download approved community waypoints' href='#' download='community-waypoints.geojson'><svg aria-hidden='true' viewBox='0 0 24 24'><path d='M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4'/><path d='m7 10 5 5 5-5'/><path d='M12 15V3'/></svg></a><span>Download approved community waypoints</span></div></div>",
+      "css": ".settings-about-card{overflow:hidden;border:1px solid var(--border-card);border-radius:var(--radius-lg);background:var(--surface-card)}.settings-waypoints-download-row{display:flex;align-items:center;gap:var(--space-3)}.settings-waypoints-download-link{text-decoration:none}"
     }
   ],
   "narrative": {

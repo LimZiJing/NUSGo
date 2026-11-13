@@ -12,6 +12,7 @@ describe('Settings sections', () => {
     const user = userEvent.setup()
     render(
       <SettingsContent
+        communityWaypointDownloadUrl="/data/community-waypoints.geojson"
         themePreference="system"
         onThemePreferenceChange={() => undefined}
         minuteFormat="prime"
@@ -26,7 +27,7 @@ describe('Settings sections', () => {
       />,
     )
 
-    expect(document.querySelectorAll('.settings-disclosure-icon.menu-icon-tile')).toHaveLength(3)
+    expect(document.querySelectorAll('.settings-disclosure-icon.menu-icon-tile')).toHaveLength(4)
 
     const getSection = (title: string): HTMLDetailsElement => {
       const summary = screen.getByText(title)
@@ -38,21 +39,28 @@ describe('Settings sections', () => {
     const appearance = getSection('Appearance')
     const favourites = getSection('Favourites')
     const about = getSection('About')
+    const waypoints = getSection('Waypoints')
 
     expect(appearance.open).toBe(false)
     expect(favourites.open).toBe(false)
     expect(about.open).toBe(false)
+    expect(waypoints.open).toBe(false)
 
     await user.click(screen.getByText('Appearance'))
     await user.click(screen.getByText('About'))
+    await user.click(screen.getByText('Waypoints'))
     expect(appearance.open).toBe(true)
     expect(favourites.open).toBe(false)
     expect(about.open).toBe(true)
+    expect(waypoints.open).toBe(true)
+    expect(screen.getByRole('link', { name: 'Download approved community waypoints' }).getAttribute('href'))
+      .toBe('/data/community-waypoints.geojson')
 
     await user.click(screen.getByText('Favourites'))
     expect(appearance.open).toBe(true)
     expect(favourites.open).toBe(true)
     expect(about.open).toBe(true)
+    expect(waypoints.open).toBe(true)
   })
 
   it('manages favourites in Settings and keeps the saved order in the summary', async () => {
@@ -60,6 +68,7 @@ describe('Settings sections', () => {
     const onRemoveFavorite = vi.fn()
     const view = render(
       <SettingsContent
+        communityWaypointDownloadUrl="/data/community-waypoints.geojson"
         themePreference="matcha"
         onThemePreferenceChange={() => undefined}
         minuteFormat="prime"
@@ -81,6 +90,7 @@ describe('Settings sections', () => {
     expect(onRemoveFavorite).toHaveBeenCalledWith('kent-ridge')
     view.rerender(
       <SettingsContent
+        communityWaypointDownloadUrl="/data/community-waypoints.geojson"
         themePreference="matcha"
         onThemePreferenceChange={() => undefined}
         minuteFormat="prime"
@@ -104,6 +114,7 @@ describe('Settings sections', () => {
     const onMinuteFormatChange = vi.fn()
     render(
       <SettingsContent
+        communityWaypointDownloadUrl="/data/community-waypoints.geojson"
         themePreference="system"
         onThemePreferenceChange={() => undefined}
         minuteFormat="prime"

@@ -39,6 +39,7 @@ export interface BackendConfig {
   readonly dataVersion: string
   readonly dataDirectory: string
   readonly valhallaBaseUrl: string
+  readonly communityWaypointGithubToken: string | null
   readonly apiRateLimitWindowMs: number
   readonly apiRateLimitMaxRequests: number
   readonly journeyRateLimitMaxRequests: number
@@ -244,6 +245,7 @@ export function loadBackendConfig(
     dataVersion,
     dataDirectory: resolve(workingDirectory, dataPath),
     valhallaBaseUrl: parseValhallaBaseUrl(environment.VALHALLA_BASE_URL),
+    communityWaypointGithubToken: optionalText(environment, 'COMMUNITY_WAYPOINT_GITHUB_TOKEN') || null,
     apiRateLimitWindowMs: parseInteger(
       environment.API_RATE_LIMIT_WINDOW_MS,
       60_000,

@@ -1,10 +1,13 @@
 // @vitest-environment jsdom
 
 import { cleanup, render, screen } from '@testing-library/react'
-import { afterEach, describe, expect, it } from 'vitest'
+import { afterEach, describe, expect, it, vi } from 'vitest'
 import { AboutSection } from './about-section'
 
-afterEach(cleanup)
+afterEach(() => {
+  cleanup()
+  vi.unstubAllEnvs()
+})
 
 describe('About settings', () => {
   it('groups sources, version, and feedback into compact sections', () => {
@@ -65,7 +68,11 @@ describe('About settings', () => {
   })
 
   it('omits unavailable transit and building source details', () => {
-    render(<AboutSection dataVersion={'b'.repeat(40)} transitMetadata={null} buildingSource={null} />)
+    render(<AboutSection
+      dataVersion={'b'.repeat(40)}
+      transitMetadata={null}
+      buildingSource={null}
+    />)
 
     expect(screen.queryByText('Bus network')).toBeNull()
     expect(screen.queryByText('Building locations')).toBeNull()

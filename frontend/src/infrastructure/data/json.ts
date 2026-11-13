@@ -1,11 +1,14 @@
+export function buildBasePathUrl(path: string): string {
+  const relativePath = path.replace(/^\/+/, '')
+  return `${import.meta.env.BASE_URL}${relativePath}`
+}
+
 export async function fetchJson(
   path: string,
   signal: AbortSignal,
   resourceName: string,
 ): Promise<unknown> {
-  const basePath = import.meta.env.BASE_URL
-  const relativePath = path.replace(/^\/+/, '')
-  const response = await fetch(`${basePath}${relativePath}`, { signal })
+  const response = await fetch(buildBasePathUrl(path), { signal })
 
   if (!response.ok) {
     throw new Error(`${resourceName} request failed: ${response.status}`)

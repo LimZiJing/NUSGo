@@ -5,6 +5,7 @@ import {
   ArrowRightIcon,
   ArrowLeftIcon,
   ArmchairIcon,
+  PrinterIcon,
   BuildingIcon,
   BusIcon,
   ChevronDownIcon,
@@ -14,6 +15,8 @@ import {
   CompassIcon,
   CoffeeIcon,
   EllipsisVerticalIcon,
+  CupSodaIcon,
+  DropletsIcon,
   FavoriteIcon,
   FootprintsIcon,
   LocateIcon,
@@ -25,6 +28,7 @@ import {
   SearchIcon,
   SunIcon,
   TreePineIcon,
+  ToiletIcon,
 } from './index'
 
 const icons = [
@@ -32,6 +36,7 @@ const icons = [
   ArrowRightIcon,
   ArrowLeftIcon,
   ArmchairIcon,
+  PrinterIcon,
   BuildingIcon,
   BusIcon,
   ChevronDownIcon,
@@ -40,6 +45,8 @@ const icons = [
   CloseIcon,
   CompassIcon,
   CoffeeIcon,
+  CupSodaIcon,
+  DropletsIcon,
   EllipsisVerticalIcon,
   FootprintsIcon,
   LocateIcon,
@@ -51,6 +58,7 @@ const icons = [
   SearchIcon,
   SunIcon,
   TreePineIcon,
+  ToiletIcon,
 ]
 
 describe('centralized UI icons', () => {

@@ -256,6 +256,9 @@ Explore, Stops, and Plan use a three-item icon-and-label navigation. The selecte
 ### Mobile Sheet
 Mobile sheets overlay the shared map and move between collapsed, partial, and full positions. Preserve independent state per tab, keep the bottom tab bar reachable, and allow the sheet content to scroll independently.
 
+### Settings Panels
+Settings uses focused sections and the same bordered card language as About. The Waypoints section presents a Community waypoints heading and a download row: a compact square secondary icon button sits beside the visible label. Keep the accessible name aligned with the visible action label.
+
 **The State Clarity Rule.** Selection and status remain clear in text and accessible state; color reinforces the meaning.
 
 ## Do's and Don'ts

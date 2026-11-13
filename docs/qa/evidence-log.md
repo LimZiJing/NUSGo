@@ -199,3 +199,31 @@ Google Chrome 154.0.8037.57 headless with CDP, local Vite app at `http://127.0.0
 ## Earlier browser evidence
 
 The [responsive layout browser evidence](responsive-layout-browser-evidence.md) preserves earlier headless and device-emulation results. It is historical evidence, not a standing checklist. Record only the targeted checks or release result that applies to each change.
+
+## Community waypoint discovery verification — 2026-11-08
+
+Codex In-App Browser (Chromium-based; exact version unavailable), local Vite app at `http://localhost:32916`, HEAD `5d0ec90f8b0ebebd9291ef55bfd9b08ec0786c44`:
+
+- At 1280 × 800, Explore → Community showed the category filters, map legend, and empty state without overlap. At 1280 × 720, with a temporary approved fixture, the distinct map marker appeared; selecting either the row or marker opened details with category, building/floor, optional notes, source, and last-updated date.
+- Toggling a category removed its marker and list row; Show all restored them. The fixture was removed and the checked-in collection returned to empty after the smoke check.
+- At 390 × 844, the list and details fit the mobile sheet without overlap. Keyboard activation opened details; Back returned focus to the same list row. The browser console had no errors.
+- Targeted interactions were checked at desktop 1280 × 720 and mobile 390 × 844; this was not the full release checklist.
+
+## Community waypoint submission entry and empty state — 2026-11-08
+
+Codex In-App Browser (Chromium-based; exact version unavailable), local managed Vite app at `http://localhost:32916`, application code HEAD `46fc9a7`:
+
+- At 390 × 844 and 1280 × 800, Explore → Community showed the concise “No places yet” state with one Suggest a place action. Category filters and zero-count chips were absent while the approved dataset was empty. The basemap and existing stop markers rendered at both sizes.
+- At 390 × 844, Tab from the Community selector focused Suggest a place. Enter opened the text-only form; Cancel returned to Community and restored focus to the same action.
+- At 1280 × 800, the form opened from Suggest a place. Adjust on map → Use map centre → Done returned to the form with the selected coordinate updated. Cancel returned to Community and restored focus to Suggest a place.
+- The form displayed its review and privacy notice. No suggestion was submitted; the private API and review queue were not exercised. The browser console had no errors.
+- The earlier discovery pass above remains evidence for the temporary approved-place marker, filtering, details, provenance, and correction entry; this pass records the updated empty state and submission entry points. Neither pass is a full release checklist.
+
+## Community submission form redesign verification — 2026-11-09
+
+Codex In-App Browser, local managed Vite app at `http://localhost:32916`, application code HEAD `cd7061c000b3e287bb0adb744b4ee3b944360153`:
+
+- At 390 × 844, Explore → Community showed the top-aligned empty state and Suggest a place action. Tab focused the action and Enter opened the text-only form. The compact fields, separate-coordinate Location card, collapsed Additional details section, and Cancel/Send actions fit the mobile panel.
+- Keyboard Tab and Space opened Additional details. With an invalid floor entered and the section collapsed, Send suggestion reopened it, exposed the inline whole-number error, and moved focus to Floor. Cancel returned focus to Suggest a place. No suggestion was sent.
+- At 1280 × 800, the form remained readable in the desktop panel alongside the map. The map and existing stops remained visible.
+- The submission API, private review queue, and browser console were not exercised in this pass; it is targeted UI evidence, not the full release checklist.

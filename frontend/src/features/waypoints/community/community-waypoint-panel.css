@@ -1,0 +1,389 @@
+.community-waypoint-panel {
+  display: flex;
+  flex: 1 1 auto;
+  flex-direction: column;
+  min-width: 0;
+  min-height: 0;
+  overflow: hidden;
+  text-align: left;
+}
+
+.community-waypoint-browser,
+.community-waypoint-details {
+  display: flex;
+  flex: 1 1 auto;
+  flex-direction: column;
+  gap: var(--space-3);
+  min-width: 0;
+  min-height: 0;
+}
+
+.community-waypoint-browser {
+  overflow: hidden;
+  padding-bottom: var(--space-2);
+}
+
+.community-waypoint-browser[hidden] {
+  display: none;
+}
+
+.community-waypoint-details h3 {
+  margin: 0;
+  color: var(--text-primary);
+  font: 600 var(--font-size-xl)/1.25 var(--sans);
+}
+
+.community-waypoint-details h3:focus {
+  outline: none;
+}
+
+.community-waypoint-details > .button[data-back-button-mode='inline'] {
+  align-self: flex-start;
+  min-height: var(--control-height-lg);
+  gap: var(--space-2);
+  padding: var(--space-2) var(--space-3);
+  border-color: var(--border-control);
+  border-radius: var(--radius-control-lg);
+  color: var(--text-primary);
+  background: var(--surface-control);
+  font-weight: 600;
+}
+
+.community-waypoint-status,
+.community-waypoint-load-error p {
+  margin: 0;
+  color: var(--text-secondary);
+  font-size: var(--font-size-sm);
+  line-height: 1.4;
+}
+
+.community-waypoint-categories {
+  display: flex;
+  flex: 1 1 auto;
+  flex-direction: column;
+  gap: var(--space-2);
+  min-width: 0;
+  /* Without this a flex item refuses to shrink, and the list pushes the footer off. */
+  min-height: 0;
+  margin: 0;
+  padding: 0;
+  border: 0;
+}
+
+/* The legend stays in the DOM for the fieldset's accessible name but takes no space. */
+.community-waypoint-categories legend {
+  padding: 0;
+}
+
+.community-waypoint-category-list {
+  display: grid;
+  flex: 0 1 auto;
+  grid-auto-rows: auto;
+  gap: var(--space-2);
+  min-height: 0;
+  overflow-y: auto;
+  overscroll-behavior-y: contain;
+  padding-right: 2px;
+}
+
+.community-waypoint-category-row {
+  display: grid;
+  grid-template-columns: 36px minmax(0, 1fr) 44px;
+  min-height: 56px;
+  align-items: center;
+  gap: var(--space-2);
+  box-sizing: border-box;
+  padding: 7px var(--space-2);
+  border: 1px solid var(--border-card);
+  border-radius: var(--radius-control-lg);
+  color: var(--text-primary);
+  background: var(--surface-raised);
+}
+
+.community-waypoint-category-row.is-selected {
+  border-color: var(--accent);
+  background: var(--accent-soft);
+}
+
+.community-waypoint-category-icon {
+  display: grid;
+  width: 36px;
+  height: 36px;
+  place-items: center;
+  border-radius: var(--radius-control);
+  color: var(--text-secondary);
+  background: var(--surface-control);
+}
+
+.community-waypoint-category-row.is-selected .community-waypoint-category-icon {
+  color: var(--accent);
+}
+
+.community-waypoint-category-icon svg {
+  width: 19px;
+  height: 19px;
+  stroke-width: 1.8;
+}
+
+.community-waypoint-category-copy {
+  display: flex;
+  min-width: 0;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--space-2);
+}
+
+.community-waypoint-category-label {
+  overflow: hidden;
+  color: var(--text-primary);
+  font-size: var(--font-size-sm);
+  font-weight: 600;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.community-waypoint-category-count {
+  display: grid;
+  min-width: 24px;
+  height: 24px;
+  flex: 0 0 auto;
+  place-items: center;
+  padding: 0 6px;
+  border-radius: var(--radius-pill);
+  color: var(--text-secondary);
+  background: var(--surface-control);
+  font-size: var(--font-size-xs);
+  font-variant-numeric: tabular-nums;
+}
+
+.community-waypoint-switch {
+  position: relative;
+  width: 44px;
+  height: 36px;
+  justify-self: end;
+  padding: 0;
+  border: 0;
+  border-radius: var(--radius-pill);
+  background: transparent;
+  cursor: pointer;
+}
+
+.community-waypoint-switch::before,
+.community-waypoint-switch::after {
+  position: absolute;
+  content: '';
+  transition: background-color var(--motion-duration-fast) var(--motion-ease-standard),
+    transform var(--motion-duration-fast) var(--motion-ease-standard);
+}
+
+.community-waypoint-switch::before {
+  top: 5px;
+  left: 0;
+  width: 44px;
+  height: 26px;
+  border: 1px solid var(--control-border);
+  border-radius: var(--radius-pill);
+  background: var(--surface-control);
+}
+
+.community-waypoint-switch::after {
+  top: 9px;
+  left: 4px;
+  width: 18px;
+  height: 18px;
+  border-radius: 50%;
+  background: var(--text-secondary);
+}
+
+.community-waypoint-switch[aria-checked='true']::before {
+  border-color: var(--accent);
+  background: var(--accent);
+}
+
+.community-waypoint-switch[aria-checked='true']::after {
+  transform: translateX(18px);
+  background: var(--surface-raised);
+}
+
+.community-waypoint-switch:focus-visible {
+  outline: 3px solid var(--focus-ring-strong);
+  outline-offset: 2px;
+}
+
+.community-waypoint-footer {
+  display: flex;
+  flex: 0 0 auto;
+  align-items: center;
+  justify-content: stretch;
+  margin-top: 0;
+  padding-top: var(--space-3);
+  border-top: 1px solid var(--border-subtle);
+}
+
+.community-waypoint-footer .button {
+  flex: 1 1 auto;
+}
+
+.community-waypoint-details-scroll {
+  display: grid;
+  align-content: start;
+  gap: var(--space-4);
+  min-height: 0;
+  overflow-y: auto;
+  padding-bottom: var(--space-2);
+}
+
+.community-waypoint-details-identity {
+  display: flex;
+  min-width: 0;
+  align-items: center;
+  gap: var(--space-3);
+}
+
+.community-waypoint-details-identity-icon {
+  display: grid;
+  width: var(--control-height-lg);
+  height: var(--control-height-lg);
+  flex: 0 0 var(--control-height-lg);
+  place-items: center;
+  border-radius: var(--radius-card);
+  color: var(--accent);
+  background: var(--accent-soft);
+}
+
+.community-waypoint-details-identity-copy {
+  display: grid;
+  min-width: 0;
+  gap: var(--space-1);
+}
+
+.community-waypoint-details h3 {
+  font-size: var(--font-size-2xl);
+  line-height: 1.15;
+  overflow-wrap: anywhere;
+}
+
+.community-waypoint-details-category,
+.community-waypoint-details-floor {
+  display: inline-flex;
+  width: fit-content;
+  max-width: 100%;
+  align-items: center;
+  gap: var(--space-1);
+  padding: var(--space-1) var(--space-2);
+  border: 1px solid var(--border-control);
+  border-radius: var(--radius-pill);
+  color: var(--text-secondary);
+  background: var(--surface-muted);
+  font-size: var(--font-size-xs);
+  font-weight: 600;
+  line-height: 1.25;
+  overflow-wrap: anywhere;
+}
+
+.community-waypoint-details-floor svg {
+  flex: 0 0 14px;
+}
+
+.community-waypoint-details-fields {
+  display: grid;
+  gap: var(--space-3);
+}
+
+.community-waypoint-note {
+  display: grid;
+  gap: var(--space-1);
+  padding: var(--space-3);
+  border: 1px solid var(--border-card);
+  border-radius: var(--radius-card);
+  background: var(--surface-card);
+}
+
+.community-waypoint-note-title {
+  display: flex;
+  align-items: center;
+  gap: var(--space-1);
+  margin: 0;
+  color: var(--text-muted);
+  font-size: var(--font-size-xs);
+  font-weight: 600;
+}
+
+.community-waypoint-note-title svg {
+  flex: 0 0 14px;
+}
+
+.community-waypoint-note p {
+  margin: 0;
+  color: var(--text-primary);
+  font-size: var(--font-size-md);
+  line-height: 1.45;
+  overflow-wrap: anywhere;
+}
+
+.community-waypoint-metadata {
+  display: grid;
+  margin: 0;
+  overflow: hidden;
+  border: 1px solid var(--border-card);
+  border-radius: var(--radius-card);
+  background: var(--surface-raised);
+}
+
+.community-waypoint-metadata > div {
+  display: grid;
+  grid-template-columns: minmax(88px, 0.4fr) minmax(0, 1fr);
+  align-items: start;
+  gap: var(--space-2);
+  padding: var(--space-2) var(--space-3);
+}
+
+.community-waypoint-metadata > div + div {
+  border-top: 1px solid var(--border-subtle);
+}
+
+.community-waypoint-metadata dt {
+  color: var(--text-muted);
+  font-size: var(--font-size-xs);
+  font-weight: 600;
+}
+
+.community-waypoint-metadata dd {
+  min-width: 0;
+  margin: 0;
+  color: var(--text-secondary);
+  font-size: var(--font-size-sm);
+  line-height: 1.4;
+  overflow-wrap: anywhere;
+}
+
+.community-waypoint-correction-action {
+  display: grid;
+  justify-items: start;
+  gap: var(--space-2);
+}
+
+.community-waypoint-load-error {
+  display: grid;
+  justify-items: start;
+  gap: var(--space-2);
+}
+
+.community-waypoint-load-error .button:focus-visible,
+.community-waypoint-correction-action .button:focus-visible {
+  outline: 3px solid var(--focus-ring-strong);
+  outline-offset: 2px;
+}
+
+@media (max-width: 768px) {
+  .community-waypoint-details h3 {
+    font-size: var(--font-size-2xl);
+  }
+
+  .community-waypoint-category-row {
+    grid-template-columns: 36px minmax(0, 1fr) 44px;
+    min-height: 58px;
+    gap: 6px;
+    padding-inline: 7px;
+  }
+}

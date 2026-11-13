@@ -5,6 +5,11 @@ import type { BackendLiveData } from '../live-data/runtime.ts'
 import { registerHealthRoutes } from './routes/health.ts'
 import { registerLiveDataRoutes } from './routes/live-data.ts'
 import { registerJourneyRoutes } from './routes/journeys.ts'
+import {
+  createPrivateSubmissionIssueWriter,
+  registerCommunityWaypointSubmissionRoute,
+  type PrivateSubmissionIssueWriter,
+} from './routes/community-waypoint-submissions.ts'
 import type { PathfindingService } from '../pathfinding/service.ts'
 import { createApiErrorHandler, sendApiError } from './error-response.ts'
 import { createCorsMiddleware } from './cors.ts'
@@ -24,6 +29,7 @@ type AppConfig = Pick<
   | 'journeyRequestTimeoutMs'
 > & {
   readonly environment?: BackendConfig['environment']
+  readonly communityWaypointGithubToken?: string | null
 }
 
 export function createApp(
@@ -31,6 +37,9 @@ export function createApp(
   data: BackendData | null,
   liveData: BackendLiveData | null = null,
   planner: PathfindingService | null = null,
+  submissionIssueWriter: PrivateSubmissionIssueWriter | null = createPrivateSubmissionIssueWriter(
+    config.communityWaypointGithubToken ?? null,
+  ),
 ): Express {
   const app = express()
   app.disable('x-powered-by')
@@ -65,6 +74,7 @@ export function createApp(
     planner,
     config,
   )
+  registerCommunityWaypointSubmissionRoute(app, submissionIssueWriter)
 
   app.use('/api', (_request, response) => {
     sendApiError(response, 404, 'API route not found', 'invalid_request')

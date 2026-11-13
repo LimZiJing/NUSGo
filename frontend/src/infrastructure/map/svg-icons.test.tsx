@@ -7,8 +7,12 @@ import {
   ArmchairIcon,
   CircleDotIcon,
   CoffeeIcon,
+  CupSodaIcon,
+  DropletsIcon,
   FavoriteIcon,
   NavigationIcon,
+  PrinterIcon,
+  ToiletIcon,
   TreePineIcon,
 } from '../../ui/icons'
 import { createMapSvgIcon, type MapSvgIconName } from './svg-icons'
@@ -39,6 +43,10 @@ const icons: readonly { name: MapSvgIconName; reactIcon: ReactElement }[] = [
     }),
   },
   { name: 'navigation', reactIcon: createElement(NavigationIcon) },
+  { name: 'printer', reactIcon: createElement(PrinterIcon, { className: 'community-waypoint-marker-glyph', size: 13 }) },
+  { name: 'droplets', reactIcon: createElement(DropletsIcon, { className: 'community-waypoint-marker-glyph', size: 13 }) },
+  { name: 'toilet', reactIcon: createElement(ToiletIcon, { className: 'community-waypoint-marker-glyph', size: 13 }) },
+  { name: 'cup-soda', reactIcon: createElement(CupSodaIcon, { className: 'community-waypoint-marker-glyph', size: 13 }) },
 ]
 
 function attributesOf(element: Element): Record<string, string> {
@@ -55,6 +63,8 @@ describe('createMapSvgIcon', () => {
     const actual = createMapSvgIcon(name, {
       ...(name === 'circle-dot' || name === 'armchair' || name === 'coffee' || name === 'tree-pine' || name === 'star'
         ? { className: 'personal-waypoint-marker-glyph', size: 13 }
+        : name === 'printer' || name === 'droplets' || name === 'toilet' || name === 'cup-soda'
+          ? { className: 'community-waypoint-marker-glyph', size: 13 }
         : {}),
     })
 

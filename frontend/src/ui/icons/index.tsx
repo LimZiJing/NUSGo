@@ -5,6 +5,7 @@ import {
   ArrowUpRight,
   ArrowLeft,
   Armchair,
+  Printer,
   Building2,
   BusFront,
   CircleAlert,
@@ -15,7 +16,9 @@ import {
   Compass,
   Coffee,
   CircleDot,
+  CupSoda,
   DoorOpen,
+  Droplets,
   Download,
   EllipsisVertical,
   ExternalLink,
@@ -26,11 +29,13 @@ import {
   ListFilter,
   Map,
   MapPin,
+  MapPinPlus,
   LocateFixed,
   Monitor,
   MoreHorizontal,
   Navigation,
   Palette,
+  Plus,
   Moon,
   RotateCw,
   Route,
@@ -38,6 +43,7 @@ import {
   Settings,
   Star,
   Sun,
+  Toilet,
   TreePine,
   X,
 } from 'lucide-react'
@@ -67,6 +73,10 @@ export function ArrowLeftIcon(props: IconProps) {
 
 export function ArmchairIcon(props: IconProps) {
   return renderDecorativeIcon(Armchair, props)
+}
+
+export function PrinterIcon(props: IconProps) {
+  return renderDecorativeIcon(Printer, props)
 }
 
 export function BuildingIcon(props: IconProps) {
@@ -109,6 +119,14 @@ export function CoffeeIcon(props: IconProps) {
   return renderDecorativeIcon(Coffee, props)
 }
 
+export function CupSodaIcon(props: IconProps) {
+  return renderDecorativeIcon(CupSoda, props)
+}
+
+export function DropletsIcon(props: IconProps) {
+  return renderDecorativeIcon(Droplets, props)
+}
+
 export function CircleDotIcon(props: IconProps) {
   return renderDecorativeIcon(CircleDot, props)
 }
@@ -145,6 +163,11 @@ export function MapPinIcon(props: IconProps) {
   return renderDecorativeIcon(MapPin, props)
 }
 
+/** A pin with a plus beside it: contributing a new location rather than showing one. */
+export function MapPinPlusIcon(props: IconProps) {
+  return renderDecorativeIcon(MapPinPlus, props)
+}
+
 export function MoreHorizontalIcon(props: IconProps) {
   return renderDecorativeIcon(MoreHorizontal, props)
 }
@@ -159,6 +182,9 @@ export function NavigationIcon(props: IconProps) {
 
 export function PaletteIcon(props: IconProps) {
   return renderDecorativeIcon(Palette, props)
+}
+export function PlusIcon(props: IconProps) {
+  return renderDecorativeIcon(Plus, props)
 }
 
 export function RouteIcon(props: IconProps) {
@@ -179,6 +205,10 @@ export function InfoIcon(props: IconProps) {
 
 export function SunIcon(props: IconProps) {
   return renderDecorativeIcon(Sun, props)
+}
+
+export function ToiletIcon(props: IconProps) {
+  return renderDecorativeIcon(Toilet, props)
 }
 
 export function TreePineIcon(props: IconProps) {

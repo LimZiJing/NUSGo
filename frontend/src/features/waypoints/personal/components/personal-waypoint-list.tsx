@@ -70,7 +70,8 @@ interface PersonalWaypointListProps {
   /** Renames or merges a category. Returns false when the write was refused. */
   readonly onRenameCategory?: (from: string, to: string) => boolean
   /** Records the merged category's map visibility and reports whether it is shown. */
-  readonly onMergeCategoryVisibility?: (from: string, to: string) => boolean
+  /** null when the merged category's map visibility could not be read or saved. */
+  readonly onMergeCategoryVisibility?: (from: string, to: string) => boolean | null
   readonly onMove: (waypointId: string, targetIndex: number) => boolean
   readonly onEditAnnouncement?: (message: string) => void
 }
@@ -307,8 +308,15 @@ export function PersonalWaypointList({
       focusHeading(request.from)
       return
     }
-    const visibleAfter = onMergeCategoryVisibility?.(request.from, request.to) ?? true
-    setRenameAnnouncement(`${categoryMergeConfirmation(visibleAfter)}. Merged ${request.from} into ${request.to}.`)
+    // Only a caller that does not track visibility at all means "shown"; a null answer is a real
+    // failure and must not be read as success.
+    const answer = onMergeCategoryVisibility?.(request.from, request.to)
+    const visibleAfter = answer === undefined ? true : answer
+    // A null answer means the visibility could not be read or saved, so the merged category's map
+    // state is unknown. Say the places merged and name the problem instead of claiming a state.
+    setRenameAnnouncement(visibleAfter === null
+      ? `Merged ${request.from} into ${request.to}. Its map visibility could not be saved.`
+      : `${categoryMergeConfirmation(visibleAfter)}. Merged ${request.from} into ${request.to}.`)
     focusHeading(request.to)
   }
 

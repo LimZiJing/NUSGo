@@ -30,7 +30,7 @@ describe('PersonalWaypointPlacement', () => {
     expect(screen.getByRole('heading', { name: 'Adjust location' })).toBeTruthy()
     expect(screen.getByText('1.293300° N · 103.784400° E')).toBeTruthy()
     expect(screen.getAllByRole('button').map((button) => button.textContent?.trim())).toEqual([
-      'Use map centre', 'Coordinates', 'Cancel', 'Use location',
+      'Back to waypoint form', 'Use map centre', 'Coordinates', 'Cancel', 'Use location',
     ])
     expect(screen.queryByRole('textbox')).toBeNull()
     expect(screen.queryByRole('spinbutton')).toBeNull()
@@ -39,6 +39,9 @@ describe('PersonalWaypointPlacement', () => {
     expect(props.onContinue).toHaveBeenCalledOnce()
     await user.click(screen.getByRole('button', { name: 'Cancel' }))
     expect(props.onCancel).toHaveBeenCalledOnce()
+    // The More header is hidden while placing, so the overlay's Back must abandon the same way.
+    await user.click(screen.getByRole('button', { name: 'Back to waypoint form' }))
+    expect(props.onCancel).toHaveBeenCalledTimes(2)
   })
 
   it('applies a pasted coordinate on Enter and returns focus to Edit', async () => {

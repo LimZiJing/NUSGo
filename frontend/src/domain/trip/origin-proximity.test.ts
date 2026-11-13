@@ -32,13 +32,15 @@ describe('origin circle and Current location proximity', () => {
   })
 
   it('measures geography rather than pixels, so zoom and panning cannot change the answer', () => {
-    // A east-west offset uses the same shared distance helper, not a screen projection.
-    const eastward = {
+    // An east-west offset uses the same shared distance helper, not a screen projection. The ground
+    // distances travel through floating point, so give the boundary a few centimetres of slack
+    // rather than asserting an artefact of the sphere maths.
+    const eastAt = (meters: number) => ({
       ...fixMetresNorth(0),
-      longitude: ORIGIN.longitude + (20 / (EARTH_RADIUS_METERS * Math.cos(ORIGIN.latitude * Math.PI / 180))) * 180 / Math.PI,
-    }
-    expect(merge(eastward)).toBe(false)
-    expect(merge({ ...eastward, longitude: ORIGIN.longitude + 0.00001 })).toBe(true)
+      longitude: ORIGIN.longitude + (meters / (EARTH_RADIUS_METERS * Math.cos(ORIGIN.latitude * Math.PI / 180))) * 180 / Math.PI,
+    })
+    expect(merge(eastAt(20 - 0.01))).toBe(true)
+    expect(merge(eastAt(20 + 0.01))).toBe(false)
   })
 
   it('keeps the origin circle when Current location is hidden or untrusted', () => {

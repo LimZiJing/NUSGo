@@ -364,7 +364,11 @@ describe('PersonalWaypointList', () => {
     expect(screen.getByRole('button', { name: /Study place.*1/ }).getAttribute('aria-expanded')).toBe('false')
     unmount()
     render(<PersonalWaypointList waypoints={waypoints} canEdit editing={false} onRemove={() => undefined} onMove={() => true} />)
-    expect(screen.getByText('Quiet bench')).toBeTruthy()
+    // Rows stay mounted while a group is collapsed, so text alone proves nothing: assert the
+    // remembered state that unmounting and remounting is supposed to restore.
+    expect(screen.getByRole('button', { name: /Rest spot.*2/ }).getAttribute('aria-expanded')).toBe('true')
+    expect(screen.getByRole('button', { name: /Study place.*1/ }).getAttribute('aria-expanded')).toBe('false')
+    expect(document.getElementById('waypoint-category-list-Rest%20spot')?.hasAttribute('hidden')).toBe(false)
   })
 
   it('shows only places from a fixed category and disables reordering', async () => {
@@ -708,6 +712,37 @@ describe('PersonalWaypointList', () => {
     expect(onMergeCategoryVisibility).toHaveBeenCalledExactlyOnceWith('Rest spot', 'Study place')
     expect(screen.getByRole('status').textContent).toContain('Merged Rest spot into Study place.')
     expect(screen.getByRole('status').textContent).toContain('Shown on map after merging')
+  })
+
+  it('reports a merge it could not keep visible without claiming a map state', async () => {
+    const user = userEvent.setup()
+    const onRenameCategory = vi.fn(() => true)
+    // null: the visibility store was unreadable or the write failed, so nothing can be promised.
+    const onMergeCategoryVisibility = vi.fn(() => null)
+    render(
+      <PersonalWaypointList
+        waypoints={waypoints}
+        canEdit
+        editing
+        onRenameCategory={onRenameCategory}
+        onMergeCategoryVisibility={onMergeCategoryVisibility}
+        onRemove={() => undefined}
+        onMove={() => true}
+      />,
+    )
+
+    await user.click(screen.getByRole('button', { name: 'Rest spot options' }))
+    await user.click(screen.getByRole('button', { name: 'Rename category' }))
+    const input = screen.getByRole('textbox', { name: 'Rename Rest spot category' })
+    await user.clear(input)
+    await user.type(input, 'Study place{Enter}')
+    await user.click(screen.getByRole('button', { name: 'Merge categories' }))
+
+    const announced = screen.getByRole('status').textContent ?? ''
+    expect(announced).toContain('Merged Rest spot into Study place.')
+    expect(announced).toContain('map visibility could not be saved')
+    expect(announced).not.toContain('Shown on map after merging')
+    expect(announced).not.toContain('Hidden on map after merging')
   })
 
   it('cancelling a merge keeps the original category and restores its heading', async () => {

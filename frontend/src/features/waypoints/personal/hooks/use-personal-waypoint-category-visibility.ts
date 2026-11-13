@@ -48,21 +48,24 @@ export function usePersonalWaypointCategoryVisibility(store: PersonalWaypointCat
     return true
   }, [store])
 
-  // A merge rewrites which category names exist, so visibility follows the same durable write and
-  // reports whether the merged category will be shown.
-  const mergeCategoryVisibilityFor = useCallback((from: string, to: string): boolean => {
+  // A merge rewrites which category names exist, so visibility follows the same durable write.
+  // It answers whether the merged category will be shown, or null when that cannot be promised:
+  // an unreadable store has no visibility to merge, and a failed write would not survive reload.
+  const mergeCategoryVisibilityFor = useCallback((from: string, to: string): boolean | null => {
     const latest = store.read()
     if (latest.kind !== 'ready') {
       setStatus(getReadStatus(latest.kind))
-      return true
+      return null
     }
     const next = mergeCategoryVisibility(latest.hiddenCategories, from, to)
     const result = store.write(next.hiddenCategories)
     setHiddenCategories(next.hiddenCategories)
     setDraftHiddenCategories((current) => mergeCategoryVisibility(current, from, to).hiddenCategories)
-    setStatus(result.kind === 'saved'
-      ? null
-      : 'Map category settings could not be saved. The change applies until this page is reloaded.')
+    if (result.kind !== 'saved') {
+      setStatus('Map category settings could not be saved. The change applies until this page is reloaded.')
+      return null
+    }
+    setStatus(null)
     return next.visibleAfter
   }, [store])
 

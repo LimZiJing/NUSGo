@@ -1,10 +1,12 @@
 import { useEffect, useRef, useState } from 'react'
 import { FileText } from 'lucide-react'
 import type { PersonalWaypoint } from '../../../../domain/waypoints/personal/personal-waypoint'
-import { ChevronDownIcon, CompassIcon, EditIcon, EllipsisVerticalIcon, MapPinIcon, TrashIcon } from '../../../../ui/icons'
+import { ChevronDownIcon, EditIcon, EllipsisVerticalIcon, MapPinIcon, TrashIcon } from '../../../../ui/icons'
 import { IconButton } from '../../../../ui/button'
 import { MenuItem } from '../../../../ui/menu-item'
 import { NavigateButton } from '../../../../ui/navigate-button'
+import { PersonalWaypointMarkerGlyph } from './personal-waypoint-marker-glyph'
+import { personalWaypointMarkerColorClass } from './personal-waypoint-marker-color'
 
 export function PersonalWaypointDetails({ waypoint, canManage, onDirections, onEdit, onDelete }: {
   readonly waypoint: PersonalWaypoint | null
@@ -51,8 +53,13 @@ export function PersonalWaypointDetails({ waypoint, canManage, onDirections, onE
     }}
   >
     <header className="personal-waypoint-details-identity">
-      <span className="personal-waypoint-details-identity-icon">
-        <CompassIcon size={20} />
+      <span
+        className={`personal-waypoint-details-identity-icon ${personalWaypointMarkerColorClass(waypoint.markerColor)}`}
+        data-marker-color={waypoint.markerColor}
+        data-marker-icon={waypoint.markerIcon}
+        aria-hidden="true"
+      >
+        <PersonalWaypointMarkerGlyph markerIcon={waypoint.markerIcon} size={20} />
       </span>
       <div className="personal-waypoint-details-identity-copy">
         <h3 id="personal-waypoint-details-heading">{waypoint.name}</h3>

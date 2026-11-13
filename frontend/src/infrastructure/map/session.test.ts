@@ -1,5 +1,6 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 import { createMapSession } from './session'
+import { JOURNEY_ROUTE_SOURCE_ID } from './path-layers'
 import {
   createTransferTransitNetwork,
   createValidTransitNetwork,
@@ -614,7 +615,7 @@ describe('MapSession', () => {
         readonly coordinate: unknown
         readonly remove: ReturnType<typeof vi.fn>
       }>
-      readonly sourceData: globalThis.Map<string, { data: unknown }>
+      readonly sourceData: globalThis.Map<string, { data: unknown; setData: ReturnType<typeof vi.fn> }>
     }
     const venues = {
       ONE: { roomName: 'One', location: { x: 103.7812, y: 1.2961 } },
@@ -652,11 +653,21 @@ describe('MapSession', () => {
     session.setCurrentLocation({ longitude: 103.7812, latitude: 1.29615, accuracy: 8, timestamp: 3 }, true, false)
     expect(endpointMarkers()).toHaveLength(2)
 
-    // Re-applying the same selected request keeps the same endpoints and Path source data.
-    const pathSourceBefore = map.sourceData.get('journey-route')
+    // Re-applying the same selected request keeps the same endpoints and never rewrites the Path.
+    // The source only exists once a journey is drawn, so draw one first; asserting on a missing
+    // source would compare `undefined` to `undefined` and pass no matter what the session did.
+    session.setJourneyOptions([{ candidateKey: 'selected', path: createPath() }], 'selected')
+    // Replace the drawn route once with a different Path object, so the assertion below runs
+    // against a source that demonstrably accepts writes.
+    session.setJourneyOptions([{ candidateKey: 'selected', path: createPath() }], 'selected')
+    const pathSource = map.sourceData.get(JOURNEY_ROUTE_SOURCE_ID)
+    expect(pathSource).toBeDefined()
+    expect(pathSource?.setData).toHaveBeenCalled()
+    pathSource?.setData.mockClear()
+
     session.setTripRequest(request, venues, null)
     expect(endpointMarkers()).toHaveLength(2)
-    expect(map.sourceData.get('journey-route')).toBe(pathSourceBefore)
+    expect(pathSource?.setData).not.toHaveBeenCalled()
 
     session.dispose()
     vi.unstubAllGlobals()

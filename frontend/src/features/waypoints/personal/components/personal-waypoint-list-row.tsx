@@ -4,8 +4,10 @@ import type { PersonalWaypoint } from '../../../../domain/waypoints/personal/per
 import { useSortable } from '@dnd-kit/react/sortable'
 import { IconButton } from '../../../../ui/button'
 import { SavedListRow } from '../../../../ui/saved-list-row'
-import { ArmchairIcon, CircleDotIcon, CloseIcon, CoffeeIcon, GripVerticalIcon, NavigationIcon, TreePineIcon, FavoriteIcon, EllipsisVerticalIcon, MapIcon } from '../../../../ui/icons'
+import { CloseIcon, GripVerticalIcon, NavigationIcon, EllipsisVerticalIcon, MapIcon } from '../../../../ui/icons'
 import { ConnectedCategoryPicker } from '../connected-category-picker'
+import { PersonalWaypointMarkerGlyph } from './personal-waypoint-marker-glyph'
+import { personalWaypointMarkerColorClass } from './personal-waypoint-marker-color'
 import { useState } from 'react'
 
 interface PersonalWaypointListRowProps {
@@ -53,11 +55,7 @@ export function PersonalWaypointListRow({
   const [menuOpen, setMenuOpen] = useState(false)
   const triggerRef = useRef<HTMLButtonElement>(null)
   const label = `${waypoint.name}, ${waypoint.category}`
-  const markerIcon = waypoint.markerIcon === 'rest' ? <ArmchairIcon />
-    : waypoint.markerIcon === 'food' ? <CoffeeIcon />
-      : waypoint.markerIcon === 'nature' ? <TreePineIcon />
-        : waypoint.markerIcon === 'favorite' ? <FavoriteIcon filled={false} />
-          : <CircleDotIcon />
+  const markerIcon = <PersonalWaypointMarkerGlyph markerIcon={waypoint.markerIcon} size={15} />
   const setHandleRef = useCallback((element: HTMLButtonElement | null): void => {
     handleRef?.(element)
     onHandleRef?.(waypoint.id, element)
@@ -105,7 +103,7 @@ export function PersonalWaypointListRow({
           disabled={handleDisabled}
           ref={setHandleRef}
         />}
-        <span className={`personal-waypoint-pin personal-waypoint-pin-${waypoint.markerColor}`}>{markerIcon}</span>
+        <span className={`personal-waypoint-pin ${personalWaypointMarkerColorClass(waypoint.markerColor)}`}>{markerIcon}</span>
       </>}
       title={waypoint.name}
       subtitle={waypoint.category}

@@ -2,6 +2,7 @@ import { useEffect, useRef, useState, type FormEvent, type KeyboardEvent } from 
 import { parseCoordinateInput } from '../../../domain/waypoints/parse-coordinate-input'
 import type { WaypointCoordinate } from '../../../domain/waypoints/waypoint'
 import { Button } from '../../../ui/button'
+import { GhostBackButton } from '../../../ui/ghost-back-button'
 import { CheckIcon, ChevronDownIcon, LocateIcon } from '../../../ui/icons'
 
 function formatSelectedCoordinate(coordinate: WaypointCoordinate): string {
@@ -101,6 +102,9 @@ export function PersonalWaypointPlacement({
 
   return <section className="personal-waypoint-placement" aria-label="Adjust waypoint location">
     <header className="personal-waypoint-placement-header">
+      {/* The More panel is hidden while placement owns the map, so the overlay carries the shared
+          Back control itself and abandons the adjustment exactly like Cancel. */}
+      <GhostBackButton label="Back to waypoint form" onClick={onCancel} />
       <h2 ref={headingRef} tabIndex={-1}>Adjust location</h2>
       <p>Tap the map or drag the pin.</p>
     </header>

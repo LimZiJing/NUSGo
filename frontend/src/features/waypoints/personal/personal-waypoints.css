@@ -45,7 +45,8 @@
   width: var(--control-height-lg);
   height: var(--control-height-lg);
   border-radius: var(--radius-card);
-  color: var(--accent);
+  /* The saved marker colour comes from the same `personal-waypoint-pin-<colour>` class the list row
+     uses, so the open place looks like its row and its map pin. */
   background: var(--accent-soft);
 }
 
@@ -1045,6 +1046,8 @@
   text-align: left;
 }
 .personal-waypoint-placement-header { display: grid; gap: var(--space-1); }
+/* The overlay owns its Back control while the More header is hidden; keep it compact and leading. */
+.personal-waypoint-placement-header > .ghost-back-button { justify-self: start; min-height: 32px; }
 .personal-waypoint-placement h2 { margin: 0; font-size: var(--font-size-lg); font-weight: 650; line-height: 1.3; }
 .personal-waypoint-placement h2:focus { outline: none; }
 .personal-waypoint-placement-header p { margin: 0; color: var(--text-secondary); font-size: var(--font-size-sm); line-height: 1.4; }

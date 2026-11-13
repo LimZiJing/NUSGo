@@ -55,7 +55,8 @@ export function PersonalWaypointsHome({
   readonly onMoveToCategory?: (waypointId: string, category: string) => boolean
   readonly onMoveToPosition?: (waypointId: string, category: string, indexWithinCategory: number) => boolean
   readonly onRenameCategory?: (from: string, to: string) => boolean
-  readonly onMergeCategoryVisibility?: (from: string, to: string) => boolean
+  /** null when the merged category's map visibility could not be read or saved. */
+  readonly onMergeCategoryVisibility?: (from: string, to: string) => boolean | null
   readonly onResetUnreadableData: () => void
   readonly onDiscardRejectedRecords: () => void
   readonly categoryOptions: readonly PersonalWaypointCategoryOption[]

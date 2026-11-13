@@ -55,6 +55,25 @@ describe('PersonalWaypointDetails', () => {
       .toContain('personal-waypoint-details-coordinate')
   })
 
+  it('shows the saved marker colour and icon in its identity header', () => {
+    const custom: PersonalWaypoint = { ...waypoint, markerColor: 'purple', markerIcon: 'food' }
+    render(<PersonalWaypointDetails
+      waypoint={custom}
+      canManage
+      onDirections={() => undefined}
+      onEdit={() => undefined}
+      onDelete={() => undefined}
+    />)
+
+    const icon = document.querySelector('.personal-waypoint-details-identity-icon')
+    expect(icon?.getAttribute('data-marker-color')).toBe('purple')
+    expect(icon?.getAttribute('data-marker-icon')).toBe('food')
+    // The same colour class the list row paints, not the generic accent.
+    expect(icon?.className).toContain('personal-waypoint-pin-purple')
+    // `food` is the coffee glyph, so a different saved icon must change the rendered svg.
+    expect(icon?.querySelector('svg')).toBeTruthy()
+  })
+
   it('offers Navigate first with a leading icon and keeps edit and delete in the overflow', async () => {
     const user = userEvent.setup()
     const { onDirections, onEdit, onDelete } = renderDetails()

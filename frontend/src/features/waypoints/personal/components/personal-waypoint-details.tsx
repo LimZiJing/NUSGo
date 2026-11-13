@@ -1,7 +1,7 @@
 import { FileText } from 'lucide-react'
 import type { PersonalWaypoint } from '../../../../domain/waypoints/personal/personal-waypoint'
 import { EditIcon, MapPinIcon, TrashIcon } from '../../../../ui/icons'
-import { Button } from '../../../../ui/button'
+import { NavigateButton } from '../../../../ui/navigate-button'
 import { MenuItem } from '../../../../ui/menu-item'
 import { OverflowMenu } from '../../../../ui/overflow-menu'
 import { PersonalWaypointMarkerGlyph } from './personal-waypoint-marker-glyph'
@@ -67,13 +67,7 @@ export function PersonalWaypointDetails({ waypoint, canManage, onDirections, onE
       Editing and deleting are unavailable until saved data is recovered.
     </p>}
     <div className="personal-waypoint-details-actions">
-      <Button
-        className="personal-waypoint-details-directions"
-        label="Directions"
-        variant="primary"
-        size="lg"
-        onClick={onDirections}
-      />
+      <NavigateButton className="personal-waypoint-details-navigate" onClick={onDirections} />
     </div>
   </section>
 }

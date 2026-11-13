@@ -8,7 +8,8 @@ export type IconButtonVariant = ButtonVariant | 'plain'
 
 interface ButtonProps {
   readonly label: string
-  readonly onClick: () => void
+  /** Omitted by a submit button, which is driven by its surrounding form instead. */
+  readonly onClick?: () => void
   readonly variant?: ButtonVariant
   readonly size?: ControlSize
   readonly icon?: ReactNode
@@ -29,6 +30,8 @@ interface ButtonProps {
   /** Layout only, such as alignment or flex sizing; the look comes from the props and tokens. */
   readonly className?: string
   readonly ref?: Ref<HTMLButtonElement>
+  /** `submit` lets the button send its surrounding form; defaults to `button`. */
+  readonly type?: 'button' | 'submit'
 }
 
 interface IconButtonProps {
@@ -74,12 +77,13 @@ export function Button({
   ariaKeyShortcuts,
   className,
   ref,
+  type = 'button',
 }: ButtonProps) {
   return (
     <button
       ref={ref}
       className={joinClassNames('button', className)}
-      type="button"
+      type={type}
       data-variant={variant}
       data-size={size}
       data-hover-filter="none"

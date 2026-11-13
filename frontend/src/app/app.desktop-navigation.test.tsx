@@ -743,7 +743,7 @@ describe('More surface', () => {
     expect(JSON.parse(localStorage.getItem('navus:personal-waypoints:v1') ?? '{}').waypoints).toHaveLength(1)
   })
 
-  it('uses the shared Directions action from the list and details', async () => {
+  it('uses the shared Navigate action from the list and details', async () => {
     const waypoint = {
       id: '00000000-0000-4000-8000-000000000021',
       name: 'Quiet bench',
@@ -766,7 +766,7 @@ describe('More surface', () => {
     await user.click(screen.getByRole('button', { name: 'Open Quiet bench details' }))
     expect(document.querySelector('.more-panel-surface')?.getAttribute('data-page')).toBe('waypoint-details')
 
-    await user.click(screen.getByRole('button', { name: 'Directions' }))
+    await user.click(screen.getByRole('button', { name: 'Navigate' }))
     expect(appHarness.commands.navigateToEndpoint).toHaveBeenCalledWith(expect.objectContaining({
       kind: 'personal-waypoint',
       id: waypoint.id,
@@ -782,7 +782,7 @@ describe('More surface', () => {
     await user.click(screen.getByRole('button', { name: 'My waypoints' }))
     const mapTrigger = selectPersonalWaypointFromMap(waypoint.id)
     expect(document.querySelector('.more-panel-surface')?.getAttribute('data-page')).toBe('waypoint-details')
-    await user.click(screen.getByRole('button', { name: 'Directions' }))
+    await user.click(screen.getByRole('button', { name: 'Navigate' }))
     expect(appHarness.commands.navigateToEndpoint).toHaveBeenCalledTimes(2)
     expect(appHarness.commands.navigateToEndpoint).toHaveBeenLastCalledWith(expect.objectContaining({
       kind: 'personal-waypoint',
@@ -795,7 +795,7 @@ describe('More surface', () => {
     mapTrigger.remove()
   })
 
-  it.each(['desktop', 'mobile'])('focuses the already-active Plan and reopens waypoint details after Directions on %s', async (viewport) => {
+  it.each(['desktop', 'mobile'])('focuses the already-active Plan and reopens waypoint details after Navigate on %s', async (viewport) => {
     if (viewport === 'mobile') mockMobileViewport()
     const waypoint = {
       id: '00000000-0000-4000-8000-000000000021',
@@ -825,8 +825,8 @@ describe('More surface', () => {
       expect(panel?.getAttribute('data-page')).toBe('waypoint-details')
       expect(panel?.getAttribute('data-open')).toBe('true')
       expect(screen.getByRole('heading', { name: selected.name })).toBeTruthy()
-      const directions = screen.getByRole('button', { name: 'Directions' })
-      directions.focus()
+      const navigate = screen.getByRole('button', { name: 'Navigate' })
+      navigate.focus()
       await user.keyboard('{Enter}')
 
       expect(appHarness.commands.navigateToEndpoint).toHaveBeenLastCalledWith(expect.objectContaining({
@@ -840,7 +840,7 @@ describe('More surface', () => {
     }
   })
 
-  it.each(['desktop', 'mobile'])('moves focus into Plan when Directions closes More over an already-active Plan view on %s', async (viewport) => {
+  it.each(['desktop', 'mobile'])('moves focus into Plan when Navigate closes More over an already-active Plan view on %s', async (viewport) => {
     if (viewport === 'mobile') mockMobileViewport()
     else mockDesktopViewport()
     localStorage.setItem('navus:personal-waypoints:v1', JSON.stringify({ version: 1, waypoints: [{
@@ -861,7 +861,7 @@ describe('More surface', () => {
     await user.click(screen.getByRole('button', { name: 'My waypoints' }))
     await user.click(screen.getByRole('button', { name: 'Expand Rest spot' }))
     await user.click(screen.getByRole('button', { name: 'Open Quiet bench details' }))
-    await user.click(screen.getByRole('button', { name: 'Directions' }))
+    await user.click(screen.getByRole('button', { name: 'Navigate' }))
 
     expect(document.querySelector('.more-panel-surface')?.getAttribute('data-open')).toBe('false')
     expect(document.activeElement?.closest('.plan-sheet')).toBeTruthy()
@@ -1010,12 +1010,12 @@ describe('More surface', () => {
     const panel = document.querySelector('.more-panel-surface')
     expect(panel?.getAttribute('data-page')).toBe('waypoint-details')
     expect(screen.getByText('Near the garden')).toBeTruthy()
-    // A details screen is allowed one overflow trigger, and Directions is its only visible action.
+    // A details screen is allowed one overflow trigger, and Navigate is its only visible action.
     expect(document.querySelectorAll('.overflow-menu-trigger')).toHaveLength(1)
     const details = document.querySelector('.personal-waypoint-details') as HTMLElement
     expect(within(details).getAllByRole('button')
       .map((button) => button.textContent || button.getAttribute('aria-label')))
-      .toEqual(['Waypoint actions', 'Directions'])
+      .toEqual(['Waypoint actions', 'Navigate'])
 
     await chooseWaypointAction(user, 'Edit waypoint')
     expect(panel?.getAttribute('data-page')).toBe('editing-waypoint')
@@ -1185,6 +1185,8 @@ describe('More surface', () => {
     await user.click(screen.getByRole('button', { name: 'Add waypoint' }))
     await user.type(screen.getByLabelText('Name'), 'Quiet bench')
     await user.type(screen.getByLabelText('Category'), 'Rest spot')
+    // Typing only fills the query; the category is committed by choosing the Create result.
+    await user.click(screen.getByRole('button', { name: 'Create “Rest spot”' }))
     await user.type(screen.getByLabelText('Note (optional)'), 'Near the garden')
     await user.click(screen.getByRole('button', { name: 'Adjust on map' }))
 
@@ -1198,7 +1200,8 @@ describe('More surface', () => {
     await user.click(screen.getByRole('button', { name: 'Done adjusting location' }))
 
     expect((screen.getByLabelText('Name') as HTMLInputElement).value).toBe('Quiet bench')
-    expect((screen.getByLabelText('Category') as HTMLInputElement).value).toBe('Rest spot')
+    // The chosen category is shown as the picker's current value; the input itself is only a query.
+    expect(screen.getByText('Rest spot', { selector: '.connected-category-picker-current' })).toBeTruthy()
     expect((screen.getByLabelText('Note (optional)') as HTMLTextAreaElement).value).toBe('Near the garden')
     expect(screen.getByText('1.500000, 104.250000')).toBeTruthy()
     expect(document.querySelector('.navigation-column')?.hasAttribute('hidden')).toBe(false)
@@ -1278,6 +1281,9 @@ describe('More surface', () => {
 
     await user.type(screen.getByLabelText('Name'), '  Quiet bench  ')
     await user.type(screen.getByLabelText('Category'), ' Study spot ')
+    // A typed category is a draft query until it is explicitly created.
+    expect(localStorage.getItem('navus:personal-waypoints:v1')).toBeNull()
+    await user.click(screen.getByRole('button', { name: 'Create “Study spot”' }))
     await user.type(screen.getByLabelText('Note (optional)'), ' Near the trees ')
     expect(localStorage.getItem('navus:personal-waypoints:v1')).toBeNull()
     await user.click(screen.getByRole('button', { name: 'Save waypoint' }))
@@ -1324,6 +1330,7 @@ describe('More surface', () => {
     await user.click(screen.getByRole('button', { name: 'Add waypoint' }))
     await user.type(screen.getByLabelText('Name'), 'Coffee stop')
     await user.type(screen.getByLabelText('Category'), 'Food')
+    await user.click(screen.getByRole('button', { name: 'Create “Food”' }))
     await user.click(screen.getByRole('button', { name: 'Save waypoint' }))
 
     // Groups start collapsed, so a freshly created place's group must be expanded before its list

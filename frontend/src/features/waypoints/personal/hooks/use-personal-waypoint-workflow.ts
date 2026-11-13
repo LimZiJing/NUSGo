@@ -93,6 +93,9 @@ function getEditConflict(
 export function usePersonalWaypointWorkflow(store: PersonalWaypointStore) {
   const [readResult, setReadResult] = useState(() => store.read())
   const [draft, setDraft] = useState<PersonalWaypointDraft>(() => createEmptyPersonalWaypointDraft())
+  // The value the draft started from. `isDirty` compares against it so a form can ask whether there
+  // is anything worth confirming before it is thrown away.
+  const [draftBaseline, setDraftBaseline] = useState<PersonalWaypointDraft>(() => createEmptyPersonalWaypointDraft())
   const [statusUpdate, setStatusUpdate] = useState<PersonalWaypointWorkflowStatus | null>(null)
   const statusRevision = useRef(0)
   const [issues, setIssues] = useState<readonly PersonalWaypointValidationIssue[]>([])
@@ -212,7 +215,9 @@ export function usePersonalWaypointWorkflow(store: PersonalWaypointStore) {
 
   const startDraft = useCallback((coordinate: WaypointCoordinate) => {
     setEditing(null)
-    setDraft(createEmptyPersonalWaypointDraft(coordinate))
+    const emptyDraft = createEmptyPersonalWaypointDraft(coordinate)
+    setDraft(emptyDraft)
+    setDraftBaseline(emptyDraft)
     setIssues([])
     clearStatus()
   }, [clearStatus])
@@ -238,18 +243,31 @@ export function usePersonalWaypointWorkflow(store: PersonalWaypointStore) {
       baseRevision: current.revision,
       conflict: null,
     })
-    setDraft({
+    const savedDraft = {
       name: savedWaypoint.name,
       category: savedWaypoint.category,
       note: savedWaypoint.note ?? '',
       coordinate: savedWaypoint.coordinate,
       markerColor: savedWaypoint.markerColor,
       markerIcon: savedWaypoint.markerIcon,
-    })
+    }
+    setDraft(savedDraft)
+    setDraftBaseline(savedDraft)
     setIssues([])
     clearStatus()
     return true
   }, [clearStatus, setStatus, store])
+
+  const isDraftDirty = draft.name !== draftBaseline.name
+    || draft.category !== draftBaseline.category
+    || (draft.note ?? '') !== (draftBaseline.note ?? '')
+    || draft.markerColor !== draftBaseline.markerColor
+    || draft.markerIcon !== draftBaseline.markerIcon
+    || draft.coordinate.latitude !== draftBaseline.coordinate.latitude
+    || draft.coordinate.longitude !== draftBaseline.coordinate.longitude
+
+  /** Marks the current draft as the new starting point, e.g. after saving. */
+  const acceptDraft = useCallback(() => setDraftBaseline(draft), [draft])
 
   const cancelEdit = useCallback(() => {
     setEditing(null)
@@ -404,6 +422,8 @@ export function usePersonalWaypointWorkflow(store: PersonalWaypointStore) {
     updateDraft,
     save,
     removeWaypoint,
+    isDraftDirty,
+    acceptDraft,
     renameCategory,
     moveWaypoint,
     clearAll,

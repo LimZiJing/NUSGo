@@ -38,6 +38,7 @@ import {
   subscribeToSystemThemeChanges,
   type ThemePreference,
 } from '../ui/theme'
+import { ConfirmDialog } from '../ui/confirm-dialog'
 import { MobileSheetMetricsContext } from '../ui/mobile/mobile-sheet/mobile-sheet-metrics'
 // Dev-only: import.meta.env.DEV is a build-time constant, so production builds drop this
 // dynamic import, the control module and its CSS.
@@ -132,6 +133,8 @@ function App() {
   const [hasPersonalWaypointSearchFilter, setHasPersonalWaypointSearchFilter] = useState(false)
   const [personalWaypointEditReturnPage, setPersonalWaypointEditReturnPage] = useState<'waypoints' | 'waypoint-details'>('waypoint-details')
   const [placementReturnPage, setPlacementReturnPage] = useState<'creating' | 'editing-waypoint' | null>(null)
+  // Set while a changed waypoint draft is waiting on Keep editing / Discard changes.
+  const [pendingDraftLeave, setPendingDraftLeave] = useState<null | 'back' | 'cancel'>(null)
   const [personalWaypointDetails, setPersonalWaypointDetails] = useState<PersonalWaypointDetailsSelection | null>(null)
   const selectedPersonalWaypointId = personalWaypointDetails?.waypointId ?? null
   const pendingWaypointReturnFocusRef = useRef<HTMLElement | null>(null)
@@ -813,6 +816,11 @@ function App() {
       returnFromWaypointDetails()
       return
     }
+    if ((morePage === 'creating' || morePage === 'editing-waypoint') && personalWaypoints.isDraftDirty) {
+      // Leaving a changed draft asks first, whatever triggered the leave.
+      setPendingDraftLeave('back')
+      return
+    }
     if (morePage === 'editing-waypoint') {
       cancelPersonalWaypointEdit()
       setMorePage(personalWaypointEditReturnPage)
@@ -843,6 +851,7 @@ function App() {
     morePage,
     personalWaypointEditReturnPage,
     placementReturnPage,
+    personalWaypoints.isDraftDirty,
     returnFromWaypointDetails,
   ])
   const closeMore = goBackInMore
@@ -1111,6 +1120,7 @@ function App() {
               submitLabel={morePage === 'editing-waypoint' ? 'Save changes' : 'Save waypoint'}
               onAdjustLocation={beginWaypointLocationAdjustment}
               onCancel={() => {
+                if (personalWaypoints.isDraftDirty) { setPendingDraftLeave('cancel'); return }
                 if (morePage === 'editing-waypoint') {
                   cancelPersonalWaypointEdit()
                   setMorePage(personalWaypointEditReturnPage)
@@ -1177,6 +1187,29 @@ function App() {
             stops: stopsWorkspaceContent,
           }}
         />
+        {/* One confirmation for leaving a changed waypoint draft, whichever control asked. */}
+        <ConfirmDialog
+          open={pendingDraftLeave !== null}
+          title="Discard this draft?"
+          confirmLabel="Discard changes"
+          cancelLabel="Keep editing"
+          destructive
+          onConfirm={() => {
+            setPendingDraftLeave(null)
+            if (morePage === 'editing-waypoint') {
+              cancelPersonalWaypointEdit()
+              setMorePage(personalWaypointEditReturnPage)
+            } else if (morePage === 'creating') {
+              personalWaypoints.cancelEdit()
+              setIsEditingPersonalWaypoints(false)
+              setMorePage('waypoints')
+            }
+            setMoreSheetDetent('full')
+          }}
+          onCancel={() => setPendingDraftLeave(null)}
+        >
+          <p>Your changes to this waypoint have not been saved.</p>
+        </ConfirmDialog>
       </MobileSheetMetricsContext.Provider>
     </main>
   )

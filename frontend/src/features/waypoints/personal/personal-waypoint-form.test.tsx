@@ -47,15 +47,21 @@ describe('PersonalWaypointForm', () => {
     render(<StatefulPersonalWaypointForm onChange={onChange} />)
 
     const categoryInput = screen.getByRole('combobox', { name: 'Category' }) as HTMLInputElement
-    await user.click(screen.getByRole('button', { name: 'Show categories' }))
+    await user.click(screen.getByRole('button', { name: 'Show category options' }))
     expect(await screen.findByRole('option', { name: 'Cafe' })).toBeTruthy()
     expect(screen.getByRole('option', { name: 'Study' })).toBeTruthy()
 
     await user.click(screen.getByRole('option', { name: 'Cafe' }))
     expect(onChange).toHaveBeenLastCalledWith({ category: 'Cafe' })
 
+    // Typing only narrows the list: it never commits the draft category on its own.
     await user.clear(categoryInput)
+    await user.click(categoryInput)
     await user.type(categoryInput, 'New category')
+    expect(onChange).toHaveBeenLastCalledWith({ category: 'Cafe' })
+
+    // The new name is accepted only through the explicit Create result.
+    await user.click(await screen.findByRole('button', { name: 'Create “New category”' }))
     expect(onChange).toHaveBeenLastCalledWith({ category: 'New category' })
   })
 })

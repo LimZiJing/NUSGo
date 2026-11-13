@@ -36,9 +36,9 @@ describe('PersonalWaypointAppearanceFields', () => {
     const user = userEvent.setup()
     render(<PersonalWaypointAppearanceFields draft={draft} onChange={vi.fn()} />)
 
-    const markerStyleButton = screen.getByRole('button', { name: /Marker style/ })
+    const markerStyleButton = screen.getByRole('button', { name: /Appearance/ })
     expect(markerStyleButton.getAttribute('aria-expanded')).toBe('false')
-    expect(markerStyleButton.getAttribute('aria-label')).toBe('Marker style, Blue marker, General icon')
+    expect(markerStyleButton.getAttribute('aria-label')).toBe('Appearance, Blue marker, General icon')
     expect(screen.queryByRole('radio')).toBeNull()
 
     await user.keyboard('{Tab}')
@@ -56,7 +56,7 @@ describe('PersonalWaypointAppearanceFields', () => {
     const onChange = vi.fn()
     render(<StatefulAppearanceFields onChange={onChange} />)
 
-    await user.click(screen.getByRole('button', { name: /Marker style/ }))
+    await user.click(screen.getByRole('button', { name: /Appearance/ }))
     expect((screen.getByRole('radio', { name: 'Blue' }) as HTMLInputElement).checked).toBe(true)
     expect((screen.getByRole('radio', { name: 'General' }) as HTMLInputElement).checked).toBe(true)
     expect(screen.getAllByRole('radio')).toHaveLength(13)
@@ -64,21 +64,21 @@ describe('PersonalWaypointAppearanceFields', () => {
     expect(screen.queryByText('Red')).toBeNull()
 
     await user.click(screen.getByRole('radio', { name: 'Purple' }))
-    expect(screen.getByRole('button', { name: /Marker style/ }).getAttribute('aria-label')).toBe('Marker style, Purple marker, General icon')
+    expect(screen.getByRole('button', { name: /Appearance/ }).getAttribute('aria-label')).toBe('Appearance, Purple marker, General icon')
     await user.click(screen.getByRole('radio', { name: 'Rest' }))
 
     expect(onChange).toHaveBeenNthCalledWith(1, { markerColor: 'purple' })
     expect(onChange).toHaveBeenNthCalledWith(2, { markerIcon: 'rest' })
-    expect(screen.getByRole('button', { name: /Marker style/ }).getAttribute('aria-label')).toBe('Marker style, Purple marker, Rest icon')
-    const preview = screen.getByRole('button', { name: /Marker style/ })
+    expect(screen.getByRole('button', { name: /Appearance/ }).getAttribute('aria-label')).toBe('Appearance, Purple marker, Rest icon')
+    const preview = screen.getByRole('button', { name: /Appearance/ })
       .querySelector('.personal-waypoint-marker-preview')
     expect(preview?.getAttribute('data-color')).toBe('purple')
     expect(preview?.querySelector('svg.lucide-armchair')).not.toBeNull()
     expect(preview?.querySelector('svg.lucide-circle-dot')).toBeNull()
 
-    await user.click(screen.getByRole('button', { name: /Marker style/ }))
+    await user.click(screen.getByRole('button', { name: /Appearance/ }))
     expect(screen.queryByRole('radio')).toBeNull()
-    await user.click(screen.getByRole('button', { name: /Marker style/ }))
+    await user.click(screen.getByRole('button', { name: /Appearance/ }))
     expect((screen.getByRole('radio', { name: 'Purple' }) as HTMLInputElement).checked).toBe(true)
     expect((screen.getByRole('radio', { name: 'Rest' }) as HTMLInputElement).checked).toBe(true)
   })

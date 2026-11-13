@@ -21,7 +21,7 @@ const waypoint: PersonalWaypoint = {
 afterEach(cleanup)
 
 describe('PersonalWaypointDetails', () => {
-  it('shows waypoint details with directions as its only visible action', async () => {
+  it('shows waypoint details with navigate as its only visible action', async () => {
     const user = userEvent.setup()
     const onDirections = vi.fn()
     render(<PersonalWaypointDetails
@@ -38,17 +38,17 @@ describe('PersonalWaypointDetails', () => {
     expect(screen.getByText('1.290000, 103.780000').className)
       .toContain('personal-waypoint-details-coordinate')
 
-    // Exactly one action is visible: Directions. Edit and Delete live behind the overflow menu.
+    // Exactly one action is visible: Navigate. Edit and Delete live behind the overflow menu.
     const buttons = screen.getAllByRole('button')
     expect(buttons).toHaveLength(2)
-    const directions = screen.getByRole('button', { name: 'Directions' })
+    const navigate = screen.getByRole('button', { name: 'Navigate' })
     const menuTrigger = screen.getByRole('button', { name: 'Waypoint actions' })
-    expect(buttons).toEqual([menuTrigger, directions])
-    expect(directions.getAttribute('data-variant')).toBe('primary')
+    expect(buttons).toEqual([menuTrigger, navigate])
+    expect(navigate.getAttribute('data-variant')).toBe('primary')
     expect(screen.queryByRole('button', { name: 'Edit waypoint' })).toBeNull()
     expect(screen.queryByRole('button', { name: 'Delete waypoint' })).toBeNull()
 
-    await user.click(directions)
+    await user.click(navigate)
     expect(onDirections).toHaveBeenCalledOnce()
   })
 

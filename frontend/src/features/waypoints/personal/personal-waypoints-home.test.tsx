@@ -96,8 +96,10 @@ describe('PersonalWaypointsHome', () => {
     }
     const view = render(<PersonalWaypointsHome {...props} editing={false} />)
 
-    expect(screen.queryByText('Personal Waypoints are saved in this browser profile.')).toBeNull()
-    expect(screen.queryByText('Choose which categories appear on the map.')).toBeNull()
+    // The collection has no standing explanatory copy. These sentences DO exist elsewhere in the
+    // feature, so the assertion is meaningful: it fails if either is moved onto this screen.
+    expect(screen.queryByText('This waypoint will be saved in this browser.')).toBeNull()
+    expect(screen.queryByText(/saved in this browser/i)).toBeNull()
 
     view.rerender(<PersonalWaypointsHome {...props} editing />)
     await waitFor(() => {

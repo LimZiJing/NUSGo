@@ -130,6 +130,54 @@ describe('CommunityWaypointPanel', () => {
     expect(onSuggestWaypoint).toHaveBeenCalledWith(suggestButton, 'water_cooler')
   })
 
+  it('reports invalid saved visibility and lets the user replace it', async () => {
+    const user = userEvent.setup()
+    localStorage.setItem(VISIBILITY_KEY, '["unknown_category"]')
+    render(<DiscoveryHarness load={async () => waypoints} />)
+
+    expect(await screen.findByText(
+      'Saved category visibility could not be read. Review the categories and save to replace it.',
+    )).toBeTruthy()
+    const saveButton = screen.getByRole('button', { name: 'Save Community Waypoint categories' })
+    expect(saveButton.hasAttribute('disabled')).toBe(false)
+    vi.spyOn(Storage.prototype, 'setItem').mockImplementationOnce(() => {
+      throw new DOMException('Storage is full', 'QuotaExceededError')
+    })
+    await user.click(saveButton)
+    expect(screen.getByText('Selection saved for this session only.')).toBeTruthy()
+    expect(saveButton.hasAttribute('disabled')).toBe(false)
+
+    await user.click(saveButton)
+
+    expect(screen.getByText('Selection saved.')).toBeTruthy()
+    expect(localStorage.getItem(VISIBILITY_KEY)).toBe('[]')
+
+    const waterSwitch = screen.getByRole('switch', { name: 'Show Water cooler on map' })
+    await user.click(waterSwitch)
+    await user.click(saveButton)
+    expect(localStorage.getItem(VISIBILITY_KEY)).toBe('["water_cooler"]')
+  })
+
+  it('keeps a failed preference write retryable', async () => {
+    const user = userEvent.setup()
+    render(<DiscoveryHarness load={async () => waypoints} />)
+
+    const waterSwitch = await screen.findByRole('switch', { name: 'Show Water cooler on map' })
+    await user.click(waterSwitch)
+    const saveButton = screen.getByRole('button', { name: 'Save Community Waypoint categories' })
+    vi.spyOn(Storage.prototype, 'setItem').mockImplementationOnce(() => {
+      throw new DOMException('Storage is full', 'QuotaExceededError')
+    })
+    await user.click(saveButton)
+
+    expect(screen.getByText('Selection saved for this session only.')).toBeTruthy()
+    expect(saveButton.hasAttribute('disabled')).toBe(false)
+    await user.click(saveButton)
+
+    expect(screen.getByText('Selection saved.')).toBeTruthy()
+    expect(localStorage.getItem(VISIBILITY_KEY)).toBe('["water_cooler"]')
+  })
+
   it('opens marker details and restores focus to the marker after Back', async () => {
     const user = userEvent.setup()
     const onSuggestCorrection = vi.fn()

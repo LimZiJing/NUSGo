@@ -41,6 +41,8 @@ type LoadedState =
 interface CategorySelection {
   readonly saved: readonly CommunityWaypointCategory[]
   readonly draft: readonly CommunityWaypointCategory[]
+  readonly status: string | null
+  readonly hasUnpersistedSelection: boolean
 }
 
 const EMPTY_WAYPOINTS: readonly CommunityWaypoint[] = []
@@ -58,10 +60,14 @@ export function useCommunityWaypointDiscovery(
   const [loaded, setLoaded] = useState<LoadedState>({ attempt: 0, status: 'loading' })
   const [loadAttempt, setLoadAttempt] = useState(0)
   const [selection, setSelection] = useState<CategorySelection>(() => {
-    const saved = readCommunityWaypointVisibleCategories()
-    return { saved, draft: saved }
+    const { categories, error } = readCommunityWaypointVisibleCategories()
+    return {
+      saved: categories,
+      draft: categories,
+      status: error,
+      hasUnpersistedSelection: error !== null,
+    }
   })
-  const [visibilitySaveStatus, setVisibilitySaveStatus] = useState<string | null>(null)
   const [selectedWaypointId, setSelectedWaypointId] = useState<string | null>(null)
   const returnFocusTarget = useRef<HTMLButtonElement | null>(null)
 
@@ -90,25 +96,28 @@ export function useCommunityWaypointDiscovery(
     [selection.draft, waypoints],
   )
   const selectedWaypoint = waypoints.find(({ id }) => id === selectedWaypointId) ?? null
-  const hasPendingVisibilityChanges = !sameCategories(selection.saved, selection.draft)
+  const hasPendingVisibilityChanges = selection.hasUnpersistedSelection
+    || !sameCategories(selection.saved, selection.draft)
 
   const toggleCategory = useCallback((category: CommunityWaypointCategory): void => {
     setSelection((current) => ({
       ...current,
+      status: null,
       draft: current.draft.includes(category)
         ? current.draft.filter((item) => item !== category)
         : [...current.draft, category],
     }))
-    setVisibilitySaveStatus(null)
   }, [])
 
   const saveVisibilitySelection = useCallback((): void => {
     const saved = [...selection.draft]
     const persisted = writeCommunityWaypointVisibleCategories(saved)
-    setSelection({ saved, draft: saved })
-    setVisibilitySaveStatus(persisted
-      ? 'Selection saved.'
-      : 'Selection saved for this session only.')
+    setSelection({
+      saved,
+      draft: saved,
+      status: persisted ? 'Selection saved.' : 'Selection saved for this session only.',
+      hasUnpersistedSelection: !persisted,
+    })
   }, [selection.draft])
 
   const showCategoryPanel = useCallback((): void => {
@@ -142,7 +151,7 @@ export function useCommunityWaypointDiscovery(
     categoryOptions,
     draftVisibleCategories: selection.draft,
     hasPendingVisibilityChanges,
-    visibilitySaveStatus,
+    visibilitySaveStatus: selection.status,
     selectedWaypoint,
     toggleCategory,
     saveVisibilitySelection,

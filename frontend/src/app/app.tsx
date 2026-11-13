@@ -89,7 +89,7 @@ import type { PersonalWaypoint } from '../domain/waypoints/personal/personal-way
 import { CommunityWaypointPanel } from '../features/waypoints/community/community-waypoint-panel'
 import { CommunityWaypointSubmissionForm } from '../features/waypoints/community/submission/form'
 import { useCommunityWaypointDiscovery } from '../features/waypoints/community/use-community-waypoint-discovery'
-import type { ActiveCommunityWaypointCategory, CommunityWaypoint } from '@nusgo/shared/waypoints/community'
+import type { CommunityWaypoint } from '@nusgo/shared/waypoints/community'
 import type { WaypointCoordinate } from '@nusgo/shared/waypoints/waypoint'
 import type { ShuttleArrivalSnapshot } from '../domain/transit/arrivals'
 import type { PublicBusArrivalSnapshot } from '../domain/transit/public-bus-arrivals'
@@ -145,7 +145,6 @@ function App() {
   const [selectedPersonalWaypointCategory, setSelectedPersonalWaypointCategory] = useState<string | null>(null)
   const pendingWaypointReturnFocusRef = useRef<HTMLElement | null>(null)
   const [communitySubmissionWaypoint, setCommunitySubmissionWaypoint] = useState<CommunityWaypoint | null>(null)
-  const [communitySubmissionInitialCategory, setCommunitySubmissionInitialCategory] = useState<ActiveCommunityWaypointCategory | null>(null)
   const [communitySubmissionCoordinate, setCommunitySubmissionCoordinate] = useState<WaypointCoordinate>(
     DEFAULT_PERSONAL_WAYPOINT_COORDINATE,
   )
@@ -483,14 +482,12 @@ function App() {
   const beginCommunityWaypointSuggestion = useCallback((
     returnPage: 'menu' | 'explore' = 'menu',
     trigger: HTMLButtonElement | null = null,
-    initialCategory: ActiveCommunityWaypointCategory | null = null,
   ): void => {
     const location = state.location.status === 'tracking' && state.location.latestFix &&
       isValidLocationCoordinates(state.location.latestFix.longitude, state.location.latestFix.latitude)
       ? state.location.latestFix
       : null
     setCommunitySubmissionWaypoint(null)
-    setCommunitySubmissionInitialCategory(initialCategory)
     setCommunitySubmissionCoordinate(location
       ? { longitude: location.longitude, latitude: location.latitude }
       : DEFAULT_PERSONAL_WAYPOINT_COORDINATE)
@@ -515,7 +512,6 @@ function App() {
     const waypoint = communityWaypoints.find(({ id }) => id === waypointId)
     if (!waypoint) return
     setCommunitySubmissionWaypoint(waypoint)
-    setCommunitySubmissionInitialCategory(null)
     setCommunitySubmissionCoordinate(waypoint.coordinate)
     setCommunitySubmissionLocationStatus('ready')
     setCommunitySubmissionLocationAccuracy(null)
@@ -529,7 +525,7 @@ function App() {
     <CommunityWaypointPanel
       discovery={communityDiscovery}
       onSuggestCorrection={beginCommunityCorrection}
-      onSuggestWaypoint={(trigger, category) => beginCommunityWaypointSuggestion('explore', trigger, category)}
+      onSuggestWaypoint={(trigger) => beginCommunityWaypointSuggestion('explore', trigger)}
     />
   )
   const navigateToPersonalWaypoint = useCallback((waypoint: PersonalWaypoint): void => {
@@ -1362,7 +1358,7 @@ function App() {
             /> : morePage === 'community-submission' || morePage === 'community-placing' ? (
               <CommunityWaypointSubmissionForm
                 waypoint={communitySubmissionWaypoint}
-                initialCategory={communitySubmissionInitialCategory}
+                initialCategory={null}
                 coordinate={communitySubmissionCoordinate}
                 locationStatus={communitySubmissionLocationStatus}
                 locationAccuracy={communitySubmissionLocationAccuracy}

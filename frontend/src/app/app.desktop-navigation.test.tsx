@@ -329,7 +329,7 @@ describe('desktop shared navigation shell', () => {
 
       await user.click(screen.getByRole('button', { name: 'Explore' }))
       await user.click(screen.getByRole('button', { name: 'Community' }))
-      const trigger = await screen.findByRole('button', { name: 'Suggest Water cooler location' })
+      const trigger = await screen.findByRole('button', { name: 'Suggest a waypoint' })
       await user.click(trigger)
 
       expect(screen.getByRole('radio', { name: 'Water cooler' })).toBeTruthy()
@@ -364,7 +364,6 @@ describe('desktop shared navigation shell', () => {
     await user.click(screen.getByRole('button', { name: 'Explore' }))
     await user.click(screen.getByRole('button', { name: 'Community' }))
     await user.click(screen.getByRole('switch', { name: 'Show Water cooler on map' }))
-    await user.click(screen.getByRole('button', { name: 'Save Community Waypoint categories' }))
     await waitFor(() => expect(appHarness.commands.setCommunityWaypoints)
       .toHaveBeenLastCalledWith([waypoint], expect.any(Function)))
     const mapTrigger = document.createElement('button')
@@ -467,7 +466,6 @@ describe('desktop shared navigation shell', () => {
     expect(screen.getByRole('group', { name: 'Categories' })).toBeTruthy()
 
     await user.click(screen.getByRole('switch', { name: 'Show Water cooler on map' }))
-    await user.click(screen.getByRole('button', { name: 'Save Community Waypoint categories' }))
     await waitFor(() => expect(appHarness.commands.setCommunityWaypoints)
       .toHaveBeenLastCalledWith([], expect.any(Function)))
   })

@@ -2,25 +2,20 @@ import { useLayoutEffect, useRef } from 'react'
 import {
   getCommunityWaypointCategoryLabel,
   getCommunityWaypointFloorLabel,
-  type ActiveCommunityWaypointCategory,
   type CommunityWaypoint,
   type CommunityWaypointCategory,
 } from '@nusgo/shared/waypoints/community'
 import { BackButton } from '../../../ui/back-button.tsx'
-import { Button, IconButton } from '../../../ui/button.tsx'
-import { FileTextIcon, MapPinIcon, PlusIcon } from '../../../ui/icons'
+import { Button } from '../../../ui/button.tsx'
+import { FileTextIcon, MapPinIcon, MapPinPlusIcon } from '../../../ui/icons'
 import { CommunityWaypointCategoryIcon } from './community-waypoint-category-icon'
-import { isActiveCommunityWaypointCategory } from './community-waypoint-category-utils'
 import type { CommunityWaypointDiscovery } from './use-community-waypoint-discovery'
 import './community-waypoint-panel.css'
 
 interface CommunityWaypointPanelProps {
   readonly discovery: CommunityWaypointDiscovery
   readonly onSuggestCorrection: (waypointId: string, trigger: HTMLButtonElement) => void
-  readonly onSuggestWaypoint: (
-    trigger: HTMLButtonElement,
-    category: ActiveCommunityWaypointCategory,
-  ) => void
+  readonly onSuggestWaypoint: (trigger: HTMLButtonElement) => void
 }
 
 function WaypointDetails({
@@ -105,18 +100,13 @@ function CategoryRow({
   count,
   selected,
   onToggle,
-  onSuggestWaypoint,
 }: {
   readonly value: CommunityWaypointCategory
   readonly label: string
   readonly count: number
   readonly selected: boolean
   readonly onToggle: () => void
-  readonly onSuggestWaypoint: CommunityWaypointPanelProps['onSuggestWaypoint']
 }) {
-  const suggestButtonRef = useRef<HTMLButtonElement>(null)
-  const suggestionCategory = isActiveCommunityWaypointCategory(value) ? value : null
-
   return (
     <div className={'community-waypoint-category-row' + (selected ? ' is-selected' : '')}>
       <span className="community-waypoint-category-icon">
@@ -130,21 +120,6 @@ function CategoryRow({
           {count}
         </span>
       </span>
-      {suggestionCategory ? (
-        <IconButton
-          ref={suggestButtonRef}
-          label={'Suggest ' + label + ' location'}
-          title={'Suggest ' + label}
-          icon={<PlusIcon />}
-          onClick={() => {
-            const trigger = suggestButtonRef.current
-            if (trigger) onSuggestWaypoint(trigger, suggestionCategory)
-          }}
-          className="community-waypoint-suggest"
-        />
-      ) : (
-        <span className="community-waypoint-suggest-placeholder" aria-hidden="true" />
-      )}
       <button
         type="button"
         role="switch"
@@ -165,12 +140,10 @@ export function CommunityWaypointPanel({
   const {
     status,
     categoryOptions,
-    draftVisibleCategories,
-    hasPendingVisibilityChanges,
+    visibleCategories,
     visibilitySaveStatus,
     selectedWaypoint,
     toggleCategory,
-    saveVisibilitySelection,
     clearSelectedWaypoint,
     retry,
   } = discovery
@@ -178,7 +151,7 @@ export function CommunityWaypointPanel({
   return (
     <div className="community-waypoint-panel">
       <div className="community-waypoint-browser navigation-panel-scroll-content" hidden={selectedWaypoint !== null}>
-        <h3>Community Waypoints</h3>
+        <h3 className="visually-hidden">Community Waypoints</h3>
         {status === 'loading' && <p className="community-waypoint-status" role="status">Loading approved Community Waypoints…</p>}
         {status === 'failed' && (
           <div className="community-waypoint-load-error">
@@ -189,7 +162,7 @@ export function CommunityWaypointPanel({
         {status === 'ready' && (
           <>
             <fieldset className="community-waypoint-categories">
-              <legend>Categories</legend>
+              <legend className="visually-hidden">Categories</legend>
               <div className="community-waypoint-category-list">
                 {categoryOptions.map(({ value, label, count }) => (
                   <CategoryRow
@@ -197,30 +170,24 @@ export function CommunityWaypointPanel({
                     value={value}
                     label={label}
                     count={count}
-                    selected={draftVisibleCategories.includes(value)}
+                    selected={visibleCategories.includes(value)}
                     onToggle={() => toggleCategory(value)}
-                    onSuggestWaypoint={onSuggestWaypoint}
                   />
                 ))}
               </div>
             </fieldset>
-            <div className="community-waypoint-save">
-              <p
-                className="community-waypoint-save-status"
-                role="status"
-                aria-live="polite"
-                data-error={visibilitySaveStatus?.includes('session only') || undefined}
-              >
-                {visibilitySaveStatus}
-              </p>
+            <div className="community-waypoint-footer">
               <Button
-                label="Save"
-                ariaLabel="Save Community Waypoint categories"
+                label="Suggest a waypoint"
                 variant="primary"
-                disabled={!hasPendingVisibilityChanges}
-                onClick={saveVisibilitySelection}
+                size="lg"
+                icon={<MapPinPlusIcon />}
+                onClick={(event) => onSuggestWaypoint(event.currentTarget)}
               />
             </div>
+            <p className="visually-hidden" role="status" aria-live="polite">
+              {visibilitySaveStatus}
+            </p>
           </>
         )}
       </div>

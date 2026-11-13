@@ -29,6 +29,7 @@ import {
   ListFilter,
   Map,
   MapPin,
+  MapPinPlus,
   LocateFixed,
   Monitor,
   MoreHorizontal,
@@ -160,6 +161,11 @@ export function RefreshIcon(props: IconProps) {
 
 export function MapPinIcon(props: IconProps) {
   return renderDecorativeIcon(MapPin, props)
+}
+
+/** A pin with a plus beside it: contributing a new location rather than showing one. */
+export function MapPinPlusIcon(props: IconProps) {
+  return renderDecorativeIcon(MapPinPlus, props)
 }
 
 export function MoreHorizontalIcon(props: IconProps) {

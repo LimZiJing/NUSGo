@@ -4,7 +4,7 @@ import { useEffect, useRef } from 'react'
 import { cleanup, render, screen, waitFor, within } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import { afterEach, describe, expect, it, vi } from 'vitest'
-import type { ActiveCommunityWaypointCategory, CommunityWaypoint } from '@nusgo/shared/waypoints/community'
+import type { CommunityWaypoint } from '@nusgo/shared/waypoints/community'
 import { CommunityWaypointPanel } from './community-waypoint-panel'
 import { useCommunityWaypointDiscovery, type CommunityWaypointLoader } from './use-community-waypoint-discovery'
 
@@ -47,7 +47,7 @@ function DiscoveryHarness({
 }: {
   readonly load: CommunityWaypointLoader
   readonly onSuggestCorrection?: (id: string, trigger: HTMLButtonElement) => void
-  readonly onSuggestWaypoint?: (trigger: HTMLButtonElement, category: ActiveCommunityWaypointCategory) => void
+  readonly onSuggestWaypoint?: (trigger: HTMLButtonElement) => void
   readonly onVisibleWaypointsChange?: (waypoints: readonly CommunityWaypoint[]) => void
   readonly selectWaypointOnMount?: string
 }) {
@@ -78,7 +78,7 @@ function DiscoveryHarness({
 }
 
 describe('CommunityWaypointPanel', () => {
-  it('previews category visibility changes on the map and saves the selection', async () => {
+  it('persists category visibility as soon as a category is toggled', async () => {
     const user = userEvent.setup()
     const onVisibleWaypointsChange = vi.fn()
     render(
@@ -89,35 +89,23 @@ describe('CommunityWaypointPanel', () => {
     )
 
     const waterSwitch = await screen.findByRole('switch', { name: 'Show Water cooler on map' })
-    const saveButton = screen.getByRole('button', { name: 'Save Community Waypoint categories' })
     expect(screen.queryByText(/waypoints across/)).toBeNull()
+    expect(screen.queryByRole('button', { name: 'Save Community Waypoint categories' })).toBeNull()
     expect(waterSwitch.getAttribute('aria-checked')).toBe('false')
     expect(screen.getByRole('switch', { name: 'Show Printing / photocopying on map' }).getAttribute('aria-checked')).toBe('false')
-    expect(saveButton.hasAttribute('disabled')).toBe(true)
     expect(screen.queryByRole('list', { name: 'Approved Community Waypoints' })).toBeNull()
 
     await user.click(waterSwitch)
     expect(waterSwitch.getAttribute('aria-checked')).toBe('true')
-    expect(saveButton.hasAttribute('disabled')).toBe(false)
     expect(onVisibleWaypointsChange.mock.calls.at(-1)?.[0]).toEqual([waypoints[0]])
-
-    await user.click(saveButton)
-    await waitFor(() => {
-      expect(onVisibleWaypointsChange.mock.calls.at(-1)?.[0]).toEqual([waypoints[0]])
-    })
-    expect(screen.getByText('Selection saved.')).toBeTruthy()
-    expect(saveButton.hasAttribute('disabled')).toBe(true)
     expect(localStorage.getItem(VISIBILITY_KEY)).toBe('["water_cooler"]')
 
     await user.click(waterSwitch)
     expect(onVisibleWaypointsChange.mock.calls.at(-1)?.[0]).toEqual([])
-    expect(localStorage.getItem(VISIBILITY_KEY)).toBe('["water_cooler"]')
-    await user.click(saveButton)
     expect(localStorage.getItem(VISIBILITY_KEY)).toBe('[]')
-    expect(saveButton.hasAttribute('disabled')).toBe(true)
   })
 
-  it('keeps category actions available when the approved dataset is empty', async () => {
+  it('offers one waypoint suggestion action at the bottom of the panel', async () => {
     const user = userEvent.setup()
     const onSuggestWaypoint = vi.fn()
     render(<DiscoveryHarness load={async () => []} onSuggestWaypoint={onSuggestWaypoint} />)
@@ -125,12 +113,20 @@ describe('CommunityWaypointPanel', () => {
     const switches = await screen.findAllByRole('switch')
     expect(switches).toHaveLength(4)
     expect(screen.queryByText(/waypoints across/)).toBeNull()
-    const suggestButton = screen.getByRole('button', { name: 'Suggest Water cooler location' })
+    expect(screen.queryByRole('button', { name: /^Suggest .+ location$/ })).toBeNull()
+    const suggestButton = screen.getByRole('button', { name: 'Suggest a waypoint' })
     await user.click(suggestButton)
-    expect(onSuggestWaypoint).toHaveBeenCalledWith(suggestButton, 'water_cooler')
+    expect(onSuggestWaypoint).toHaveBeenCalledWith(suggestButton)
   })
 
-  it('reports invalid saved visibility and lets the user replace it', async () => {
+  it('keeps the category names available to assistive technology without a visible heading', async () => {
+    render(<DiscoveryHarness load={async () => waypoints} />)
+
+    expect(await screen.findByRole('heading', { name: 'Community Waypoints' })).toBeTruthy()
+    expect(screen.getByRole('group', { name: 'Categories' })).toBeTruthy()
+  })
+
+  it('reports invalid saved visibility without blocking further changes', async () => {
     const user = userEvent.setup()
     localStorage.setItem(VISIBILITY_KEY, '["unknown_category"]')
     render(<DiscoveryHarness load={async () => waypoints} />)
@@ -138,24 +134,14 @@ describe('CommunityWaypointPanel', () => {
     expect(await screen.findByText(
       'Saved category visibility could not be read. Review the categories and save to replace it.',
     )).toBeTruthy()
-    const saveButton = screen.getByRole('button', { name: 'Save Community Waypoint categories' })
-    expect(saveButton.hasAttribute('disabled')).toBe(false)
-    vi.spyOn(Storage.prototype, 'setItem').mockImplementationOnce(() => {
-      throw new DOMException('Storage is full', 'QuotaExceededError')
-    })
-    await user.click(saveButton)
-    expect(screen.getByText('Selection saved for this session only.')).toBeTruthy()
-    expect(saveButton.hasAttribute('disabled')).toBe(false)
-
-    await user.click(saveButton)
-
-    expect(screen.getByText('Selection saved.')).toBeTruthy()
-    expect(localStorage.getItem(VISIBILITY_KEY)).toBe('[]')
+    expect(screen.queryByRole('button', { name: 'Save Community Waypoint categories' })).toBeNull()
 
     const waterSwitch = screen.getByRole('switch', { name: 'Show Water cooler on map' })
     await user.click(waterSwitch)
-    await user.click(saveButton)
     expect(localStorage.getItem(VISIBILITY_KEY)).toBe('["water_cooler"]')
+    expect(screen.queryByText(
+      'Saved category visibility could not be read. Review the categories and save to replace it.',
+    )).toBeNull()
   })
 
   it('keeps a failed preference write retryable', async () => {
@@ -163,19 +149,19 @@ describe('CommunityWaypointPanel', () => {
     render(<DiscoveryHarness load={async () => waypoints} />)
 
     const waterSwitch = await screen.findByRole('switch', { name: 'Show Water cooler on map' })
-    await user.click(waterSwitch)
-    const saveButton = screen.getByRole('button', { name: 'Save Community Waypoint categories' })
     vi.spyOn(Storage.prototype, 'setItem').mockImplementationOnce(() => {
       throw new DOMException('Storage is full', 'QuotaExceededError')
     })
-    await user.click(saveButton)
+    await user.click(waterSwitch)
 
-    expect(screen.getByText('Selection saved for this session only.')).toBeTruthy()
-    expect(saveButton.hasAttribute('disabled')).toBe(false)
-    await user.click(saveButton)
+    expect(screen.getByText('Category visibility is saved for this session only.')).toBeTruthy()
+    expect(waterSwitch.getAttribute('aria-checked')).toBe('true')
 
-    expect(screen.getByText('Selection saved.')).toBeTruthy()
+    await user.click(waterSwitch)
+    await user.click(waterSwitch)
+
     expect(localStorage.getItem(VISIBILITY_KEY)).toBe('["water_cooler"]')
+    expect(screen.queryByText('Category visibility is saved for this session only.')).toBeNull()
   })
 
   it('opens marker details and restores focus to the marker after Back', async () => {

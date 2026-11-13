@@ -19,8 +19,7 @@
 }
 
 .community-waypoint-browser {
-  overflow-y: auto;
-  overscroll-behavior-y: contain;
+  overflow: hidden;
   padding-bottom: var(--space-2);
 }
 
@@ -28,7 +27,6 @@
   display: none;
 }
 
-.community-waypoint-browser h3,
 .community-waypoint-details h3 {
   margin: 0;
   color: var(--text-primary);
@@ -52,8 +50,7 @@
 }
 
 .community-waypoint-status,
-.community-waypoint-load-error p,
-.community-waypoint-save-status {
+.community-waypoint-load-error p {
   margin: 0;
   color: var(--text-secondary);
   font-size: var(--font-size-sm);
@@ -62,32 +59,36 @@
 
 .community-waypoint-categories {
   display: flex;
-  flex: 0 0 auto;
+  flex: 1 1 auto;
   flex-direction: column;
   gap: var(--space-2);
   min-width: 0;
+  /* Without this a flex item refuses to shrink, and the list pushes the footer off. */
+  min-height: 0;
   margin: 0;
   padding: 0;
   border: 0;
 }
 
+/* The legend stays in the DOM for the fieldset's accessible name but takes no space. */
 .community-waypoint-categories legend {
-  margin-bottom: var(--space-2);
-  color: var(--text-secondary);
-  font-size: var(--font-size-sm);
-  font-weight: 600;
+  padding: 0;
 }
 
 .community-waypoint-category-list {
   display: grid;
-  flex: 0 0 auto;
+  flex: 0 1 auto;
   grid-auto-rows: auto;
   gap: var(--space-2);
+  min-height: 0;
+  overflow-y: auto;
+  overscroll-behavior-y: contain;
+  padding-right: 2px;
 }
 
 .community-waypoint-category-row {
   display: grid;
-  grid-template-columns: 36px minmax(0, 1fr) var(--control-height-sm) 44px;
+  grid-template-columns: 36px minmax(0, 1fr) 44px;
   min-height: 56px;
   align-items: center;
   gap: var(--space-2);
@@ -155,27 +156,6 @@
   font-variant-numeric: tabular-nums;
 }
 
-.community-waypoint-suggest,
-.community-waypoint-suggest-placeholder {
-  width: var(--control-height-sm);
-  height: var(--control-height-sm);
-}
-
-.community-waypoint-suggest {
-  border-color: var(--border-success);
-  color: var(--text-success-strong);
-  background: var(--status-success-surface);
-}
-
-.community-waypoint-suggest:hover {
-  background: color-mix(in srgb, var(--status-success) 16%, var(--status-success-surface));
-}
-
-.community-waypoint-suggest svg {
-  width: 17px;
-  height: 17px;
-}
-
 .community-waypoint-switch {
   position: relative;
   width: 44px;
@@ -230,23 +210,18 @@
   outline-offset: 2px;
 }
 
-.community-waypoint-save {
+.community-waypoint-footer {
   display: flex;
   flex: 0 0 auto;
   align-items: center;
-  justify-content: flex-end;
-  gap: var(--space-2);
+  justify-content: stretch;
   margin-top: 0;
   padding-top: var(--space-3);
   border-top: 1px solid var(--border-subtle);
 }
 
-.community-waypoint-save-status:empty {
-  display: none;
-}
-
-.community-waypoint-save-status[data-error='true'] {
-  color: var(--text-error-strong);
+.community-waypoint-footer .button {
+  flex: 1 1 auto;
 }
 
 .community-waypoint-details-scroll {
@@ -394,7 +369,6 @@
   gap: var(--space-2);
 }
 
-.community-waypoint-suggest:focus-visible,
 .community-waypoint-load-error .button:focus-visible,
 .community-waypoint-correction-action .button:focus-visible {
   outline: 3px solid var(--focus-ring-strong);
@@ -402,13 +376,12 @@
 }
 
 @media (max-width: 768px) {
-  .community-waypoint-browser h3,
   .community-waypoint-details h3 {
     font-size: var(--font-size-2xl);
   }
 
   .community-waypoint-category-row {
-    grid-template-columns: 36px minmax(0, 1fr) var(--control-height-sm) 44px;
+    grid-template-columns: 36px minmax(0, 1fr) 44px;
     min-height: 58px;
     gap: 6px;
     padding-inline: 7px;

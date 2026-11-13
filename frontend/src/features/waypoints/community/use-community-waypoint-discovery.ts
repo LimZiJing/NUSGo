@@ -21,12 +21,10 @@ export interface CommunityWaypointDiscovery {
   readonly waypoints: readonly CommunityWaypoint[]
   readonly visibleWaypoints: readonly CommunityWaypoint[]
   readonly categoryOptions: ReturnType<typeof getCommunityWaypointCategoryOptions>
-  readonly draftVisibleCategories: readonly CommunityWaypointCategory[]
-  readonly hasPendingVisibilityChanges: boolean
+  readonly visibleCategories: readonly CommunityWaypointCategory[]
   readonly visibilitySaveStatus: string | null
   readonly selectedWaypoint: CommunityWaypoint | null
   toggleCategory(category: CommunityWaypointCategory): void
-  saveVisibilitySelection(): void
   showCategoryPanel(): void
   selectWaypoint(id: string, trigger?: HTMLButtonElement): void
   clearSelectedWaypoint(): void
@@ -39,20 +37,11 @@ type LoadedState =
   | { readonly attempt: number; readonly status: 'ready'; readonly waypoints: readonly CommunityWaypoint[] }
 
 interface CategorySelection {
-  readonly saved: readonly CommunityWaypointCategory[]
-  readonly draft: readonly CommunityWaypointCategory[]
+  readonly categories: readonly CommunityWaypointCategory[]
   readonly status: string | null
-  readonly hasUnpersistedSelection: boolean
 }
 
 const EMPTY_WAYPOINTS: readonly CommunityWaypoint[] = []
-
-function sameCategories(
-  first: readonly CommunityWaypointCategory[],
-  second: readonly CommunityWaypointCategory[],
-): boolean {
-  return first.length === second.length && first.every((category) => second.includes(category))
-}
 
 export function useCommunityWaypointDiscovery(
   load: CommunityWaypointLoader,
@@ -61,12 +50,7 @@ export function useCommunityWaypointDiscovery(
   const [loadAttempt, setLoadAttempt] = useState(0)
   const [selection, setSelection] = useState<CategorySelection>(() => {
     const { categories, error } = readCommunityWaypointVisibleCategories()
-    return {
-      saved: categories,
-      draft: categories,
-      status: error,
-      hasUnpersistedSelection: error !== null,
-    }
+    return { categories, status: error }
   })
   const [selectedWaypointId, setSelectedWaypointId] = useState<string | null>(null)
   const returnFocusTarget = useRef<HTMLButtonElement | null>(null)
@@ -92,33 +76,28 @@ export function useCommunityWaypointDiscovery(
     [waypoints],
   )
   const visibleWaypoints = useMemo(
-    () => filterCommunityWaypointsByCategory(waypoints, selection.draft),
-    [selection.draft, waypoints],
+    () => filterCommunityWaypointsByCategory(waypoints, selection.categories),
+    [selection.categories, waypoints],
   )
   const selectedWaypoint = waypoints.find(({ id }) => id === selectedWaypointId) ?? null
-  const hasPendingVisibilityChanges = selection.hasUnpersistedSelection
-    || !sameCategories(selection.saved, selection.draft)
 
+  /**
+   * Toggles apply and persist in one step. A failed write leaves the selection in
+   * place for this session and says so, so a private-mode visitor is warned rather
+   * than silently losing their choice on reload.
+   */
   const toggleCategory = useCallback((category: CommunityWaypointCategory): void => {
-    setSelection((current) => ({
-      ...current,
-      status: null,
-      draft: current.draft.includes(category)
-        ? current.draft.filter((item) => item !== category)
-        : [...current.draft, category],
-    }))
-  }, [])
-
-  const saveVisibilitySelection = useCallback((): void => {
-    const saved = [...selection.draft]
-    const persisted = writeCommunityWaypointVisibleCategories(saved)
-    setSelection({
-      saved,
-      draft: saved,
-      status: persisted ? 'Selection saved.' : 'Selection saved for this session only.',
-      hasUnpersistedSelection: !persisted,
+    setSelection((current) => {
+      const categories = current.categories.includes(category)
+        ? current.categories.filter((item) => item !== category)
+        : [...current.categories, category]
+      const persisted = writeCommunityWaypointVisibleCategories(categories)
+      return {
+        categories,
+        status: persisted ? null : 'Category visibility is saved for this session only.',
+      }
     })
-  }, [selection.draft])
+  }, [])
 
   const showCategoryPanel = useCallback((): void => {
     returnFocusTarget.current = null
@@ -149,12 +128,10 @@ export function useCommunityWaypointDiscovery(
     waypoints,
     visibleWaypoints,
     categoryOptions,
-    draftVisibleCategories: selection.draft,
-    hasPendingVisibilityChanges,
+    visibleCategories: selection.categories,
     visibilitySaveStatus: selection.status,
     selectedWaypoint,
     toggleCategory,
-    saveVisibilitySelection,
     showCategoryPanel,
     selectWaypoint,
     clearSelectedWaypoint,

@@ -55,13 +55,10 @@ function categoryHeadingId(category: string): string {
 
 interface PersonalWaypointListProps {
   readonly waypoints: readonly PersonalWaypoint[]
-  /** When set, the list shows only that category and drops the group headings. */
-  readonly category?: string
   readonly canEdit: boolean
   readonly editing: boolean
   readonly categoryPicker?: ReactNode
   readonly onOpenDetails: (waypoint: PersonalWaypoint, trigger: HTMLElement) => void
-  readonly onOpenCategory: (category: string) => void
   readonly onSearchFilterChange?: (active: boolean) => void
   readonly onRemove: (waypointId: string) => void
   readonly onMove: (waypointId: string, targetIndex: number) => boolean
@@ -74,8 +71,6 @@ interface PersonalWaypointListProps {
  */
 function PersonalWaypointRowList({
   categoryWaypoints,
-  categoryView,
-  category,
   waypoints,
   editMode,
   canReorder,
@@ -88,8 +83,6 @@ function PersonalWaypointRowList({
   registerHandleRef,
 }: {
   readonly categoryWaypoints: readonly PersonalWaypoint[]
-  readonly categoryView: boolean
-  readonly category?: string
   readonly waypoints: readonly PersonalWaypoint[]
   readonly editMode: boolean
   readonly canReorder: boolean
@@ -105,7 +98,7 @@ function PersonalWaypointRowList({
     <ul
       className="personal-waypoint-list-rows"
       data-editing={editMode ? 'true' : 'false'}
-      aria-label={categoryView ? `Saved places in ${category}` : 'Saved places'}
+      aria-label="Saved places"
     >
       {categoryWaypoints.map((waypoint) => {
         const index = waypoints.findIndex(({ id }) => id === waypoint.id)
@@ -137,12 +130,10 @@ function PersonalWaypointRowList({
 
 export function PersonalWaypointList({
   waypoints,
-  category,
   canEdit,
   editing,
   categoryPicker,
   onOpenDetails,
-  onOpenCategory,
   onSearchFilterChange,
   onRemove,
   onMove,
@@ -156,17 +147,14 @@ export function PersonalWaypointList({
   const searchInputRef = useRef<HTMLInputElement>(null)
   const handleRefs = useRef(new Map<string, HTMLButtonElement>())
   const pendingFocusRef = useRef<{ readonly waypointId: string; readonly action: 'reorder' | 'remove' } | null>(null)
-  const categoryView = category !== undefined
-  const activeCategory = categoryView ? category : ''
   const hasSearchFilter = searchQuery.trim().length > 0
-  const visibleWaypoints = useMemo(() => filterPersonalWaypoints(
-    waypoints,
-    searchQuery,
-    activeCategory || null,
-  ), [activeCategory, searchQuery, waypoints])
+  const visibleWaypoints = useMemo(
+    () => filterPersonalWaypoints(waypoints, searchQuery, null),
+    [searchQuery, waypoints],
+  )
   const groups = useMemo(() => groupPersonalWaypointsByCategory(visibleWaypoints), [visibleWaypoints])
   const editMode = canEdit && editing && waypoints.length > 0
-  const canReorder = editMode && waypoints.length > 1 && !hasSearchFilter && !categoryView
+  const canReorder = editMode && waypoints.length > 1 && !hasSearchFilter
 
   const changeSearchQuery = (query: string): void => {
     setSearchQuery(query)
@@ -334,8 +322,6 @@ export function PersonalWaypointList({
   const renderRows = (categoryWaypoints: readonly PersonalWaypoint[]) => (
     <PersonalWaypointRowList
       categoryWaypoints={categoryWaypoints}
-      categoryView={categoryView}
-      category={category}
       waypoints={waypoints}
       editMode={editMode}
       canReorder={canReorder}
@@ -355,11 +341,11 @@ export function PersonalWaypointList({
     </p>
     : null
 
-  return <section className="personal-waypoint-list" aria-label={categoryView ? `Saved places in ${category}` : 'Saved places'}>
+  return <section className="personal-waypoint-list" aria-label="Saved places">
     <div className="personal-waypoint-list-controls">
       <SearchField
-        aria-label={categoryView ? `Search ${category} places` : 'Search saved places'}
-        placeholder={categoryView ? `Search ${category} places` : 'Search saved places'}
+        aria-label="Search saved places"
+        placeholder="Search saved places"
         inputRef={searchInputRef}
         value={searchQuery}
         onChange={(event) => changeSearchQuery(event.target.value)}
@@ -367,11 +353,9 @@ export function PersonalWaypointList({
       {categoryPicker}
     </div>
 
-    {editMode && (hasSearchFilter || categoryView) && (
+    {editMode && hasSearchFilter && (
       <p className="personal-waypoint-list-filter-note">
-        {categoryView
-          ? 'Return to All places to reorder saved places.'
-          : 'Clear search to reorder or clear all saved places.'}
+        Clear search to reorder or clear all saved places.
       </p>
     )}
 
@@ -379,7 +363,7 @@ export function PersonalWaypointList({
       <>
         {reorderInstructions}
         {canReorder ? <DragDropProvider sensors={[PointerSensor]} onDragEnd={handleDragEnd}>
-          {categoryView ? renderRows(visibleWaypoints) : groups.map(({ category: name, waypoints: grouped }) => {
+          {groups.map(({ category: name, waypoints: grouped }) => {
             const expanded = !collapsedEditCategories.includes(name)
             return <section className="personal-waypoint-category-group" key={name}>
               <DisclosureHeader
@@ -396,10 +380,10 @@ export function PersonalWaypointList({
                   setCategoryExpanded(name, !expanded)
                 }}
               />
-              <div hidden={!expanded}>{renderRows(grouped)}</div>
+              <div id={categoryListId(name)} hidden={!expanded}>{renderRows(grouped)}</div>
             </section>
           })}
-        </DragDropProvider> : categoryView ? renderRows(visibleWaypoints) : <>
+        </DragDropProvider> : <>
           {!hasSearchFilter && <div className="personal-waypoint-groups-actions">
             <Button label="Expand all" variant="ghost" onClick={expandAll} />
             <Button label="Collapse all" variant="ghost" onClick={collapseAll} />
@@ -418,8 +402,6 @@ export function PersonalWaypointList({
                 controls={categoryListId(name)}
                 expandDisabled={hasSearchFilter}
                 onToggle={() => setCategoryExpanded(name, !expanded)}
-                onOpen={() => onOpenCategory(name)}
-                openLabel={`Open ${name}, ${personalWaypointCountLabel(grouped.length)}`}
               />
               <div id={categoryListId(name)} hidden={!expanded}>{renderRows(grouped)}</div>
             </section>

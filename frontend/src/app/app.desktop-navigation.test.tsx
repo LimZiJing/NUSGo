@@ -163,6 +163,36 @@ function selectPersonalWaypointFromMap(waypointId: string): HTMLButtonElement {
   return trigger
 }
 
+/**
+ * The collection screen's commands live in its one overflow menu, so opening a command is two
+ * steps. Returns the command group so a caller can read its items with `within`.
+ */
+async function openWaypointListMenu(user: ReturnType<typeof userEvent.setup>): Promise<HTMLElement> {
+  const existing = screen.queryByRole('group', { name: 'Waypoint list commands' })
+  if (existing) return existing
+  await user.click(screen.getByRole('button', { name: 'Waypoint list options' }))
+  return screen.getByRole('group', { name: 'Waypoint list commands' })
+}
+
+/** Runs one collection command (`Edit list`/`Done`, or `Clear all`) from the overflow menu. */
+async function chooseWaypointListCommand(
+  user: ReturnType<typeof userEvent.setup>,
+  label: string,
+): Promise<void> {
+  const menu = await openWaypointListMenu(user)
+  await user.click(within(menu).getByRole('button', { name: label }))
+}
+
+/** Runs one record command (`Edit waypoint`/`Delete waypoint`) from the details overflow menu. */
+async function chooseWaypointAction(
+  user: ReturnType<typeof userEvent.setup>,
+  label: string,
+): Promise<void> {
+  await user.click(screen.getByRole('button', { name: 'Waypoint actions' }))
+  const menu = screen.getByRole('group', { name: 'Waypoint actions' })
+  await user.click(within(menu).getByRole('button', { name: label }))
+}
+
 beforeEach(() => {
   mockDesktopViewport()
   vi.stubGlobal('IntersectionObserver', class {
@@ -642,7 +672,7 @@ describe('More surface', () => {
     expect(document.activeElement).toBe(screen.getByRole('button', { name: 'More' }))
   })
 
-  it.each(['Edit list', 'Clear all'])('keeps the expanded mobile waypoint sheet open when Escape comes from the %s header action', async (actionLabel) => {
+  it('keeps the expanded mobile waypoint sheet open when Escape comes from the collection options trigger', async () => {
     mockMobileViewport()
     localStorage.setItem('navus:personal-waypoints:v1', JSON.stringify({ version: 1, waypoints: [{
       id: '00000000-0000-4000-8000-000000000021',
@@ -661,13 +691,20 @@ describe('More surface', () => {
     await user.click(screen.getByRole('button', { name: 'My waypoints' }))
     const sheet = document.querySelector('.more-panel-surface')
     expect(sheet?.getAttribute('data-detent')).toBe('full')
-    // The collection's commands are always-visible header buttons now, not a popup menu.
-    const trigger = screen.getByRole('button', { name: actionLabel })
-    trigger.focus()
+    // The collection has exactly one overflow trigger; its commands live inside it.
+    expect(document.querySelectorAll('.overflow-menu-trigger')).toHaveLength(1)
+
+    // An open menu owns Escape: the first press only closes the menu.
+    const menu = await openWaypointListMenu(user)
+    expect(within(menu).getByRole('button', { name: 'Clear all' })).toBeTruthy()
+    await user.keyboard('{Escape}')
+    expect(screen.queryByRole('group', { name: 'Waypoint list commands' })).toBeNull()
+    expect(sheet?.getAttribute('data-page')).toBe('waypoints')
+    expect(document.activeElement).toBe(screen.getByRole('button', { name: 'Waypoint list options' }))
 
     await user.keyboard('{Escape}')
 
-    // Escape from a header action steps back one More page; it never tears down the whole sheet.
+    // Escape from the trigger itself steps back one More page; it never tears down the whole sheet.
     expect(sheet?.getAttribute('data-open')).toBe('true')
     expect(sheet?.getAttribute('data-page')).toBe('menu')
     expect(document.activeElement).toBe(screen.getByRole('button', { name: 'Close More' }))
@@ -677,7 +714,7 @@ describe('More surface', () => {
     expect(sheet?.getAttribute('data-open')).toBe('false')
   })
 
-  it.each(['Edit list', 'Clear all'])('closes only the waypoints page on Escape from the %s header action', async (actionLabel) => {
+  it('closes only the waypoints page on Escape from the collection options trigger', async () => {
     localStorage.setItem('navus:personal-waypoints:v1', JSON.stringify({ version: 1, waypoints: [{
       id: '00000000-0000-4000-8000-000000000021',
       name: 'Quiet bench',
@@ -693,14 +730,14 @@ describe('More surface', () => {
 
     await user.click(screen.getByRole('button', { name: 'More' }))
     await user.click(screen.getByRole('button', { name: 'My waypoints' }))
-    const trigger = screen.getByRole('button', { name: actionLabel })
+    const trigger = screen.getByRole('button', { name: 'Waypoint list options' })
     trigger.focus()
 
     await user.keyboard('{Escape}')
 
     // Escape leaves the waypoints page for the More menu and keeps the panel open; the saved
-    // place is untouched and the header actions are gone with their page.
-    expect(screen.queryByRole('button', { name: 'Clear all' })).toBeNull()
+    // place is untouched and the list actions are gone with their page.
+    expect(screen.queryByRole('button', { name: 'Waypoint list options' })).toBeNull()
     expect(document.querySelector('.more-panel-surface')?.getAttribute('data-page')).toBe('menu')
     expect(document.querySelector('.more-panel-surface')?.getAttribute('data-open')).toBe('true')
     expect(JSON.parse(localStorage.getItem('navus:personal-waypoints:v1') ?? '{}').waypoints).toHaveLength(1)
@@ -853,7 +890,7 @@ describe('More surface', () => {
 
     await user.click(screen.getByRole('button', { name: 'More' }))
     await user.click(screen.getByRole('button', { name: 'My waypoints' }))
-    await user.click(screen.getByRole('button', { name: 'Edit list' }))
+    await chooseWaypointListCommand(user, 'Edit list')
     const waypointsList = screen.getByRole('list', { name: 'Saved places' })
     const handle = within(waypointsList).getByRole('button', { name: 'Reorder Quiet bench' })
     handle.focus()
@@ -870,7 +907,7 @@ describe('More surface', () => {
       .toEqual([firstWaypoint.id, secondWaypoint.id])
   })
 
-  it('opens category places, preserves visibility drafts, and shows category places on the map', async () => {
+  it('preserves category visibility drafts and expands groups in place', async () => {
     const quietBench = {
       id: '00000000-0000-4000-8000-000000000011',
       name: 'Quiet bench',
@@ -900,6 +937,8 @@ describe('More surface', () => {
     await user.click(screen.getByRole('button', { name: 'My waypoints' }))
     const panel = document.querySelector('.more-panel-surface')
     expect(screen.getByRole('button', { name: 'Add waypoint' })).toBeTruthy()
+    // The collection screen has exactly one overflow trigger, and it owns the list commands.
+    expect(document.querySelectorAll('.overflow-menu-trigger')).toHaveLength(1)
 
     // Map visibility is a themed toggle button now, not a native checkbox. Its state is only a
     // draft while the picker is open, so it shows as the category moving into the "All categories"
@@ -911,19 +950,21 @@ describe('More surface', () => {
       ?.querySelector('h3')?.textContent ?? null
     await user.click(screen.getByRole('button', { name: /Categories/ }))
     expect(visibilityGroupName('Food & drink')).toBe('Selected')
+    // Category rows are labels plus a visibility toggle; there is no category screen to open.
+    expect(visibilityPicker().queryByRole('button', { name: /^Open / })).toBeNull()
     await user.click(screen.getByRole('button', { name: 'Show Food & drink markers' }))
     expect(visibilityGroupName('Food & drink')).toBe('All categories')
     expect(localStorage.getItem(categoryVisibilityKey)).toBeNull()
-    // The picker and the list's group heading both offer "Open Rest spot, 1 place"; this test is
-    // about opening the category from the picker.
-    await user.click(within(screen.getByRole('group', { name: 'Category places and map visibility' }))
-      .getByRole('button', { name: 'Open Rest spot, 1 place' }))
 
+    // The list is one grouped collection: both categories are reachable, and expanding a group
+    // happens in place without changing page.
+    await user.click(screen.getByRole('button', { name: /Categories/ }))
     expect(panel?.getAttribute('data-page')).toBe('waypoints')
-    expect(screen.getByRole('region', { name: 'Saved places in Rest spot' })).toBeTruthy()
+    expect(screen.getByRole('region', { name: 'Saved places' })).toBeTruthy()
+    await user.click(screen.getByRole('button', { name: 'Expand Rest spot' }))
+    expect(panel?.getAttribute('data-page')).toBe('waypoints')
     expect(screen.getByText('Quiet bench')).toBeTruthy()
-    expect(screen.queryByText('Campus cafe')).toBeNull()
-    expect(screen.queryByRole('button', { name: 'Add waypoint' })).toBeNull()
+    expect(screen.getByRole('button', { name: 'Add waypoint' })).toBeTruthy()
 
     // Places are navigational now: the row opens that place's details, and the camera focus that
     // used to live on a per-row "show on map" action is part of opening details (see #669).
@@ -933,7 +974,8 @@ describe('More surface', () => {
     await user.click(screen.getByRole('button', { name: 'Back to previous view' }))
     expect(panel?.getAttribute('data-page')).toBe('waypoints')
 
-    await user.click(screen.getByRole('button', { name: 'Back to categories' }))
+    // The draft survived the round trip through details, and cancelling discards it.
+    await user.click(screen.getByRole('button', { name: /Categories/ }))
     expect(visibilityGroupName('Food & drink')).toBe('All categories')
     await user.click(screen.getByRole('button', { name: 'Cancel' }))
     expect(localStorage.getItem(categoryVisibilityKey)).toBeNull()
@@ -945,7 +987,7 @@ describe('More surface', () => {
       .toBe('true')
   })
 
-  it('opens category waypoint details, edits the record, and confirms deletion', async () => {
+  it('opens waypoint details, edits the record, and confirms deletion', async () => {
     const waypoint = {
       id: '00000000-0000-4000-8000-000000000001',
       name: 'Quiet bench',
@@ -962,15 +1004,20 @@ describe('More surface', () => {
 
     await user.click(screen.getByRole('button', { name: 'More' }))
     await user.click(screen.getByRole('button', { name: 'My waypoints' }))
-    await user.click(screen.getByRole('button', { name: /Categories/ }))
-    await user.click(within(screen.getByRole('group', { name: 'Category places and map visibility' }))
-      .getByRole('button', { name: 'Open Rest spot, 1 place' }))
-    const mapTrigger = selectPersonalWaypointFromMap(waypoint.id)
+    await user.click(screen.getByRole('button', { name: 'Expand Rest spot' }))
+    await user.click(screen.getByRole('button', { name: 'Open Quiet bench details' }))
 
     const panel = document.querySelector('.more-panel-surface')
     expect(panel?.getAttribute('data-page')).toBe('waypoint-details')
     expect(screen.getByText('Near the garden')).toBeTruthy()
-    await user.click(screen.getByRole('button', { name: 'Edit waypoint' }))
+    // A details screen is allowed one overflow trigger, and Directions is its only visible action.
+    expect(document.querySelectorAll('.overflow-menu-trigger')).toHaveLength(1)
+    const details = document.querySelector('.personal-waypoint-details') as HTMLElement
+    expect(within(details).getAllByRole('button')
+      .map((button) => button.textContent || button.getAttribute('aria-label')))
+      .toEqual(['Waypoint actions', 'Directions'])
+
+    await chooseWaypointAction(user, 'Edit waypoint')
     expect(panel?.getAttribute('data-page')).toBe('editing-waypoint')
     await user.clear(screen.getByLabelText('Name'))
     await user.type(screen.getByLabelText('Name'), 'Shaded bench')
@@ -986,18 +1033,17 @@ describe('More surface', () => {
     })
     expect(saved.updatedAt).not.toBe(waypoint.updatedAt)
 
-    await user.click(screen.getByRole('button', { name: 'Delete waypoint' }))
+    await chooseWaypointAction(user, 'Delete waypoint')
     expect(confirm).toHaveBeenCalledWith('Delete "Shaded bench"? This cannot be undone.')
     expect(panel?.getAttribute('data-page')).toBe('waypoint-details')
     expect(JSON.parse(localStorage.getItem('navus:personal-waypoints:v1') ?? '{}').waypoints)
       .toHaveLength(1)
 
     confirm.mockReturnValue(true)
-    await user.click(screen.getByRole('button', { name: 'Delete waypoint' }))
+    await chooseWaypointAction(user, 'Delete waypoint')
     expect(panel?.getAttribute('data-page')).toBe('waypoints')
     expect(JSON.parse(localStorage.getItem('navus:personal-waypoints:v1') ?? '{}').waypoints).toEqual([])
     confirm.mockRestore()
-    mapTrigger.remove()
   })
 
   it('shows the latest saved waypoint before allowing a conflicted edit to replace it', async () => {
@@ -1018,10 +1064,9 @@ describe('More surface', () => {
     await user.click(screen.getByRole('button', { name: 'More' }))
     await user.click(screen.getByRole('button', { name: 'My waypoints' }))
     await user.click(screen.getByRole('button', { name: /Categories/ }))
-    await user.click(within(screen.getByRole('group', { name: 'Category places and map visibility' }))
-      .getByRole('button', { name: 'Open Rest spot, 1 place' }))
-    const mapTrigger = selectPersonalWaypointFromMap(waypoint.id)
-    await user.click(screen.getByRole('button', { name: 'Edit waypoint' }))
+    await user.click(screen.getByRole('button', { name: 'Expand Rest spot' }))
+    await user.click(screen.getByRole('button', { name: 'Open Quiet bench details' }))
+    await chooseWaypointAction(user, 'Edit waypoint')
     await user.clear(screen.getByLabelText('Name'))
     await user.type(screen.getByLabelText('Name'), 'My unsaved edit')
 
@@ -1050,7 +1095,6 @@ describe('More surface', () => {
     const saved = JSON.parse(localStorage.getItem(storageKey) ?? '{}').waypoints[0]
     expect(saved.name).toBe('My unsaved edit')
     expect(saved.note).toBe('Near the garden')
-    mapTrigger.remove()
   })
 
   it('restores the More page and sheet position after details opened from a map marker', async () => {
@@ -1109,7 +1153,7 @@ describe('More surface', () => {
 
     marker.remove()
     const confirm = vi.spyOn(window, 'confirm').mockReturnValue(true)
-    await user.click(screen.getByRole('button', { name: 'Delete waypoint' }))
+    await chooseWaypointAction(user, 'Delete waypoint')
 
     expect(document.querySelector('.more-panel-surface')?.getAttribute('data-page')).toBe('settings')
     expect(document.activeElement).toBe(screen.getByRole('button', { name: 'Back to previous view' }))
@@ -1267,11 +1311,11 @@ describe('More surface', () => {
 
     await user.click(screen.getByRole('button', { name: 'More' }))
     await user.click(screen.getByRole('button', { name: 'My waypoints' }))
-    await user.click(screen.getByRole('button', { name: 'Edit list' }))
+    await chooseWaypointListCommand(user, 'Edit list')
     const waypointsList = screen.getByRole('list', { name: 'Saved places' })
     expect(waypointsList.getAttribute('data-editing')).toBe('true')
 
-    await user.click(screen.getByRole('button', { name: 'Clear all' }))
+    await chooseWaypointListCommand(user, 'Clear all')
     expect(confirm).toHaveBeenCalledWith(
       'Clear all personal waypoints, including places hidden by filters?',
     )
@@ -1288,7 +1332,7 @@ describe('More surface', () => {
     const createdWaypointsList = screen.getByRole('list', { name: 'Saved places' })
     expect(createdWaypointsList.getAttribute('data-editing')).toBe('false')
 
-    await user.click(screen.getByRole('button', { name: 'Edit list' }))
+    await chooseWaypointListCommand(user, 'Edit list')
     expect(createdWaypointsList.getAttribute('data-editing')).toBe('true')
     await user.click(screen.getByRole('button', { name: 'Add waypoint' }))
     await user.click(screen.getByRole('button', { name: 'Cancel' }))
@@ -1411,13 +1455,14 @@ describe('More surface', () => {
     expect(sheet?.getAttribute('data-page')).toBe('waypoints')
     expect(sheet?.getAttribute('data-detent')).toBe('full')
     expect(screen.queryByRole('button', { name: /More actions for Quiet bench/ })).toBeNull()
+    expect(document.querySelectorAll('.overflow-menu-trigger')).toHaveLength(1)
     // Edit mode expands every group, so query the list after entering it.
-    await user.click(screen.getByRole('button', { name: 'Edit list' }))
+    await chooseWaypointListCommand(user, 'Edit list')
     const waypointsList = screen.getByRole('list', { name: 'Saved places' })
     expect(waypointsList.getAttribute('data-editing')).toBe('true')
     expect(screen.getByRole('button', { name: 'Reorder Quiet bench' }).hasAttribute('disabled'))
       .toBe(true)
-    await user.click(screen.getByRole('button', { name: 'Done' }))
+    await chooseWaypointListCommand(user, 'Done')
 
     await user.click(screen.getByRole('button', { name: 'Back to previous view' }))
     expect(sheet?.getAttribute('data-page')).toBe('menu')

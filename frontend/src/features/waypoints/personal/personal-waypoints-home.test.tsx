@@ -33,11 +33,8 @@ const waypointHomeCallbacks = {
   hiddenCategories: [],
   draftHiddenCategories: [],
   categoryPickerOpen: false,
-  selectedCategory: null,
   categoryVisibilityStatus: null,
   onSetCategoryVisible: noop,
-  onOpenCategory: noop,
-  onBackToCategories: noop,
   onToggleCategoryPicker: noop,
   onClearCategoryVisibilityChanges: noop,
   onCancelCategoryVisibilityChanges: noop,
@@ -142,10 +139,10 @@ describe('PersonalWaypointsHome', () => {
     const foodToggle = screen.getByRole('button', { name: 'Show Food & drink markers' })
     expect(foodToggle.getAttribute('aria-label')).toBe('Show Food & drink markers')
     // Group headings stay readable while the category visibility panel is open; that panel renders
-    // its own category links, so the headings are selected through the shared header rows.
-    const headingLabels = [...document.querySelectorAll('.disclosure-header-open')]
+    // its own category labels, so the headings are selected through the shared header toggles.
+    const headingLabels = [...document.querySelectorAll('.disclosure-header-toggle')]
       .map((element) => element.getAttribute('aria-label'))
-    expect(headingLabels).toEqual(['Open Food & drink, 1 place', 'Open Rest spot, 1 place'])
+    expect(headingLabels).toEqual(['Expand Food & drink', 'Expand Rest spot'])
 
     await user.click(foodToggle)
     expect(onSetCategoryVisible).toHaveBeenCalledWith('Food & drink', true)
@@ -153,10 +150,9 @@ describe('PersonalWaypointsHome', () => {
     expect(onClearCategoryVisibilityChanges).toHaveBeenCalledWith(['Food & drink', 'Rest spot'])
   })
 
-  it('opens place details from the row and opens a category from its heading', async () => {
+  it('opens place details from the row and expands a group in place', async () => {
     const user = userEvent.setup()
     const onOpenDetails = vi.fn()
-    const onOpenCategory = vi.fn()
     render(
       <PersonalWaypointsHome
         {...waypointHomeCallbacks}
@@ -164,7 +160,6 @@ describe('PersonalWaypointsHome', () => {
         status={null}
         onAdd={() => undefined}
         onOpenDetails={onOpenDetails}
-        onOpenCategory={onOpenCategory}
         editing={false}
         onRemove={() => undefined}
         onMove={() => true}
@@ -178,19 +173,19 @@ describe('PersonalWaypointsHome', () => {
     expect(screen.queryByRole('heading', { name: 'All places 1' })).toBeNull()
     expect(screen.queryByRole('button', { name: 'Edit Quiet bench, Rest spot' })).toBeNull()
 
-    await user.click(screen.getByRole('button', { name: 'Open Rest spot, 1 place' }))
-    expect(onOpenCategory).toHaveBeenCalledWith('Rest spot')
-
+    // The heading only discloses the group. Nothing outside the list can be opened from it.
     await user.click(screen.getByRole('button', { name: 'Expand Rest spot' }))
+    expect(screen.getByRole('button', { name: 'Collapse Rest spot' })).toBeTruthy()
+    expect(screen.getByRole('button', { name: 'Add waypoint' })).toBeTruthy()
+    expect(screen.getByRole('region', { name: 'Saved places' })).toBeTruthy()
+
     const rowButton = screen.getByRole('button', { name: 'Open Quiet bench details' })
     await user.click(rowButton)
     expect(onOpenDetails).toHaveBeenCalledWith(waypoint, rowButton)
   })
 
-  it('shows only the selected category and keeps Add waypoint on the main screen', async () => {
-    const user = userEvent.setup()
-    const onBackToCategories = vi.fn()
-    const view = render(
+  it('always shows the whole grouped collection with Add waypoint available', () => {
+    render(
       <PersonalWaypointsHome
         {...waypointHomeCallbacks}
         readResult={readyResult}
@@ -202,34 +197,14 @@ describe('PersonalWaypointsHome', () => {
         onResetUnreadableData={() => undefined}
         onDiscardRejectedRecords={() => undefined}
         categoryOptions={[{ category: 'Rest spot', waypointCount: 1 }]}
-        selectedCategory="Rest spot"
-        onBackToCategories={onBackToCategories}
       />,
     )
 
-    expect(screen.queryByRole('button', { name: 'Add waypoint' })).toBeNull()
-    expect(screen.getByRole('region', { name: 'Saved places in Rest spot' })).toBeTruthy()
-    expect(screen.getByRole('button', { name: 'Back to categories' })).toBeTruthy()
-
-    await user.click(screen.getByRole('button', { name: 'Back to categories' }))
-    expect(onBackToCategories).toHaveBeenCalledOnce()
-
-    view.rerender(
-      <PersonalWaypointsHome
-        {...waypointHomeCallbacks}
-        readResult={readyResult}
-        status={null}
-        onAdd={() => undefined}
-        editing={false}
-        onRemove={() => undefined}
-        onMove={() => true}
-        onResetUnreadableData={() => undefined}
-        onDiscardRejectedRecords={() => undefined}
-        categoryOptions={[{ category: 'Rest spot', waypointCount: 1 }]}
-        selectedCategory={null}
-      />,
-    )
+    // There is no category screen any more: the one list is the All-places list.
     expect(screen.getByRole('button', { name: 'Add waypoint' })).toBeTruthy()
+    expect(screen.getByRole('region', { name: 'Saved places' })).toBeTruthy()
+    expect(screen.queryByRole('button', { name: 'Back to categories' })).toBeNull()
+    expect(screen.queryByRole('region', { name: /Saved places in/ })).toBeNull()
   })
 
   it('restores focus to the page empty state when the last waypoint is removed', async () => {

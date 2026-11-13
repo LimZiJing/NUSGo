@@ -5,7 +5,6 @@ import type { PersonalWaypoint } from '../../../domain/waypoints/personal/person
 import { useLayoutEffect, useRef, useState } from 'react'
 import type { Ref } from 'react'
 import { Button } from '../../../ui/button'
-import { GhostBackButton } from '../../../ui/ghost-back-button'
 import { PersonalWaypointCategoryVisibility } from './components/personal-waypoint-category-visibility'
 import { PersonalWaypointList } from './components/personal-waypoint-list'
 
@@ -24,16 +23,12 @@ export function PersonalWaypointsHome({
   hiddenCategories,
   draftHiddenCategories,
   categoryPickerOpen,
-  selectedCategory,
   categoryVisibilityStatus,
   onSetCategoryVisible,
-  onOpenCategory,
-  onBackToCategories,
   onToggleCategoryPicker,
   onClearCategoryVisibilityChanges,
   onCancelCategoryVisibilityChanges,
   onDoneCategoryVisibilityChanges,
-  categoryBackButtonRef,
   categoryPickerTriggerRef,
   initialFocusRef,
 }: {
@@ -51,16 +46,12 @@ export function PersonalWaypointsHome({
   readonly hiddenCategories: readonly string[]
   readonly draftHiddenCategories: readonly string[]
   readonly categoryPickerOpen: boolean
-  readonly selectedCategory: string | null
   readonly categoryVisibilityStatus: string | null
   readonly onSetCategoryVisible: (category: string, visible: boolean) => void
-  readonly onOpenCategory: (category: string) => void
-  readonly onBackToCategories: () => void
   readonly onToggleCategoryPicker: () => void
   readonly onClearCategoryVisibilityChanges: (categories: readonly string[]) => void
   readonly onCancelCategoryVisibilityChanges: () => void
   readonly onDoneCategoryVisibilityChanges: () => void
-  readonly categoryBackButtonRef?: Ref<HTMLButtonElement>
   readonly categoryPickerTriggerRef?: Ref<HTMLButtonElement>
   readonly initialFocusRef?: Ref<HTMLButtonElement>
 }) {
@@ -71,10 +62,7 @@ export function PersonalWaypointsHome({
   const [editAnnouncement, setEditAnnouncement] = useState('')
   const emptyStateRef = useRef<HTMLParagraphElement>(null)
   const waypointCount = ready ? readResult.waypoints.length : null
-  const activeCategory = selectedCategory && categoryOptions.some(({ category }) => category === selectedCategory)
-    ? selectedCategory
-    : null
-  const atWaypointLimit = !activeCategory && ready && readResult.waypoints.length >= PERSONAL_WAYPOINTS_MAX_COUNT
+  const atWaypointLimit = ready && readResult.waypoints.length >= PERSONAL_WAYPOINTS_MAX_COUNT
   const previousWaypointCount = useRef(waypointCount)
 
   useLayoutEffect(() => {
@@ -86,7 +74,7 @@ export function PersonalWaypointsHome({
   }, [waypointCount])
 
   return <div className="personal-waypoints-home">
-    {!activeCategory && <Button label="Add waypoint" variant="primary" onClick={onAdd} disabled={!canAdd} ref={initialFocusRef} />}
+    <Button label="Add waypoint" variant="primary" onClick={onAdd} disabled={!canAdd} ref={initialFocusRef} />
     {status && <p className="personal-waypoints-status personal-waypoints-status-problem" role="status">{status}</p>}
     {atWaypointLimit && <p className="personal-waypoints-limit">
       The limit of {PERSONAL_WAYPOINTS_MAX_COUNT} waypoints has been reached.
@@ -123,35 +111,26 @@ export function PersonalWaypointsHome({
     </p>}
     {ready && readResult.waypoints.length > 0 && (
       <>
-        {activeCategory
-          ? <div className="personal-waypoint-category-back">
-            {/* The app restores focus to this control when returning from a category. */}
-            <GhostBackButton label="Back to categories" onClick={onBackToCategories} ref={categoryBackButtonRef} />
-          </div>
-          : null}
-        {!activeCategory && categoryVisibilityStatus && <p className="personal-waypoints-status personal-waypoints-status-problem" role="status">
+        {categoryVisibilityStatus && <p className="personal-waypoints-status personal-waypoints-status-problem" role="status">
           {categoryVisibilityStatus}
         </p>}
         <PersonalWaypointList
           waypoints={readResult.waypoints}
-          category={activeCategory ?? undefined}
           canEdit={canManage}
           editing={editing}
-          categoryPicker={!activeCategory && categoryOptions.length > 0 ? <PersonalWaypointCategoryVisibility
+          categoryPicker={categoryOptions.length > 0 ? <PersonalWaypointCategoryVisibility
             categories={categoryOptions}
             hiddenCategories={hiddenCategories}
             draftHiddenCategories={draftHiddenCategories}
             pickerOpen={categoryPickerOpen}
             onTogglePicker={onToggleCategoryPicker}
             onSetCategoryVisible={onSetCategoryVisible}
-            onOpenCategory={onOpenCategory}
             triggerRef={categoryPickerTriggerRef}
             onClear={() => onClearCategoryVisibilityChanges(categoryOptions.map(({ category }) => category))}
             onCancel={onCancelCategoryVisibilityChanges}
             onDone={onDoneCategoryVisibilityChanges}
           /> : undefined}
           onOpenDetails={onOpenDetails}
-          onOpenCategory={onOpenCategory}
           onSearchFilterChange={onSearchFilterChange}
           onRemove={onRemove}
           onMove={onMove}

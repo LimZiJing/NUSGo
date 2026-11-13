@@ -39,7 +39,6 @@ const baseProps = {
   canEdit: true,
   editing: false,
   onOpenDetails: () => undefined,
-  onOpenCategory: () => undefined,
   onRemove: () => undefined,
   onMove: () => true,
 }
@@ -131,36 +130,53 @@ describe('PersonalWaypointList', () => {
     expect(screen.queryByRole('button', { name: /more|options|menu/i })).toBeNull()
   })
 
-  it('opens a category from its group heading and toggles the group from a separate control', async () => {
+  it('points every group heading at a region that exists in edit mode too', () => {
+    render(<PersonalWaypointList {...baseProps} editing />)
+
+    // Edit list renders groups from a different branch; a missing id there left aria-controls
+    // dangling, which assistive technology cannot follow.
+    const headings = screen.getAllByRole('button', { name: /^(Expand|Collapse) / })
+    expect(headings.length).toBeGreaterThan(0)
+    for (const heading of headings) {
+      const controls = heading.getAttribute('aria-controls')
+      expect(controls).toBeTruthy()
+      expect(document.getElementById(controls as string)).toBeTruthy()
+    }
+  })
+
+  it('toggles a group from its single heading button without navigating', async () => {
     const user = userEvent.setup()
-    const onOpenCategory = vi.fn()
-    render(<PersonalWaypointList {...baseProps} onOpenCategory={onOpenCategory} />)
+    render(<PersonalWaypointList {...baseProps} />)
 
-    // Groups start collapsed, and the count is rendered once, in the heading.
-    expect(screen.getByRole('button', { name: 'Open Rest spot, 2 places' })).toBeTruthy()
-    expect(screen.getAllByText('2 places')).toHaveLength(1)
-    expect(screen.queryByRole('button', { name: 'Open Quiet bench details' })).toBeNull()
-
-    await user.click(screen.getByRole('button', { name: 'Open Rest spot, 2 places' }))
-    expect(onOpenCategory).toHaveBeenCalledWith('Rest spot')
-    expect(onOpenCategory).toHaveBeenCalledOnce()
-
+    // The heading is one disclosure button: it carries the name, the count and the chevron.
     const expand = screen.getByRole('button', { name: 'Expand Rest spot' })
+    expect(expand.tagName).toBe('BUTTON')
+    expect(expand.textContent).toContain('2 places')
+    // The count is rendered once, inside that button.
+    expect(screen.getAllByText('2 places')).toHaveLength(1)
     expect(expand.getAttribute('aria-expanded')).toBe('false')
     expect(expand.getAttribute('aria-controls')).toBe(`waypoint-category-list-${encodeURIComponent('Rest spot')}`)
+    expect(screen.queryByRole('button', { name: 'Open Quiet bench details' })).toBeNull()
+    // A heading is a disclosure, never a way into a separate category screen.
+    expect(screen.queryByRole('button', { name: /^Open Rest spot/ })).toBeNull()
 
     await user.click(expand)
-    expect(screen.getByRole('button', { name: 'Collapse Rest spot' }).getAttribute('aria-expanded')).toBe('true')
+    const collapse = screen.getByRole('button', { name: 'Collapse Rest spot' })
+    expect(collapse.getAttribute('aria-expanded')).toBe('true')
+    // Expanding happens in place; there is no callback that could navigate away.
     expect(screen.getByText('Quiet bench')).toBeTruthy()
     expect(screen.getByText('Tea room')).toBeTruthy()
 
-    await user.click(screen.getByRole('button', { name: 'Collapse Rest spot' }))
+    await user.click(collapse)
     expect(screen.queryByRole('button', { name: 'Open Quiet bench details' })).toBeNull()
+    expect(screen.getByRole('button', { name: 'Expand Rest spot' })).toBeTruthy()
   })
 
-  it('renders no category subtitle inside rows and no list options menu', () => {
+  it('renders no category subtitle inside rows and no overflow menu', () => {
     render(<PersonalWaypointList {...baseProps} />)
 
+    // The collection's one overflow menu is owned by the screen header, not the list.
+    expect(document.querySelector('.overflow-menu-trigger')).toBeNull()
     expect(screen.queryByRole('button', { name: 'Waypoint list options' })).toBeNull()
     expect(screen.queryByRole('button', { name: /Edit Quiet bench/ })).toBeNull()
   })
@@ -182,30 +198,7 @@ describe('PersonalWaypointList', () => {
     expect(onSearchFilterChange).toHaveBeenLastCalledWith(false)
     // A search force-expands every group; clearing it returns them to their collapsed default.
     expect(screen.queryAllByRole('listitem')).toEqual([])
-    expect(screen.getByRole('button', { name: 'Open Study place, 1 place' })).toBeTruthy()
-  })
-
-  it('shows only places from a fixed category and disables reordering', async () => {
-    const user = userEvent.setup()
-    const onMove = vi.fn()
-    render(<PersonalWaypointList {...baseProps} category="Rest spot" editing onMove={onMove} />)
-
-    expect(screen.getByRole('region', { name: 'Saved places in Rest spot' })).toBeTruthy()
-    expect(screen.queryByRole('button', { name: 'Categories' })).toBeNull()
-    expect(screen.getAllByRole('listitem').map((row) => row.textContent)).toEqual([
-      'Quiet bench',
-      'Tea room',
-    ])
-
-    const categoryHandle = screen.getByRole('button', { name: 'Reorder Quiet bench' })
-    expect(categoryHandle.hasAttribute('disabled')).toBe(true)
-    expect(screen.getByText('Return to All places to reorder saved places.')).toBeTruthy()
-    expect(onMove).not.toHaveBeenCalled()
-
-    await user.type(screen.getByRole('searchbox', { name: 'Search Rest spot places' }), 'quiet')
-    expect(screen.getByText('Quiet bench')).toBeTruthy()
-    expect(screen.queryByText('Tea room')).toBeNull()
-    expect(screen.getByText('Return to All places to reorder saved places.')).toBeTruthy()
+    expect(screen.getByRole('button', { name: 'Expand Study place' }).textContent).toContain('1 place')
   })
 
   it('announces edit mode and exposes labelled reorder and remove controls', async () => {

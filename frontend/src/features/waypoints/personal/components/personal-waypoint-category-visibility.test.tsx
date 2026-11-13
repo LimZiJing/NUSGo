@@ -15,9 +15,8 @@ const categories: readonly PersonalWaypointCategoryOption[] = [
 afterEach(cleanup)
 
 describe('PersonalWaypointCategoryVisibility', () => {
-  it('separates category navigation from map visibility controls', async () => {
+  it('renders each category as a label with only a map visibility toggle', async () => {
     const user = userEvent.setup()
-    const onOpenCategory = vi.fn()
     const onSetCategoryVisible = vi.fn()
     render(
       <PersonalWaypointCategoryVisibility
@@ -27,7 +26,6 @@ describe('PersonalWaypointCategoryVisibility', () => {
         pickerOpen
         onTogglePicker={() => undefined}
         onSetCategoryVisible={onSetCategoryVisible}
-        onOpenCategory={onOpenCategory}
         onClear={() => undefined}
         onCancel={() => undefined}
         onDone={() => undefined}
@@ -36,18 +34,31 @@ describe('PersonalWaypointCategoryVisibility', () => {
 
     expect(screen.getByRole('heading', { name: 'Selected' })).toBeTruthy()
     expect(screen.getByRole('heading', { name: 'All categories' })).toBeTruthy()
-    expect(screen.getByRole('button', { name: 'Open Food & drink, 2 places' })).toBeTruthy()
+    // The row is text, not a control: there is no category screen left to open.
+    expect(screen.getByText('Food & drink')).toBeTruthy()
+    expect(screen.getByText('2 places')).toBeTruthy()
+    expect(screen.queryByRole('button', { name: /Open Food & drink/ })).toBeNull()
+    expect(screen.queryByRole('button', { name: /^Open / })).toBeNull()
+
     // A hidden category still has a visibility control, and it is a toggle button, not a row action.
-    expect(screen.getByRole('button', { name: 'Show Study markers' })).toBeTruthy()
+    const studyToggle = screen.getByRole('button', { name: 'Show Study markers' })
+    expect(studyToggle.getAttribute('aria-pressed')).toBe('false')
+    expect(screen.getByRole('button', { name: 'Show Food & drink markers' }).getAttribute('aria-pressed'))
+      .toBe('true')
     expect(screen.queryByRole('checkbox')).toBeNull()
 
-    await user.click(screen.getByRole('button', { name: 'Open Food & drink, 2 places' }))
-    expect(onOpenCategory).toHaveBeenCalledWith('Food & drink')
-    expect(onSetCategoryVisible).not.toHaveBeenCalled()
+    // The only buttons inside the category rows are the visibility toggles.
+    const categoryRows = document.querySelectorAll('.personal-waypoint-category-option')
+    expect(categoryRows).toHaveLength(3)
+    for (const row of categoryRows) {
+      const buttons = [...row.querySelectorAll('button')]
+      expect(buttons).toHaveLength(1)
+      expect(buttons[0].getAttribute('aria-label')).toMatch(/^Show .+ markers$/)
+    }
 
     await user.click(screen.getByRole('button', { name: 'Show Rest spot markers' }))
     expect(onSetCategoryVisible).toHaveBeenCalledWith('Rest spot', false)
-    expect(onOpenCategory).toHaveBeenCalledOnce()
+    expect(onSetCategoryVisible).toHaveBeenCalledOnce()
   })
 
   it('filters category names and exposes Clear, Cancel, and Done visibility actions', async () => {
@@ -63,7 +74,6 @@ describe('PersonalWaypointCategoryVisibility', () => {
         pickerOpen
         onTogglePicker={() => undefined}
         onSetCategoryVisible={() => undefined}
-        onOpenCategory={() => undefined}
         onClear={onClear}
         onCancel={onCancel}
         onDone={onDone}
@@ -71,8 +81,9 @@ describe('PersonalWaypointCategoryVisibility', () => {
     )
 
     await user.type(screen.getByRole('searchbox', { name: 'Search categories' }), 'study')
-    expect(screen.getByRole('button', { name: 'Open Study, 3 places' })).toBeTruthy()
-    expect(screen.queryByRole('button', { name: 'Open Food & drink, 2 places' })).toBeNull()
+    expect(screen.getByRole('button', { name: 'Show Study markers' })).toBeTruthy()
+    expect(screen.getByText('Study')).toBeTruthy()
+    expect(screen.queryByText('Food & drink')).toBeNull()
 
     await user.clear(screen.getByRole('searchbox', { name: 'Search categories' }))
     await user.click(screen.getByRole('button', { name: 'Clear' }))

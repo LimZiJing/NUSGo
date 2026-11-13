@@ -124,19 +124,19 @@ export function GalleryPanel({ theme }: { readonly theme: GalleryTheme }) {
           {
             label: 'collapsed, opens a view',
             render: () => (
-              <DisclosureHeader label="Work" detail="3 places" expanded={false} onToggle={noop} onOpen={noop} />
+              <DisclosureHeader label="Work" detail="3 places" expanded={false} onToggle={noop} />
             ),
           },
           {
             label: 'expanded',
             render: () => (
-              <DisclosureHeader label="Work" detail="3 places" expanded onToggle={noop} onOpen={noop} />
+              <DisclosureHeader label="Work" detail="3 places" expanded onToggle={noop} />
             ),
           },
           {
             label: 'expand disabled by search',
             render: () => (
-              <DisclosureHeader label="Work" detail="3 places" expanded expandDisabled onToggle={noop} onOpen={noop} />
+              <DisclosureHeader label="Work" detail="3 places" expanded expandDisabled onToggle={noop} />
             ),
           },
         ]}

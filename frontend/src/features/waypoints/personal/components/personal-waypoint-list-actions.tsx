@@ -1,8 +1,10 @@
-import { Button } from '../../../../ui/button'
+import { EditIcon, TrashIcon } from '../../../../ui/icons'
+import { MenuItem } from '../../../../ui/menu-item'
+import { OverflowMenu } from '../../../../ui/overflow-menu'
 
 /**
- * The collection's own commands. They are visible buttons rather than a third overflow menu, so the
- * screen has one menu-free action surface and Edit list / Clear all are discoverable without hunting.
+ * The collection's own commands. They live in the one overflow menu this screen is allowed, rather
+ * than as header buttons competing with the page title.
  */
 export function PersonalWaypointListActions({
   editing,
@@ -15,20 +17,20 @@ export function PersonalWaypointListActions({
   readonly onToggleEditing: () => void
   readonly onClearAll: () => void
 }) {
-  return <div className="personal-waypoint-list-actions">
-    <Button
+  return <OverflowMenu label="Waypoint list options" menuLabel="Waypoint list commands">
+    <MenuItem
       label={editing ? 'Done' : 'Edit list'}
-      variant="ghost"
+      icon={<EditIcon />}
       onClick={onToggleEditing}
     />
-    <Button
+    <MenuItem
       label="Clear all"
-      variant="ghost"
+      icon={<TrashIcon />}
+      disabled={hasSearchFilter}
       onClick={() => {
         if (hasSearchFilter) return
         if (window.confirm('Clear all personal waypoints, including places hidden by filters?')) onClearAll()
       }}
-      disabled={hasSearchFilter}
     />
-  </div>
+  </OverflowMenu>
 }

@@ -1,0 +1,33 @@
+/* OverflowMenu: the app's single triple-dot menu, used for collection commands and for record
+   actions in a details view. Every metric comes from tokens so it matches other shared controls. */
+.overflow-menu {
+  position: relative;
+  display: flex;
+  flex: 0 0 auto;
+  align-items: center;
+}
+
+.overflow-menu-trigger {
+  width: var(--control-height-sm);
+  min-width: var(--control-height-sm);
+  min-height: var(--control-height-sm);
+}
+
+.overflow-menu-popup {
+  position: absolute;
+  z-index: 30;
+  inset-block-start: calc(100% + var(--space-1));
+  inset-inline-end: 0;
+  display: grid;
+  min-width: 11rem;
+  padding: var(--space-1);
+  border: 1px solid var(--border-card);
+  border-radius: var(--radius-control);
+  background: var(--surface-card);
+  box-shadow: var(--shadow-md);
+}
+
+.overflow-menu-popup .menu-item {
+  justify-content: flex-start;
+  text-align: start;
+}

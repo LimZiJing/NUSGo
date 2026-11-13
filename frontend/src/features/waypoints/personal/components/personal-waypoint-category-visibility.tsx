@@ -3,7 +3,7 @@ import type { Ref } from 'react'
 import type { PersonalWaypointCategoryOption } from '../../../../domain/waypoints/personal/personal-waypoint-category-visibility'
 import { Button } from '../../../../ui/button'
 import { IconButton } from '../../../../ui/button'
-import { ChevronDownIcon, ChevronRightIcon, CloseIcon, MapIcon } from '../../../../ui/icons'
+import { ChevronDownIcon, CloseIcon, MapIcon } from '../../../../ui/icons'
 import { SearchField } from '../../../../ui/search-field'
 
 export function PersonalWaypointCategoryVisibility({
@@ -13,7 +13,6 @@ export function PersonalWaypointCategoryVisibility({
   pickerOpen,
   onTogglePicker,
   onSetCategoryVisible,
-  onOpenCategory,
   triggerRef,
   onClear,
   onCancel,
@@ -25,7 +24,6 @@ export function PersonalWaypointCategoryVisibility({
   readonly pickerOpen: boolean
   readonly onTogglePicker: () => void
   readonly onSetCategoryVisible: (category: string, visible: boolean) => void
-  readonly onOpenCategory: (category: string) => void
   readonly triggerRef?: Ref<HTMLButtonElement>
   readonly onClear: () => void
   readonly onCancel: () => void
@@ -47,18 +45,14 @@ export function PersonalWaypointCategoryVisibility({
   const renderCategory = ({ category, waypointCount }: PersonalWaypointCategoryOption) => {
     const placeLabel = waypointCount === 1 ? 'place' : 'places'
     const visible = !draftHidden.has(category)
+    // The row is a label plus its map-visibility toggle. There is no category screen to open:
+    // the collection already groups and searches by category.
     return <div className="personal-waypoint-category-option" key={category}>
-      <button
-        className="personal-waypoint-category-link"
-        type="button"
-        aria-label={`Open ${category}, ${waypointCount} ${placeLabel}`}
-        onClick={() => onOpenCategory(category)}
-      >
+      <span className="personal-waypoint-category-link">
         <span className="personal-waypoint-category-dot" aria-hidden="true" />
         <span className="personal-waypoint-category-name">{category}</span>
         <small>{waypointCount} {placeLabel}</small>
-        <ChevronRightIcon aria-hidden="true" />
-      </button>
+      </span>
       <IconButton
         className="personal-waypoint-category-toggle"
         label={`Show ${category} markers`}

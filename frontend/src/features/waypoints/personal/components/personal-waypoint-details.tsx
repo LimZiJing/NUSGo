@@ -1,7 +1,11 @@
 import { FileText } from 'lucide-react'
 import type { PersonalWaypoint } from '../../../../domain/waypoints/personal/personal-waypoint'
-import { CompassIcon, MapPinIcon } from '../../../../ui/icons'
+import { EditIcon, MapPinIcon, TrashIcon } from '../../../../ui/icons'
 import { Button } from '../../../../ui/button'
+import { MenuItem } from '../../../../ui/menu-item'
+import { OverflowMenu } from '../../../../ui/overflow-menu'
+import { PersonalWaypointMarkerGlyph } from './personal-waypoint-marker-glyph'
+import { personalWaypointMarkerColorClass } from './personal-waypoint-marker-color'
 
 export function PersonalWaypointDetails({ waypoint, canManage, onDirections, onEdit, onDelete }: {
   readonly waypoint: PersonalWaypoint | null
@@ -18,8 +22,13 @@ export function PersonalWaypointDetails({ waypoint, canManage, onDirections, onE
 
   return <section className="personal-waypoint-details" aria-labelledby="personal-waypoint-details-heading">
     <header className="personal-waypoint-details-identity">
-      <span className="personal-waypoint-details-identity-icon">
-        <CompassIcon size={20} />
+      <span
+        className={`personal-waypoint-details-identity-icon ${personalWaypointMarkerColorClass(waypoint.markerColor)}`}
+        data-marker-color={waypoint.markerColor}
+        data-marker-icon={waypoint.markerIcon}
+        aria-hidden="true"
+      >
+        <PersonalWaypointMarkerGlyph markerIcon={waypoint.markerIcon} size={20} />
       </span>
       <div className="personal-waypoint-details-identity-copy">
         <h3 id="personal-waypoint-details-heading">{waypoint.name}</h3>
@@ -28,6 +37,11 @@ export function PersonalWaypointDetails({ waypoint, canManage, onDirections, onE
           <span>{waypoint.category}</span>
         </span>
       </div>
+      {/* The one overflow menu this screen is allowed: the record's own actions. */}
+      <OverflowMenu label="Waypoint actions" menuLabel="Waypoint actions">
+        <MenuItem label="Edit waypoint" icon={<EditIcon />} disabled={!canManage} onClick={onEdit} />
+        <MenuItem label="Delete waypoint" icon={<TrashIcon />} disabled={!canManage} onClick={onDelete} />
+      </OverflowMenu>
     </header>
 
     <div className="personal-waypoint-details-fields">
@@ -60,17 +74,6 @@ export function PersonalWaypointDetails({ waypoint, canManage, onDirections, onE
         size="lg"
         onClick={onDirections}
       />
-      <div className="personal-waypoint-details-secondary-actions">
-        <Button label="Edit waypoint" variant="ghost" size="sm" disabled={!canManage} onClick={onEdit} />
-        <Button
-          className="personal-waypoint-details-delete"
-          label="Delete waypoint"
-          variant="ghost"
-          size="sm"
-          disabled={!canManage}
-          onClick={onDelete}
-        />
-      </div>
     </div>
   </section>
 }

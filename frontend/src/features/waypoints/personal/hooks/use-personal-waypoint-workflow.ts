@@ -8,6 +8,7 @@ import {
 import { createPersonalWaypoint, type PersonalWaypointDraft } from '../../../../domain/waypoints/personal/create-personal-waypoint'
 import type { PersonalWaypoint, PersonalWaypointValidationIssue } from '../../../../domain/waypoints/personal/personal-waypoint'
 import { updatePersonalWaypoint } from '../../../../domain/waypoints/personal/update-personal-waypoint'
+import { renamePersonalWaypointCategory } from '../../../../domain/waypoints/personal/personal-waypoint-category-rename'
 import type {
   PersonalWaypointStore,
   PersonalWaypointStoreMutationResult,
@@ -174,6 +175,26 @@ export function usePersonalWaypointWorkflow(store: PersonalWaypointStore) {
     },
     'Order saved.',
   ), [updateCollection])
+
+  /**
+   * Renames a category, merging into an existing one when the name is already taken. Returns the
+   * saved collection so the caller can report the outcome, or null when nothing was written.
+   */
+  const renameCategory = useCallback((from: string, to: string): readonly PersonalWaypoint[] | null => {
+    const current = store.read()
+    setReadResult(current)
+    const blockedMessage = getBlockedMutationMessage(current)
+    if (blockedMessage) {
+      setStatus(blockedMessage, 'problem')
+      return null
+    }
+    if (current.kind !== 'ready') return null
+
+    const next = renamePersonalWaypointCategory(current.waypoints, from, to, { now: () => new Date().toISOString() })
+    if (!next) return null
+    const outcome = store.replaceAll(next, current.revision)
+    return finishMutation(outcome, 'saved', `Renamed ${from} to ${to}.`) ? next : null
+  }, [finishMutation, setStatus, store])
 
   const clearAll = useCallback((): boolean => {
     const current = store.read()
@@ -383,6 +404,7 @@ export function usePersonalWaypointWorkflow(store: PersonalWaypointStore) {
     updateDraft,
     save,
     removeWaypoint,
+    renameCategory,
     moveWaypoint,
     clearAll,
     resetUnreadableData,

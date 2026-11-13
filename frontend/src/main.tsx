@@ -13,6 +13,20 @@ const Gallery = import.meta.env.DEV
   : null
 const showGallery = Gallery !== null && new URLSearchParams(window.location.search).has('gallery')
 
+// Dev-only sample Personal Waypoints at /?sample-waypoints, so the collection can be reviewed with
+// realistic volume without hand-editing storage. Build-time DEV constant, so production drops it.
+const SAMPLE_KEY = 'navus:personal-waypoints:v1'
+if (import.meta.env.DEV && new URLSearchParams(window.location.search).has('sample-waypoints')) {
+  void import('./features/waypoints/personal/data/sample-personal-waypoints').then(({ createSamplePersonalWaypoints }) => {
+    window.localStorage.setItem(SAMPLE_KEY, JSON.stringify({ version: 1, waypoints: createSamplePersonalWaypoints() }))
+    window.localStorage.removeItem('navus:personal-waypoint-expanded-categories:v1')
+  })
+}
+if (import.meta.env.DEV && new URLSearchParams(window.location.search).has('clear-waypoints')) {
+  window.localStorage.removeItem(SAMPLE_KEY)
+  window.localStorage.removeItem('navus:personal-waypoint-expanded-categories:v1')
+}
+
 registerPwaServiceWorker()
 void refreshPwaInstallationStatus()
 

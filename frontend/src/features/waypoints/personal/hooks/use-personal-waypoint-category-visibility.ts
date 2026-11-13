@@ -1,5 +1,6 @@
 import { useCallback, useState } from 'react'
 import type { PersonalWaypointCategoryVisibilityStore } from '../../../../domain/waypoints/personal/personal-waypoint-category-visibility-store'
+import { mergeCategoryVisibility } from '../../../../domain/waypoints/personal/personal-waypoint-category-rename'
 
 function getReadStatus(kind: 'invalid' | 'unavailable'): string {
   return kind === 'invalid'
@@ -45,6 +46,27 @@ export function usePersonalWaypointCategoryVisibility(store: PersonalWaypointCat
       : 'Map category settings could not be saved. The change applies until this page is reloaded.')
   }, [draftHiddenCategories, store])
 
+  // A merge rewrites which category names exist, so visibility follows the same durable write.
+  // It answers whether the merged category will be shown, or null when that cannot be promised:
+  // an unreadable store has no visibility to merge, and a failed write would not survive reload.
+  const mergeCategoryVisibilityFor = useCallback((from: string, to: string): boolean | null => {
+    const latest = store.read()
+    if (latest.kind !== 'ready') {
+      setStatus(getReadStatus(latest.kind))
+      return null
+    }
+    const next = mergeCategoryVisibility(latest.hiddenCategories, from, to)
+    const result = store.write(next.hiddenCategories)
+    setHiddenCategories(next.hiddenCategories)
+    setDraftHiddenCategories((current) => mergeCategoryVisibility(current, from, to).hiddenCategories)
+    if (result.kind !== 'saved') {
+      setStatus('Map category settings could not be saved. The change applies until this page is reloaded.')
+      return null
+    }
+    setStatus(null)
+    return next.visibleAfter
+  }, [store])
+
   const togglePicker = useCallback(() => setPickerOpen((open) => !open), [])
   const openPicker = useCallback(() => setPickerOpen(true), [])
 
@@ -57,6 +79,7 @@ export function usePersonalWaypointCategoryVisibility(store: PersonalWaypointCat
     cancelCategoryVisibilityChanges,
     saveCategoryVisibilityChanges,
     togglePicker,
+    mergeCategoryVisibilityFor,
     openPicker,
     status,
   }

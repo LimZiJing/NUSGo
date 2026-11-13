@@ -31,6 +31,8 @@ export function PersonalWaypointsHome({
   onDoneCategoryVisibilityChanges,
   categoryPickerTriggerRef,
   initialFocusRef,
+  onRenameCategory,
+  onMergeCategoryVisibility,
 }: {
   readonly readResult: PersonalWaypointStoreReadResult
   readonly status: string | null
@@ -54,6 +56,8 @@ export function PersonalWaypointsHome({
   readonly onDoneCategoryVisibilityChanges: () => void
   readonly categoryPickerTriggerRef?: Ref<HTMLButtonElement>
   readonly initialFocusRef?: Ref<HTMLButtonElement>
+  readonly onRenameCategory?: (from: string, to: string) => readonly PersonalWaypoint[] | null
+  readonly onMergeCategoryVisibility?: (from: string, to: string) => boolean | null
 }) {
   const ready = readResult.kind === 'ready'
   const canAdd = ready && readResult.rejectedRecords.count === 0 &&
@@ -135,6 +139,8 @@ export function PersonalWaypointsHome({
           onRemove={onRemove}
           onMove={onMove}
           onEditAnnouncement={setEditAnnouncement}
+          onRenameCategory={onRenameCategory}
+          onMergeCategoryVisibility={onMergeCategoryVisibility}
         />
       </>
     )}

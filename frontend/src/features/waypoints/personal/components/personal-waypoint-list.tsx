@@ -6,8 +6,10 @@ import { DragDropProvider, PointerSensor } from '@dnd-kit/react'
 import type { DragEndEvent } from '@dnd-kit/react'
 import type { PersonalWaypoint } from '../../../../domain/waypoints/personal/personal-waypoint'
 import { Button } from '../../../../ui/button'
+import { ConfirmDialog } from '../../../../ui/confirm-dialog'
 import { DisclosureHeader } from '../../../../ui/disclosure-header'
 import { SearchField } from '../../../../ui/search-field'
+import { categoryMergeConfirmation } from '../../../../domain/waypoints/personal/personal-waypoint-category-rename'
 import { filterPersonalWaypoints } from '../data/filter-personal-waypoints'
 import { groupPersonalWaypointsByCategory, personalWaypointCountLabel } from '../data/group-personal-waypoints'
 import {
@@ -63,6 +65,10 @@ interface PersonalWaypointListProps {
   readonly onRemove: (waypointId: string) => void
   readonly onMove: (waypointId: string, targetIndex: number) => boolean
   readonly onEditAnnouncement?: (message: string) => void
+  /** Renames (or merges) a category. Returns the saved collection, or null when nothing was written. */
+  readonly onRenameCategory?: (from: string, to: string) => readonly PersonalWaypoint[] | null
+  /** Reports whether the merged category will be shown on the map, or null when unknown. */
+  readonly onMergeCategoryVisibility?: (from: string, to: string) => boolean | null
 }
 
 /**
@@ -138,11 +144,14 @@ export function PersonalWaypointList({
   onRemove,
   onMove,
   onEditAnnouncement,
+  onRenameCategory,
+  onMergeCategoryVisibility,
 }: PersonalWaypointListProps) {
   const [searchQuery, setSearchQuery] = useState('')
   const [expandedCategories, setExpandedCategories] = useState<string[]>(readExpandedCategories)
   const [collapsedEditCategories, setCollapsedEditCategories] = useState<string[]>([])
   const [keyboardReorder, setKeyboardReorder] = useState<KeyboardReorderState | null>(null)
+  const [mergeRequest, setMergeRequest] = useState<{ readonly from: string; readonly to: string } | null>(null)
   const previousEditing = useRef(editing)
   const searchInputRef = useRef<HTMLInputElement>(null)
   const handleRefs = useRef(new Map<string, HTMLButtonElement>())
@@ -155,6 +164,34 @@ export function PersonalWaypointList({
   const groups = useMemo(() => groupPersonalWaypointsByCategory(visibleWaypoints), [visibleWaypoints])
   const editMode = canEdit && editing && waypoints.length > 0
   const canReorder = editMode && waypoints.length > 1 && !hasSearchFilter
+
+  // A rename that lands on an existing category merges the two, so it asks first.
+  const requestRenameCategory = (from: string, to: string): void => {
+    const taken = waypoints.some((waypoint) => waypoint.category.trim() === to)
+    if (taken) {
+      setMergeRequest({ from, to })
+      return
+    }
+    const saved = onRenameCategory?.(from, to) ?? null
+    onEditAnnouncement?.(saved ? `Renamed ${from} to ${to}.` : `Could not rename ${from}.`)
+  }
+
+  const confirmMerge = (): void => {
+    const request = mergeRequest
+    if (!request) return
+    setMergeRequest(null)
+    const saved = onRenameCategory?.(request.from, request.to) ?? null
+    if (!saved) {
+      onEditAnnouncement?.(`Could not merge ${request.from} into ${request.to}.`)
+      return
+    }
+    const visibleAfter = onMergeCategoryVisibility?.(request.from, request.to) ?? null
+    // A null answer means the visibility could not be read or saved, so name the problem instead
+    // of claiming the merged category is shown or hidden.
+    onEditAnnouncement?.(visibleAfter === null
+      ? `Merged ${request.from} into ${request.to}. Its map visibility could not be saved.`
+      : `Merged ${request.from} into ${request.to}. ${categoryMergeConfirmation(visibleAfter)}.`)
+  }
 
   const changeSearchQuery = (query: string): void => {
     setSearchQuery(query)
@@ -379,6 +416,7 @@ export function PersonalWaypointList({
                     : [...current, name])
                   setCategoryExpanded(name, !expanded)
                 }}
+                onRename={onRenameCategory ? (next) => requestRenameCategory(name, next) : undefined}
               />
               <div id={categoryListId(name)} hidden={!expanded}>{renderRows(grouped)}</div>
             </section>
@@ -402,6 +440,7 @@ export function PersonalWaypointList({
                 controls={categoryListId(name)}
                 expandDisabled={hasSearchFilter}
                 onToggle={() => setCategoryExpanded(name, !expanded)}
+                onRename={onRenameCategory && editMode ? (next) => requestRenameCategory(name, next) : undefined}
               />
               <div id={categoryListId(name)} hidden={!expanded}>{renderRows(grouped)}</div>
             </section>
@@ -415,5 +454,16 @@ export function PersonalWaypointList({
         {hasSearchFilter && <Button label="Clear search" variant="ghost" onClick={() => changeSearchQuery('')} />}
       </div>
     )}
+    <ConfirmDialog
+      open={mergeRequest !== null}
+      title={mergeRequest ? `Merge “${mergeRequest.from}” into “${mergeRequest.to}”?` : 'Merge categories?'}
+      confirmLabel="Merge categories"
+      onConfirm={confirmMerge}
+      onCancel={() => setMergeRequest(null)}
+    >
+      {mergeRequest && <p>
+        {mergeRequest.to} already exists. Its places stay first, then {mergeRequest.from}'s. No places are lost.
+      </p>}
+    </ConfirmDialog>
   </section>
 }

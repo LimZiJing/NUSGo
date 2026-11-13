@@ -1,7 +1,8 @@
 // @vitest-environment jsdom
 
-import { cleanup, render, screen, within } from '@testing-library/react'
+import { cleanup, render, screen, waitFor, within } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
+import type { UserEvent } from '@testing-library/user-event'
 import { useState } from 'react'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import type { PersonalWaypoint } from '../../../../domain/waypoints/personal/personal-waypoint'
@@ -74,6 +75,8 @@ afterEach(() => {
   vi.unstubAllGlobals()
   delete (document as unknown as Record<string, unknown>).getAnimations
   delete (HTMLElement.prototype as unknown as Record<string, unknown>).getAnimations
+  delete (window.HTMLDialogElement.prototype as unknown as Record<string, unknown>).showModal
+  delete (window.HTMLDialogElement.prototype as unknown as Record<string, unknown>).close
 })
 
 beforeEach(() => {
@@ -90,6 +93,20 @@ beforeEach(() => {
     observe() {}
     unobserve() {}
     disconnect() {}
+  })
+  // jsdom implements `dialog.open` but not the modal methods, so give the ConfirmDialog the
+  // behaviour a browser provides: showModal opens it, close closes it.
+  Object.defineProperty(window.HTMLDialogElement.prototype, 'showModal', {
+    configurable: true,
+    value(this: HTMLDialogElement) {
+      this.open = true
+    },
+  })
+  Object.defineProperty(window.HTMLDialogElement.prototype, 'close', {
+    configurable: true,
+    value(this: HTMLDialogElement) {
+      this.open = false
+    },
   })
 })
 
@@ -378,5 +395,192 @@ describe('PersonalWaypointList', () => {
 
     await user.click(screen.getByRole('button', { name: 'Remove Quiet bench' }))
     expect(document.activeElement).toBe(screen.getByRole('searchbox', { name: 'Search saved places' }))
+  })
+})
+
+describe('PersonalWaypointList category renaming', () => {
+  const renameProps = {
+    ...baseProps,
+    onRenameCategory: vi.fn<(from: string, to: string) => readonly PersonalWaypoint[] | null>(() => waypoints),
+  }
+
+  async function openRenameField(user: UserEvent, category: string): Promise<HTMLInputElement> {
+    await user.click(screen.getByRole('button', { name: `Rename ${category} category` }))
+    const input = screen.getByRole('textbox', { name: `Rename ${category} category` }) as HTMLInputElement
+    // The header focuses and selects the field in a follow-up frame.
+    await waitFor(() => {
+      expect(document.activeElement).toBe(input)
+      expect(input.selectionStart).toBe(0)
+    })
+    return input
+  }
+
+  it('offers no rename control outside edit mode', async () => {
+    const user = userEvent.setup()
+    render(<PersonalWaypointList {...renameProps} />)
+
+    await user.click(screen.getByRole('button', { name: 'Expand all' }))
+
+    expect(screen.queryByRole('button', { name: /^Rename .* category$/ })).toBeNull()
+    expect(screen.queryByRole('textbox', { name: /^Rename .* category$/ })).toBeNull()
+  })
+
+  it('shows a trailing pencil on each group heading in edit mode', () => {
+    render(<PersonalWaypointList {...renameProps} editing />)
+
+    const pencils = screen.getAllByRole('button', { name: /^Rename .* category$/ })
+    expect(pencils).toHaveLength(new Set(waypoints.map(({ category }) => category)).size)
+    expect(screen.getByRole('button', { name: 'Rename Rest spot category' })).toBeTruthy()
+    expect(screen.getByRole('button', { name: 'Rename Study place category' })).toBeTruthy()
+  })
+
+  it('opens an inline field with the current name preselected', async () => {
+    const user = userEvent.setup()
+    render(<PersonalWaypointList {...renameProps} editing />)
+
+    const input = await openRenameField(user, 'Rest spot')
+
+    expect(input.value).toBe('Rest spot')
+    expect(input.selectionStart).toBe(0)
+    expect(input.selectionEnd).toBe('Rest spot'.length)
+    expect(screen.getByRole('button', { name: 'Save Rest spot category name' })).toBeTruthy()
+    expect(screen.getByRole('button', { name: 'Cancel renaming Rest spot' })).toBeTruthy()
+    // The heading itself steps aside while its name is being edited.
+    expect(screen.queryByRole('button', { name: /^(Expand|Collapse) Rest spot$/ })).toBeNull()
+  })
+
+  it('commits a new name on Enter and reports the rename', async () => {
+    const user = userEvent.setup()
+    const onRenameCategory = vi.fn<(from: string, to: string) => readonly PersonalWaypoint[] | null>(() => waypoints)
+    const onEditAnnouncement = vi.fn()
+    render(
+      <PersonalWaypointList
+        {...baseProps}
+        editing
+        onRenameCategory={onRenameCategory}
+        onEditAnnouncement={onEditAnnouncement}
+      />,
+    )
+
+    const input = await openRenameField(user, 'Rest spot')
+    await user.clear(input)
+    await user.type(input, 'Break spot{Enter}')
+
+    expect(onRenameCategory).toHaveBeenCalledExactlyOnceWith('Rest spot', 'Break spot')
+    expect(onEditAnnouncement).toHaveBeenLastCalledWith('Renamed Rest spot to Break spot.')
+    expect(screen.queryByRole('textbox', { name: /^Rename .* category$/ })).toBeNull()
+  })
+
+  it('cancels with Escape without renaming', async () => {
+    const user = userEvent.setup()
+    const onRenameCategory = vi.fn<(from: string, to: string) => readonly PersonalWaypoint[] | null>(() => waypoints)
+    render(<PersonalWaypointList {...baseProps} editing onRenameCategory={onRenameCategory} />)
+
+    const input = await openRenameField(user, 'Rest spot')
+    await user.clear(input)
+    await user.type(input, 'Break spot{Escape}')
+
+    expect(onRenameCategory).not.toHaveBeenCalled()
+    expect(screen.queryByRole('textbox', { name: /^Rename .* category$/ })).toBeNull()
+    expect(screen.getByRole('button', { name: 'Rename Rest spot category' })).toBeTruthy()
+  })
+
+  it('asks before merging into an existing category and only renames on confirmation', async () => {
+    const user = userEvent.setup()
+    const onRenameCategory = vi.fn<(from: string, to: string) => readonly PersonalWaypoint[] | null>(() => waypoints)
+    const onMergeCategoryVisibility = vi.fn<(from: string, to: string) => boolean | null>(() => true)
+    const onEditAnnouncement = vi.fn()
+    render(
+      <PersonalWaypointList
+        {...baseProps}
+        editing
+        onRenameCategory={onRenameCategory}
+        onMergeCategoryVisibility={onMergeCategoryVisibility}
+        onEditAnnouncement={onEditAnnouncement}
+      />,
+    )
+
+    const input = await openRenameField(user, 'Rest spot')
+    await user.clear(input)
+    await user.type(input, 'Study place{Enter}')
+
+    // Nothing is written until the merge is confirmed.
+    expect(onRenameCategory).not.toHaveBeenCalled()
+    const dialog = await screen.findByRole('dialog')
+    expect(dialog.className).toBe('confirm-dialog')
+    expect(within(dialog).getByText('Merge “Rest spot” into “Study place”?')).toBeTruthy()
+    expect(within(dialog).getByRole('button', { name: 'Cancel' })).toBeTruthy()
+
+    await user.click(within(dialog).getByRole('button', { name: 'Merge categories' }))
+
+    expect(onRenameCategory).toHaveBeenCalledExactlyOnceWith('Rest spot', 'Study place')
+    expect(onMergeCategoryVisibility).toHaveBeenCalledWith('Rest spot', 'Study place')
+    expect(onEditAnnouncement).toHaveBeenLastCalledWith(
+      'Merged Rest spot into Study place. Shown on map after merging.',
+    )
+    expect(screen.queryByRole('dialog')).toBeNull()
+  })
+
+  it('reports a visibility answer of hidden after merging', async () => {
+    const user = userEvent.setup()
+    const onRenameCategory = vi.fn<(from: string, to: string) => readonly PersonalWaypoint[] | null>(() => waypoints)
+    const onEditAnnouncement = vi.fn()
+    render(
+      <PersonalWaypointList
+        {...baseProps}
+        editing
+        onRenameCategory={onRenameCategory}
+        onMergeCategoryVisibility={() => false}
+        onEditAnnouncement={onEditAnnouncement}
+      />,
+    )
+
+    const input = await openRenameField(user, 'Rest spot')
+    await user.clear(input)
+    await user.type(input, 'Study place{Enter}')
+    await user.click(await screen.findByRole('button', { name: 'Merge categories' }))
+
+    expect(onEditAnnouncement).toHaveBeenLastCalledWith(
+      'Merged Rest spot into Study place. Hidden on map after merging.',
+    )
+  })
+
+  it('says the map visibility could not be saved when the answer is unknown', async () => {
+    const user = userEvent.setup()
+    const onRenameCategory = vi.fn<(from: string, to: string) => readonly PersonalWaypoint[] | null>(() => waypoints)
+    const onEditAnnouncement = vi.fn()
+    render(
+      <PersonalWaypointList
+        {...baseProps}
+        editing
+        onRenameCategory={onRenameCategory}
+        onMergeCategoryVisibility={() => null}
+        onEditAnnouncement={onEditAnnouncement}
+      />,
+    )
+
+    const input = await openRenameField(user, 'Rest spot')
+    await user.clear(input)
+    await user.type(input, 'Study place{Enter}')
+    await user.click(await screen.findByRole('button', { name: 'Merge categories' }))
+
+    expect(onRenameCategory).toHaveBeenCalledExactlyOnceWith('Rest spot', 'Study place')
+    expect(onEditAnnouncement).toHaveBeenLastCalledWith(
+      'Merged Rest spot into Study place. Its map visibility could not be saved.',
+    )
+  })
+
+  it('leaves the collection untouched when the merge is cancelled', async () => {
+    const user = userEvent.setup()
+    const onRenameCategory = vi.fn<(from: string, to: string) => readonly PersonalWaypoint[] | null>(() => waypoints)
+    render(<PersonalWaypointList {...baseProps} editing onRenameCategory={onRenameCategory} />)
+
+    const input = await openRenameField(user, 'Rest spot')
+    await user.clear(input)
+    await user.type(input, 'Study place{Enter}')
+    await user.click(await screen.findByRole('button', { name: 'Cancel' }))
+
+    expect(onRenameCategory).not.toHaveBeenCalled()
+    expect(screen.queryByRole('dialog')).toBeNull()
   })
 })

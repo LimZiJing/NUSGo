@@ -51,6 +51,37 @@
   outline-offset: calc(-1 * var(--focus-ring-offset));
 }
 
+/* Rename sits in the trailing position so it never competes with the heading's expand toggle. */
+.disclosure-header-rename-trigger {
+  flex: 0 0 auto;
+  color: var(--text-muted);
+}
+
+.disclosure-header-rename {
+  display: flex;
+  min-width: 0;
+  flex: 1;
+  align-items: center;
+  gap: var(--space-1);
+}
+
+.disclosure-header-rename-input {
+  min-width: 0;
+  min-height: var(--control-height-sm);
+  flex: 1;
+  padding-inline: var(--space-2);
+  border: 1px solid var(--accent);
+  border-radius: var(--radius-control);
+  color: var(--text-primary);
+  background: var(--surface-card);
+  font: inherit;
+}
+
+.disclosure-header-rename-input:focus-visible {
+  outline: var(--focus-outline);
+  outline-offset: var(--focus-ring-offset);
+}
+
 @media (hover: hover) {
   .disclosure-header-toggle:not([aria-disabled='true']):hover .disclosure-header-label {
     text-decoration: underline;

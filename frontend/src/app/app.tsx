@@ -1063,6 +1063,8 @@ function App() {
               readResult={personalWaypoints.readResult}
               status={personalWaypoints.statusKind === 'problem' ? personalWaypoints.status : null}
               onAdd={beginWaypointCreation}
+              onRenameCategory={personalWaypoints.renameCategory}
+              onMergeCategoryVisibility={personalWaypointCategoryVisibility.mergeCategoryVisibilityFor}
               onOpenDetails={(waypoint, trigger) => openPersonalWaypointDetails(
                 waypoint.id,
                 'waypoints',

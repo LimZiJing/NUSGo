@@ -1,0 +1,44 @@
+/* ConfirmDialog: a small modal decision, used for merge and discard confirmations. It relies on the
+   native dialog's backdrop, focus trap and Escape handling; only presentation comes from here. */
+.confirm-dialog {
+  width: min(24rem, calc(100vw - var(--space-8)));
+  max-width: none;
+  padding: 0;
+  border: 1px solid var(--border-card);
+  border-radius: var(--radius-card);
+  color: var(--text-primary);
+  background: var(--surface-card);
+  box-shadow: var(--shadow-md);
+}
+
+.confirm-dialog::backdrop {
+  background: color-mix(in srgb, var(--text-primary) 40%, transparent);
+}
+
+.confirm-dialog-body {
+  display: grid;
+  gap: var(--space-3);
+  padding: var(--space-4);
+}
+
+.confirm-dialog-body h2 {
+  margin: 0;
+  font-size: var(--font-size-lg);
+}
+
+.confirm-dialog-body p {
+  margin: 0;
+  color: var(--text-secondary);
+  font-size: var(--font-size-sm);
+  line-height: 1.45;
+}
+
+.confirm-dialog-actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: var(--space-2);
+}
+
+.confirm-dialog-destructive {
+  color: var(--text-error-strong);
+}

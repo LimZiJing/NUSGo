@@ -185,7 +185,6 @@ describe('CommunityWaypointSubmissionForm', () => {
       kind: 'correction',
       waypointId: waypoint.id,
       requestedChange: 'The cooler has moved upstairs.',
-      category: waypoint.category,
       longitude: waypoint.coordinate.longitude,
       latitude: waypoint.coordinate.latitude,
       building: waypoint.building,

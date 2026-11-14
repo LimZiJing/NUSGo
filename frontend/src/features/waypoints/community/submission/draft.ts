@@ -3,6 +3,10 @@ import {
   SINGAPORE_COORDINATE_BOUNDS,
   type ActiveCommunityWaypointCategory,
   type CommunityWaypoint,
+  type CommunityWaypointDetailsSuggestion,
+  type CommunityWaypointPrintingService,
+  type CommunityWaypointVendingItem,
+  type CommunityWaypointVendingPrep,
   type CommunityWaypointSubmission,
   type ProposedCommunityWaypointFields,
 } from '@nusgo/shared'
@@ -16,6 +20,13 @@ export interface SubmissionDraft {
   readonly otherFloor: string
   readonly explanation: string
   readonly requestedChange: string
+  readonly services: readonly CommunityWaypointPrintingService[]
+  readonly colour: '' | 'yes' | 'no'
+  readonly grayscalePricePerPage: string
+  readonly colourPricePerPage: string
+  readonly items: readonly CommunityWaypointVendingItem[]
+  readonly prep: readonly CommunityWaypointVendingPrep[]
+  readonly detailsTouched: boolean
 }
 
 export type SubmissionField = keyof SubmissionDraft | 'coordinate'
@@ -30,12 +41,19 @@ export function initialSubmissionDraft(
   initialCategory: ActiveCommunityWaypointCategory | null = null,
 ): SubmissionDraft {
   return {
-    category: waypoint?.category ?? initialCategory ?? '',
+    category: waypoint ? '' : initialCategory ?? '',
     building: waypoint?.building ?? '',
     floor: waypoint?.floor === undefined ? '' : String(waypoint.floor),
     otherFloor: '',
     explanation: '',
     requestedChange: '',
+    services: waypoint?.services ?? [],
+    colour: waypoint?.colour === undefined ? '' : waypoint.colour ? 'yes' : 'no',
+    grayscalePricePerPage: priceCentsToDraft(waypoint?.grayscalePriceCentsPerPage),
+    colourPricePerPage: priceCentsToDraft(waypoint?.colourPriceCentsPerPage),
+    items: waypoint?.items ?? [],
+    prep: waypoint?.prep ?? [],
+    detailsTouched: false,
   }
 }
 
@@ -53,6 +71,18 @@ export function validateSubmissionDraft(
   if (textExceedsLimit(draft.explanation, 1_000)) errors.explanation = 'Keep the note within 1,000 characters.'
   if (textExceedsLimit(draft.requestedChange, 1_000)) errors.requestedChange = 'Keep the reason within 1,000 characters.'
   if (waypoint && !draft.requestedChange.trim()) errors.requestedChange = 'Explain what needs correcting.'
+
+  if (draft.detailsTouched && getDetailsCategory(draft, waypoint) === 'printing') {
+    if (!isValidPriceDraft(draft.grayscalePricePerPage)) {
+      errors.grayscalePricePerPage = 'Enter a price with up to 2 decimal places.'
+    }
+    if (!isValidPriceDraft(draft.colourPricePerPage)) {
+      errors.colourPricePerPage = 'Enter a price with up to 2 decimal places.'
+    }
+    if (draft.colour !== 'yes' && draft.colourPricePerPage.trim()) {
+      errors.colourPricePerPage = 'Add a colour price only when Colour is Yes.'
+    }
+  }
 
   const floorValue = getFloorInputValue(draft)
   if (
@@ -81,6 +111,7 @@ export function createSubmission(
     ...(optionalText(draft.building) ? { building: draft.building.trim() } : {}),
     ...(floorValue.trim() ? { floor: Number(floorValue) } : {}),
   }
+  const suggestedDetails = createSuggestedDetails(draft, waypoint)
 
   if (waypoint) {
     return {
@@ -91,6 +122,7 @@ export function createSubmission(
       longitude: coordinate.longitude,
       latitude: coordinate.latitude,
       ...optionalFields,
+      ...(suggestedDetails === undefined ? {} : { suggestedDetails }),
     }
   }
 
@@ -100,6 +132,9 @@ export function createSubmission(
     longitude: coordinate.longitude,
     latitude: coordinate.latitude,
     ...optionalFields,
+    ...(suggestedDetails === undefined || !hasSubmittedDetails(suggestedDetails)
+      ? {}
+      : { suggestedDetails }),
     ...(optionalText(draft.explanation) ? { explanation: draft.explanation.trim() } : {}),
   }
 }
@@ -125,4 +160,56 @@ function optionalText(value: string): string | undefined {
 
 function textExceedsLimit(value: string, limit: number): boolean {
   return [...value.trim()].length > limit
+}
+
+export function priceCentsToDraft(value: number | undefined): string {
+  return value === undefined ? '' : (value / 100).toFixed(2)
+}
+
+export function getDetailsCategory(
+  draft: SubmissionDraft,
+  waypoint: CommunityWaypoint | null,
+): 'printing' | 'vending_machine' | undefined {
+  const category = draft.category || waypoint?.category
+  return category === 'printing' || category === 'vending_machine' ? category : undefined
+}
+
+export function priceDraftToCents(value: string): number | null {
+  if (!value.trim()) return null
+  const [whole = '', fraction = ''] = value.split('.')
+  return Number(whole) * 100 + Number((fraction + '00').slice(0, 2))
+}
+
+export function isValidPriceDraft(value: string): boolean {
+  if (!value.trim()) return true
+  if (!/^\d+(?:\.\d{1,2})?$/.test(value.trim())) return false
+  return Number.isSafeInteger(priceDraftToCents(value))
+}
+
+function createSuggestedDetails(
+  draft: SubmissionDraft,
+  waypoint: CommunityWaypoint | null,
+): CommunityWaypointDetailsSuggestion | undefined {
+  const category = getDetailsCategory(draft, waypoint)
+  if (!draft.detailsTouched || category === undefined) return undefined
+
+  if (category === 'printing') {
+    return {
+      category,
+      services: draft.services,
+      colour: draft.colour === 'yes' ? true : draft.colour === 'no' ? false : null,
+      grayscalePriceCentsPerPage: priceDraftToCents(draft.grayscalePricePerPage),
+      colourPriceCentsPerPage: draft.colour === 'yes' ? priceDraftToCents(draft.colourPricePerPage) : null,
+    }
+  }
+
+  return { category, items: draft.items, prep: draft.prep }
+}
+
+function hasSubmittedDetails(details: CommunityWaypointDetailsSuggestion): boolean {
+  if (details.category === 'printing') {
+    return details.services.length > 0 || details.colour !== null ||
+      details.grayscalePriceCentsPerPage !== null || details.colourPriceCentsPerPage !== null
+  }
+  return details.items.length > 0 || details.prep.length > 0
 }

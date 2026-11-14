@@ -128,6 +128,14 @@
 
   .mobile-sheet-popup.more-panel-surface[data-page='release-notes'] .mobile-sheet-handle-row { display: none; }
 
+  .mobile-sheet-popup.more-panel-surface[data-page][data-detent] .mobile-sheet-handle-row {
+    display: flex;
+  }
+
+  .mobile-sheet-popup.more-panel-surface[data-page][data-detent='collapsed'] .more-panel-body {
+    display: none;
+  }
+
   .mobile-sheet-popup.more-panel-surface[data-page='settings'] .more-panel-header,
   .mobile-sheet-popup.more-panel-surface[data-page='waypoints'] .more-panel-header,
   .mobile-sheet-popup.more-panel-surface[data-page='creating'] .more-panel-header {

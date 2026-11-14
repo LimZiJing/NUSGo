@@ -542,7 +542,7 @@
     color: var(--text-muted);
   }
 
-@media (max-width: 768px) {
+@media (width <= 640px), (width <= 768px) and (height > 420px) {
   .navigation-panel.stops-sheet {
     border: 1px solid var(--border-subtle);
     border-bottom: 0;
@@ -577,7 +577,7 @@
 
 }
 
-@media (min-width: 769px) {
+@media (width > 768px), (width > 640px) and (height <= 420px) {
   .navigation-column .stops-content {
     display: flex;
     width: 100%;

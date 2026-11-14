@@ -29,7 +29,7 @@ Run it against a local production build (`npm run build` followed by `npm run pr
 
 ## Mobile — 390 × 844
 
-- [ ] Explore, Stops, Plan, and More open at the shared partial detent, with the sheet occupying 50% of the visual viewport above the bottom navigation. Verify More at 360 × 740, 375 × 812, and 414 × 896; its content remains usable and scrollable, the map and bottom navigation remain usable, and Settings and My waypoints open full-height. Desktop presentation is unchanged above 768px.
+- [ ] Explore, Stops, Plan, and More open at the shared partial detent, with the sheet occupying 50% of the visual viewport above the bottom navigation. Verify More at 360 × 740, 375 × 812, and 414 × 896; its content remains usable and scrollable, the map and bottom navigation remain usable, and Settings and My waypoints open full-height. Desktop presentation applies above 768px and when width exceeds 640px while height is 420px or less, regardless of pointer type.
 - [ ] Explore, Stops, and Plan tabs remain visible while the sheet is partial or collapsed. Full reaches the top and bottom of the viewport and covers the tab bar; collapsed leaves the 44px handle above it.
 - [ ] Switching tabs reaches each sheet's remembered detent immediately, without briefly opening full, and preserves the map camera and trip endpoints.
 - [ ] The handle works by tap, Enter, and Space (partial and full toggle; collapsed opens partial), and Up and Down Arrow move one detent, including full to partial. Swiping the handle or blank sheet whitespace tracks the touch smoothly and settles at a snap point; cancelling a swipe does not cause a second tap action.
@@ -41,9 +41,13 @@ Run it against a local production build (`npm run build` followed by `npm run pr
 - [ ] The single mobile location button stays inside the top-left safe area, clear of other map controls and the sheet while the map is exposed; in Plan it remains available when collapsed or partial and hides when full. Pointer and keyboard activation focus the active or first device fix; when no active fix is available, the map falls back to Kent Ridge MRT at zoom 15 before requesting or retrying location. Location updates alone do not move the camera.
 - [ ] Basemap attribution appears just above the mobile sheet during the five-second startup display, then disappears. The About section retains its source links.
 
-## Responsive boundary — 768 / 769px
+## Responsive boundaries — 640 / 768px and 420px
 
-- [ ] Resizing across the breakpoint without reloading switches between mobile and desktop layouts correctly.
+- [ ] Resizing across layout boundaries without reloading switches between mobile and desktop layouts correctly. Check fractional CSS sizes around 640px wide and 420px high so every size receives exactly one layout.
+- [ ] At 812 × 375, 900 × 420 and 740 × 360, the app uses the desktop side panel and keeps the map visible beside it, with fine or coarse pointer input. At 640 × 360 it uses mobile sheets; at 740 × 421 it uses mobile sheets; at 812 × 421 it uses the desktop side panel.
+- [ ] At 740 × 360, show and hide the mobile browser toolbar; the desktop panel tabs remain inside the visible viewport.
+- [ ] Rotate between 812 × 375 and 375 × 812 without reloading. Explore, Stops and Plan retain their selected state, sheet detents, journey endpoints and map centre.
+- [ ] At 130% text zoom, repeat the Explore, Stops and Plan reachability and scrolling checks in short landscape and portrait.
 - [ ] No overlay covers another control, traps focus, or makes the map unavailable.
 
 ## More menu and PWA installation

@@ -1,10 +1,27 @@
-import { describe, expect, it } from 'vitest'
+import { describe, expect, it, vi } from 'vitest'
+import { MOBILE_LAYOUT_MEDIA_QUERY } from '../../domain/layout-breakpoint'
 import {
   createInitialNavigationState,
+  getIsMobileViewport,
   navigationReducer,
 } from './navigation-state'
 
 describe('shared view navigation', () => {
+  it('uses the shared responsive media query to classify the current viewport', () => {
+    const matchMedia = vi.fn().mockReturnValue({ matches: true })
+    vi.stubGlobal('window', { matchMedia })
+
+    try {
+      expect(getIsMobileViewport()).toBe(true)
+      expect(matchMedia).toHaveBeenCalledWith(MOBILE_LAYOUT_MEDIA_QUERY)
+
+      matchMedia.mockReturnValue({ matches: false })
+      expect(getIsMobileViewport()).toBe(false)
+    } finally {
+      vi.unstubAllGlobals()
+    }
+  })
+
   it('starts every view at the partial mobile detent with Stops active', () => {
     expect(createInitialNavigationState()).toEqual({
       activeView: 'stops',

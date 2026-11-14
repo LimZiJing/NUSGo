@@ -169,7 +169,7 @@
     0 -6px 22px -12px color-mix(in srgb, var(--rainroom-lamplight) 36%, transparent);
 }
 
-@media (max-width: 768px) {
+@media (width <= 640px), (width <= 768px) and (height > 420px) {
   :root[data-theme='rainroom'] .navigation-panel.mobile-sheet-popup {
     background-image:
       radial-gradient(
@@ -201,7 +201,7 @@
   }
 }
 
-@media (min-width: 769px) {
+@media (width > 768px), (width > 640px) and (height <= 420px) {
   :root[data-theme='rainroom'] .navigation-column {
     border-right-color: color-mix(
       in srgb,

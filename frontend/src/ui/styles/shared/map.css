@@ -87,7 +87,7 @@
   pointer-events: none;
 }
 
-@media (min-width: 769px) {
+@media (width > 768px), (width > 640px) and (height <= 420px) {
   .map-control-stack {
     right: auto;
     left: 12px;

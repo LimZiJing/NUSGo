@@ -2,7 +2,7 @@
   pointer-events: auto;
 }
 
-@media (min-width: 769px) {
+@media (width > 768px), (width > 640px) and (height <= 420px) {
   .map-control-stack > .journey-test-time-control {
     grid-area: test;
     justify-self: start;
@@ -84,7 +84,7 @@
   flex: 1 1 auto;
 }
 
-@media (max-width: 768px) {
+@media (width <= 640px), (width <= 768px) and (height > 420px) {
   .map-control-stack > .journey-test-time-control {
     position: absolute;
     z-index: 14;

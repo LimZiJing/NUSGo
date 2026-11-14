@@ -3,22 +3,18 @@ import { dirname, join, relative, resolve } from 'node:path'
 import { fileURLToPath } from 'node:url'
 import { describe, expect, it } from 'vitest'
 import {
-  DESKTOP_LAYOUT_MIN_WIDTH,
   DESKTOP_LAYOUT_MEDIA_QUERY,
-  MOBILE_LAYOUT_MAX_WIDTH,
-  MOBILE_LAYOUT_NARROW_MAX_WIDTH,
   MOBILE_LAYOUT_MEDIA_QUERY,
-  SHORT_LANDSCAPE_MIN_WIDTH,
-  isMobileLayoutWidth,
+  isMobileLayout,
 } from './layout-breakpoint'
 
 const frontendSourceDirectory = resolve(dirname(fileURLToPath(import.meta.url)), '..')
 
 const LAYOUT_FEATURES = new Set([
-  `max-width: ${MOBILE_LAYOUT_MAX_WIDTH}px`,
-  `min-width: ${DESKTOP_LAYOUT_MIN_WIDTH}px`,
-  `max-width: ${MOBILE_LAYOUT_NARROW_MAX_WIDTH}px`,
-  `min-width: ${SHORT_LANDSCAPE_MIN_WIDTH}px`,
+  'width <= 768px',
+  'width > 768px',
+  'width <= 640px',
+  'width > 640px',
 ])
 
 // Component-level breakpoints that are deliberately not the mobile/desktop layout breakpoint.
@@ -28,7 +24,7 @@ const OTHER_BREAKPOINTS = new Set([
 ])
 
 const MEDIA_RULE_PATTERN = /@media\s+([^{]+)\{/g
-const WIDTH_FEATURE_PATTERN = /\((min|max)-width:\s*([^)]+?)\s*\)/g
+const WIDTH_FEATURE_PATTERN = /\((?:(min|max)-width:\s*([^)]+?)|width\s*(<=|<|>=|>)\s*([^)]+?))\)/g
 
 function collectCssFiles(directory: string): string[] {
   return readdirSync(directory, { withFileTypes: true }).flatMap((entry) => {
@@ -44,10 +40,12 @@ function scanMediaQueries(css: string): { query: string; widthFeatures: string[]
   return [...css.matchAll(MEDIA_RULE_PATTERN)].map((rule) => {
     const prelude = rule[1].trim()
     return {
-      query: `@media ${prelude}`,
-      widthFeatures: [...prelude.matchAll(WIDTH_FEATURE_PATTERN)].map(
-        (feature) => `${feature[1]}-width: ${feature[2]}`,
-      ),
+      query: '@media ' + prelude,
+      widthFeatures: [...prelude.matchAll(WIDTH_FEATURE_PATTERN)].map((feature) => (
+        feature[1]
+          ? feature[1] + '-width: ' + feature[2]
+          : 'width ' + feature[3] + ' ' + feature[4]
+      )),
     }
   })
 }
@@ -70,17 +68,28 @@ const allWidthFeatures = cssFiles.flatMap(({ css }) =>
 )
 
 describe('layout breakpoint', () => {
-  it('treats 768px as mobile and 769px as desktop', () => {
-    expect(isMobileLayoutWidth(768)).toBe(true)
-    expect(isMobileLayoutWidth(769)).toBe(false)
+  it('classifies fractional viewport dimensions without a dead zone', () => {
+    const cases: Array<[number, number, boolean]> = [
+      [640, 420, true],
+      [640.5, 420, false],
+      [640.5, 420.5, true],
+      [768, 420, false],
+      [768, 420.5, true],
+      [768.5, 420, false],
+      [768.5, 420.5, false],
+    ]
+
+    for (const [width, height, expectedMobile] of cases) {
+      expect(isMobileLayout(width, height)).toBe(expectedMobile)
+    }
   })
 
   it('exposes matching mobile and desktop media queries for the shared layout mode', () => {
     expect(MOBILE_LAYOUT_MEDIA_QUERY).toBe(
-      '(max-width: 640px), (max-width: 768px) and (min-height: 421px)',
+      '(width <= 640px), (width <= 768px) and (height > 420px)',
     )
     expect(DESKTOP_LAYOUT_MEDIA_QUERY).toBe(
-      '(min-width: 769px), (min-width: 641px) and (max-height: 420px)',
+      '(width > 768px), (width > 640px) and (height <= 420px)',
     )
   })
 
@@ -88,8 +97,8 @@ describe('layout breakpoint', () => {
     const mediaQueries = cssFiles.flatMap(({ file, css }) => (
       scanMediaQueries(css).map(({ query }) => ({ file, query }))
     ))
-    const mobileRules = mediaQueries.filter(({ query }) => query.includes(`max-width: ${MOBILE_LAYOUT_MAX_WIDTH}px`))
-    const desktopRules = mediaQueries.filter(({ query }) => query.includes(`min-width: ${DESKTOP_LAYOUT_MIN_WIDTH}px`))
+    const mobileRules = mediaQueries.filter(({ query }) => query.includes('width <= 768px'))
+    const desktopRules = mediaQueries.filter(({ query }) => query.includes('width > 768px'))
 
     expect(mobileRules.length).toBeGreaterThan(0)
     expect(mobileRules.every(({ query }) => query === `@media ${MOBILE_LAYOUT_MEDIA_QUERY}`)).toBe(true)
@@ -104,7 +113,7 @@ describe('layout breakpoint', () => {
 
   it('finds CSS media queries for both layout features so the scan cannot pass silently', () => {
     expect(cssFiles.length).toBeGreaterThan(0)
-    expect(allWidthFeatures).toContain(`max-width: ${MOBILE_LAYOUT_MAX_WIDTH}px`)
-    expect(allWidthFeatures).toContain(`min-width: ${DESKTOP_LAYOUT_MIN_WIDTH}px`)
+    expect(allWidthFeatures).toContain('width <= 768px')
+    expect(allWidthFeatures).toContain('width > 768px')
   })
 })

@@ -59,8 +59,8 @@ describe('map camera application seams', () => {
 
   it('keeps a usable map gap in short landscape while accounting for both surfaces', () => {
     expect(calculateMapOverlayInsets(measurements({
-      viewportWidth: 812,
-      viewportHeight: 375,
+      viewportWidth: 568,
+      viewportHeight: 320,
       tripCardHeight: 72,
       activeSheetHeight: 150,
     }))).toEqual({

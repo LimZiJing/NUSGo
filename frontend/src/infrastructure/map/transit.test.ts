@@ -300,31 +300,37 @@ describe('transit route camera', () => {
   })
 
   it('uses overlay-aware responsive padding and fits with bounded animation', () => {
-    expect(getTransitRouteFitPadding(1200)).toEqual({
+    expect(getTransitRouteFitPadding(1200, 800)).toEqual({
       top: 112,
       right: 360,
       bottom: 64,
       left: 360,
     })
-    expect(getTransitRouteFitPadding(600)).toEqual({
+    expect(getTransitRouteFitPadding(600, 360)).toEqual({
       top: 280,
       right: 24,
       bottom: 64,
       left: 24,
     })
-    expect(getTransitRouteFitPadding(768)).toEqual({
+    expect(getTransitRouteFitPadding(768, 421)).toEqual({
       top: 280,
       right: 24,
       bottom: 64,
       left: 24,
     })
-    expect(getTransitRouteFitPadding(769)).toEqual({
+    expect(getTransitRouteFitPadding(769, 360)).toEqual({
       top: 112,
       right: 231,
       bottom: 64,
       left: 231,
     })
-    expect(getTransitRouteFitPadding(390, {
+    expect(getTransitRouteFitPadding(740, 360)).toEqual({
+      top: 112,
+      right: 222,
+      bottom: 64,
+      left: 222,
+    })
+    expect(getTransitRouteFitPadding(390, 844, {
       top: 88,
       right: 12,
       bottom: 196,
@@ -335,7 +341,7 @@ describe('transit route camera', () => {
       bottom: 196,
       left: 24,
     })
-    expect(getTransitRouteFitPadding(568, {
+    expect(getTransitRouteFitPadding(568, 320, {
       top: 84,
       right: 12,
       bottom: 162,

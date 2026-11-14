@@ -2,12 +2,13 @@ import { readFileSync } from 'node:fs'
 import { dirname, resolve } from 'node:path'
 import { fileURLToPath } from 'node:url'
 import { describe, expect, it } from 'vitest'
+import { DESKTOP_LAYOUT_MEDIA_QUERY, MOBILE_LAYOUT_MEDIA_QUERY } from '../../../domain/layout-breakpoint'
 
 const stylesDirectory = dirname(fileURLToPath(import.meta.url))
 const styles = readFileSync(resolve(stylesDirectory, 'stops-content.css'), 'utf8')
 
-const desktopBlock = styles.slice(styles.indexOf('@media (min-width: 769px)'))
-const mobileBlock = styles.slice(styles.indexOf('@media (max-width: 640px)'), styles.indexOf('@media (min-width: 769px)'))
+const desktopBlock = styles.slice(styles.indexOf('@media ' + DESKTOP_LAYOUT_MEDIA_QUERY))
+const mobileBlock = styles.slice(styles.indexOf('@media ' + MOBILE_LAYOUT_MEDIA_QUERY), styles.indexOf('@media ' + DESKTOP_LAYOUT_MEDIA_QUERY))
 const rule = (block: string, selector: string) => {
   const match = block.match(new RegExp(`${selector.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')}\\s*{([^}]*)}`, 's'))
   return match?.[1] ?? ''

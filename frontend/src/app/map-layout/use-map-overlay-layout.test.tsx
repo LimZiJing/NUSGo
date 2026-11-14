@@ -292,12 +292,12 @@ describe('useMapOverlayLayout', () => {
     expect(setViewportInsets).toHaveBeenCalledTimes(2)
   })
 
-  it('uses mobile inset measurements for a short wide viewport in mobile layout mode', () => {
+  it('uses mobile inset measurements for a short narrow viewport in mobile layout mode', () => {
     vi.stubGlobal('getComputedStyle', () => ({
       getPropertyValue: (name: string) => name === '--mobile-sheet-collapsed-height' ? '44px' : '',
     }))
-    vi.stubGlobal('innerHeight', 375)
-    vi.stubGlobal('innerWidth', 812)
+    vi.stubGlobal('innerHeight', 320)
+    vi.stubGlobal('innerWidth', 568)
     vi.stubGlobal('visualViewport', undefined)
     vi.stubGlobal('ResizeObserver', class {
       observe = vi.fn()
@@ -317,7 +317,7 @@ describe('useMapOverlayLayout', () => {
     expect(setViewportInsets).toHaveBeenLastCalledWith({
       top: 0,
       right: 12,
-      bottom: 264,
+      bottom: 236,
       left: 12,
     })
   })

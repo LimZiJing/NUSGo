@@ -101,15 +101,22 @@ export type { Waypoint, WaypointCoordinate } from './waypoints/waypoint.ts'
 export { SINGAPORE_COORDINATE_BOUNDS } from './waypoints/coordinate-bounds.ts'
 export {
   COMMUNITY_WAYPOINT_CATEGORIES,
+  COMMUNITY_WAYPOINT_PRINTING_SERVICES,
   COMMUNITY_WAYPOINT_READABLE_CATEGORIES,
   COMMUNITY_WAYPOINT_TEXT_LIMITS,
   RETIRED_COMMUNITY_WAYPOINT_CATEGORIES,
+  COMMUNITY_WAYPOINT_VENDING_ITEMS,
+  COMMUNITY_WAYPOINT_VENDING_PREP_OPTIONS,
 } from './waypoints/community.ts'
 export type {
   ActiveCommunityWaypointCategory,
   CommunityWaypoint,
   CommunityWaypointCategory,
+  CommunityWaypointDetailsSuggestion,
   CommunityWaypointId,
+  CommunityWaypointPrintingService,
+  CommunityWaypointVendingItem,
+  CommunityWaypointVendingPrep,
 } from './waypoints/community.ts'
 export type {
   CommunityWaypointSubmission,

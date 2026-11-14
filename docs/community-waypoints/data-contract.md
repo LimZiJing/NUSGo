@@ -36,7 +36,7 @@ Keep fields flat in `properties` so they remain ordinary columns in GIS tools. `
 | `grayscalePriceCentsPerPage` | No | Non-negative integer SGD cents per page; printing only. |
 | `colourPriceCentsPerPage` | No | Non-negative integer SGD cents per page; printing only, and only when `colour` is `true`. |
 | `items` | No | Non-empty array of unique `drinks`, `snacks`, `meals`, `supplies`, and/or `desserts` values; vending machines only. |
-| `prep` | No | Non-empty array of unique `made-to-order`, `pre-packaged`, and/or `microwaved` values; vending machines only. |
+| `prep` | No | Non-empty array of unique `made-live`, `pre-packaged`, and/or `microwaved` values; vending machines only. |
 
 Text is trimmed at the parser boundary and length limits count Unicode code points. Optional fields may be omitted or set to `null`; the parsed model omits empty optional values. The round-trip fixture uses `null` for empty optional columns so GIS tools can retain a fixed set of fields. Empty arrays are invalid; omit the property or use `null` when no reviewed values are available. Category-specific properties are rejected on other categories.
 

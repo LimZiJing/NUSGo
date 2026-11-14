@@ -21,7 +21,7 @@ export const COMMUNITY_WAYPOINT_VENDING_ITEMS = [
 ] as const
 
 export const COMMUNITY_WAYPOINT_VENDING_PREP_OPTIONS = [
-  { value: 'made-to-order', label: 'Made to order' },
+  { value: 'made-live', label: 'Made live' },
   { value: 'pre-packaged', label: 'Pre-packaged' },
   { value: 'microwaved', label: 'Microwaved' },
 ] as const
@@ -45,18 +45,6 @@ export type CommunityWaypointId = `cw-${string}`
 export type CommunityWaypointPrintingService = typeof COMMUNITY_WAYPOINT_PRINTING_SERVICES[number]['value']
 export type CommunityWaypointVendingItem = typeof COMMUNITY_WAYPOINT_VENDING_ITEMS[number]['value']
 export type CommunityWaypointVendingPrep = typeof COMMUNITY_WAYPOINT_VENDING_PREP_OPTIONS[number]['value']
-
-export interface PrintingCommunityWaypointDetails {
-  readonly services?: readonly CommunityWaypointPrintingService[]
-  readonly colour?: boolean
-  readonly grayscalePriceCentsPerPage?: number
-  readonly colourPriceCentsPerPage?: number
-}
-
-export interface VendingCommunityWaypointDetails {
-  readonly items?: readonly CommunityWaypointVendingItem[]
-  readonly prep?: readonly CommunityWaypointVendingPrep[]
-}
 
 /** Complete, unverified category-specific details supplied for reviewer approval. */
 export type CommunityWaypointDetailsSuggestion =

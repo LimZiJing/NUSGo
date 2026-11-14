@@ -207,6 +207,293 @@
   resize: vertical;
 }
 
+.community-waypoint-more-details {
+  display: grid;
+  gap: 0;
+  padding: 0;
+  border: 1px solid var(--border-card);
+  border-radius: var(--radius-card);
+  background: var(--surface-card);
+  container: community-waypoint-details / inline-size;
+}
+
+.community-waypoint-more-details > summary {
+  display: flex;
+  align-items: center;
+  box-sizing: border-box;
+  min-height: var(--control-height-lg);
+  gap: var(--space-1);
+  color: var(--text-primary);
+  font-size: var(--font-size-md);
+  font-weight: 600;
+  line-height: 1.25;
+  list-style: none;
+  padding: var(--space-2) var(--space-3);
+  border-bottom: 1px solid transparent;
+  cursor: pointer;
+}
+
+.community-waypoint-more-details > summary::-webkit-details-marker { display: none; }
+
+.community-waypoint-more-details > summary::after {
+  width: 7px;
+  height: 7px;
+  margin-left: auto;
+  border-right: 1.5px solid var(--text-secondary);
+  border-bottom: 1.5px solid var(--text-secondary);
+  content: '';
+  transform: rotate(45deg) translateY(-2px);
+  transition: transform 140ms ease;
+}
+
+.community-waypoint-more-details[open] > summary::after {
+  transform: rotate(225deg) translate(-2px, -1px);
+}
+
+.community-waypoint-more-details[open] > summary {
+  border-bottom-color: var(--border-card);
+}
+
+.community-waypoint-more-details > summary span + span {
+  color: var(--text-muted);
+  font-size: var(--font-size-md);
+  font-weight: 400;
+}
+
+.community-waypoint-more-details > summary:focus-visible {
+  outline: var(--focus-outline);
+  outline-offset: var(--focus-ring-offset);
+}
+
+.community-waypoint-details-fields {
+  display: grid;
+  gap: 0;
+  min-width: 0;
+  padding-inline: var(--space-3);
+}
+
+.community-waypoint-details-row {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr);
+  align-items: start;
+  gap: var(--space-2);
+  min-width: 0;
+  padding: var(--space-3) 0;
+  border-top: 1px solid var(--border-card);
+}
+
+.community-waypoint-details-row:first-child {
+  padding-top: var(--space-3);
+  border-top: 0;
+}
+
+.community-waypoint-details-row-label {
+  color: var(--text-primary);
+  font-size: var(--font-size-md);
+  font-weight: 600;
+}
+
+.community-waypoint-details-control-group,
+.community-waypoint-details-price-fields {
+  min-width: 0;
+  margin: 0;
+  padding: 0;
+  border: 0;
+}
+
+.community-waypoint-details-option-list {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--space-1) var(--space-2);
+}
+
+.community-waypoint-details-option {
+  display: inline-flex;
+  min-height: var(--control-height-md);
+  align-items: center;
+  gap: var(--space-2);
+  box-sizing: border-box;
+  padding: 0 var(--space-2);
+  border: 1px solid var(--border-control);
+  border-radius: var(--radius-control);
+  color: var(--text-primary);
+  background: var(--surface-raised);
+  font-size: var(--font-size-md);
+  cursor: pointer;
+}
+
+.community-waypoint-details-option--with-icon {
+  gap: var(--space-1);
+  padding-inline: var(--space-1);
+}
+
+.community-waypoint-details-fields--vending .community-waypoint-details-row:has(.community-waypoint-details-option--with-icon) .community-waypoint-details-option-list {
+  column-gap: var(--space-1);
+}
+
+.community-waypoint-details-option:hover {
+  border-color: var(--text-secondary);
+}
+
+.community-waypoint-details-checkbox,
+.community-waypoint-details-radio {
+  display: grid;
+  width: 16px;
+  height: 16px;
+  flex: 0 0 16px;
+  place-items: center;
+  box-sizing: border-box;
+  border: 1px solid var(--border-control);
+  color: var(--accent-contrast);
+  background: var(--surface-card);
+}
+
+.community-waypoint-details-checkbox { border-radius: 4px; }
+.community-waypoint-details-radio { border-radius: 50%; }
+
+.community-waypoint-details-checkbox[data-checked],
+.community-waypoint-details-radio[data-checked] {
+  border-color: var(--accent);
+}
+
+.community-waypoint-details-checkbox[data-checked] {
+  background: var(--accent);
+}
+
+.community-waypoint-details-checkbox-indicator {
+  display: grid;
+  place-items: center;
+  color: var(--accent-contrast);
+}
+
+.community-waypoint-details-radio-indicator {
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: var(--accent);
+}
+
+.community-waypoint-details-option:focus-within {
+  outline: var(--focus-outline);
+  outline-offset: var(--focus-ring-offset);
+}
+
+.community-waypoint-details-option:has(.community-waypoint-details-checkbox[data-checked]),
+.community-waypoint-details-option:has(.community-waypoint-details-radio[data-checked]) {
+  border-color: var(--accent);
+  background: var(--surface-subtle);
+  box-shadow: inset 0 0 0 1px var(--accent);
+}
+
+.community-waypoint-details-option:has(.community-waypoint-details-radio[data-checked]) .community-waypoint-details-radio {
+  background: var(--surface-card);
+}
+
+.community-waypoint-details-option-icon {
+  flex: 0 0 auto;
+  color: var(--text-muted);
+}
+
+.community-waypoint-details-option:has([data-checked]) .community-waypoint-details-option-icon {
+  color: var(--accent);
+}
+
+.community-waypoint-details-clear {
+  min-height: var(--control-height-md);
+  padding: 0 var(--space-1);
+  border: 0;
+  color: var(--text-muted);
+  background: transparent;
+  font: var(--font-size-md)/1.2 var(--sans);
+  text-decoration: underline;
+  text-underline-offset: 2px;
+  cursor: pointer;
+}
+
+.community-waypoint-details-clear:focus-visible {
+  outline: var(--focus-outline);
+  outline-offset: var(--focus-ring-offset);
+}
+
+.community-waypoint-details-clear:hover { color: var(--text-primary); }
+
+.community-waypoint-details-price-fields {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: var(--space-2);
+}
+
+.community-waypoint-details-price-field {
+  display: grid;
+  align-content: start;
+  gap: var(--space-1);
+  min-width: 0;
+}
+
+.community-waypoint-details-price-field > label {
+  color: var(--text-secondary);
+  font-size: var(--font-size-sm);
+  font-weight: 600;
+}
+
+.community-waypoint-details-input {
+  width: 100%;
+  min-width: 0;
+  min-height: var(--control-height-lg);
+  box-sizing: border-box;
+  padding: var(--space-2) var(--space-3);
+  border: 0;
+  color: var(--text-primary);
+  background: transparent;
+  font: var(--font-size-control)/1.3 var(--sans);
+}
+
+.community-waypoint-details-price-input-group {
+  display: grid;
+  grid-template-columns: max-content minmax(0, 1fr);
+  align-items: stretch;
+  min-width: 0;
+  overflow: hidden;
+  border: 1px solid var(--border-control);
+  border-radius: var(--radius-control);
+  background: var(--surface-raised);
+}
+
+.community-waypoint-details-price-input-group:focus-within {
+  border-color: var(--accent);
+  outline: var(--focus-outline);
+  outline-offset: var(--focus-ring-offset);
+}
+
+.community-waypoint-details-price-input-group:has(.community-waypoint-details-input[aria-invalid='true']) {
+  border-color: var(--text-error-strong);
+}
+
+.community-waypoint-details-currency {
+  display: grid;
+  min-width: 0;
+  place-items: center;
+  padding-inline: var(--space-1);
+  border-right: 1px solid var(--border-subtle);
+  color: var(--text-secondary);
+  font: 600 var(--font-size-control)/1.3 var(--sans);
+}
+
+.community-waypoint-details-input:focus-visible {
+  outline: none;
+}
+
+.community-waypoint-details-price-input-group:has(.community-waypoint-details-input:disabled) {
+  color: var(--text-muted);
+  background: var(--surface-muted);
+}
+
+.community-waypoint-details-input:disabled {
+  color: var(--text-muted);
+  cursor: not-allowed;
+}
+
 .community-waypoint-field--multiline > .community-waypoint-field-label {
   top: var(--space-4);
   font-size: var(--font-size-xs);
@@ -545,4 +832,18 @@
 @media (max-width: 768px) {
   .community-waypoint-submission-actions { justify-content: stretch; }
   .community-waypoint-submission-actions > .button { flex: 1 1 140px; }
+}
+
+@container community-waypoint-details (max-width: 480px) {
+  .community-waypoint-details-option-list {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    align-items: stretch;
+    gap: var(--space-1);
+  }
+
+  .community-waypoint-details-option {
+    width: 100%;
+    justify-content: flex-start;
+  }
 }

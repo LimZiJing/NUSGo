@@ -1,7 +1,11 @@
 import {
   COMMUNITY_WAYPOINT_CATEGORIES,
+  COMMUNITY_WAYPOINT_PRINTING_SERVICES,
   COMMUNITY_WAYPOINT_TEXT_LIMITS,
+  COMMUNITY_WAYPOINT_VENDING_ITEMS,
+  COMMUNITY_WAYPOINT_VENDING_PREP_OPTIONS,
   type ActiveCommunityWaypointCategory,
+  type CommunityWaypointDetailsSuggestion,
   type CommunityWaypointId,
 } from './community.ts'
 import { SINGAPORE_COORDINATE_BOUNDS } from './coordinate-bounds.ts'
@@ -114,6 +118,79 @@ function readProposedFields(input: Record<string, unknown>): ProposedCommunityWa
   }
 }
 
+function readStringArray<T extends string>(
+  input: Record<string, unknown>,
+  field: string,
+  allowedValues: readonly { readonly value: T }[],
+): readonly T[] {
+  const value = input[field]
+  if (!Array.isArray(value)) invalid(field + ' must be a list')
+  const allowed = new Set<string>(allowedValues.map(({ value: option }) => option))
+  const result: T[] = []
+  for (const item of value) {
+    if (typeof item !== 'string' || !allowed.has(item)) invalid(field + ' contains an unsupported value')
+    if (result.includes(item as T)) invalid(field + ' must not contain duplicates')
+    result.push(item as T)
+  }
+  return result
+}
+
+function readOptionalBoolean(input: Record<string, unknown>, field: string): boolean | null {
+  const value = input[field]
+  if (value !== null && typeof value !== 'boolean') invalid(field + ' must be true, false, or null')
+  return value
+}
+
+function readOptionalPrice(input: Record<string, unknown>, field: string): number | null {
+  const value = input[field]
+  if (value !== null && (typeof value !== 'number' || !Number.isSafeInteger(value) || value < 0)) {
+    invalid(field + ' must be a non-negative integer number of cents, or null')
+  }
+  return value
+}
+
+function readSuggestedDetails(
+  input: unknown,
+  expectedCategory?: ActiveCommunityWaypointCategory,
+): CommunityWaypointDetailsSuggestion {
+  if (!isRecord(input)) invalid('suggestedDetails must be an object')
+  const category = requiredCategory(input)
+  if (expectedCategory !== undefined && category !== expectedCategory) {
+    invalid('suggestedDetails category must match the proposed category')
+  }
+
+  if (category === 'printing') {
+    assertAllowedFields(input, new Set([
+      'category', 'services', 'colour', 'grayscalePriceCentsPerPage', 'colourPriceCentsPerPage',
+    ]))
+    const services = readStringArray(input, 'services', COMMUNITY_WAYPOINT_PRINTING_SERVICES)
+    const colour = readOptionalBoolean(input, 'colour')
+    const grayscalePriceCentsPerPage = readOptionalPrice(input, 'grayscalePriceCentsPerPage')
+    const colourPriceCentsPerPage = readOptionalPrice(input, 'colourPriceCentsPerPage')
+    if (colour !== true && colourPriceCentsPerPage !== null) {
+      invalid('colourPriceCentsPerPage requires colour to be true')
+    }
+    return {
+      category,
+      services,
+      colour,
+      grayscalePriceCentsPerPage,
+      colourPriceCentsPerPage,
+    }
+  }
+
+  if (category === 'vending_machine') {
+    assertAllowedFields(input, new Set(['category', 'items', 'prep']))
+    return {
+      category,
+      items: readStringArray(input, 'items', COMMUNITY_WAYPOINT_VENDING_ITEMS),
+      prep: readStringArray(input, 'prep', COMMUNITY_WAYPOINT_VENDING_PREP_OPTIONS),
+    }
+  }
+
+  invalid('suggestedDetails is only supported for printing and vending machine waypoints')
+}
+
 function readWaypointId(input: Record<string, unknown>): CommunityWaypointId {
   const waypointId = requiredText(input, 'waypointId', 64)
   if (!WAYPOINT_ID_PATTERN.test(waypointId)) invalid('waypointId must be a Community Waypoint ID')
@@ -121,11 +198,11 @@ function readWaypointId(input: Record<string, unknown>): CommunityWaypointId {
 }
 
 const NEW_PLACE_FIELDS = new Set([
-  'kind', 'category', 'longitude', 'latitude', 'building', 'floor', 'explanation',
+  'kind', 'category', 'longitude', 'latitude', 'building', 'floor', 'explanation', 'suggestedDetails',
 ])
 const CORRECTION_FIELDS = new Set([
   'kind', 'waypointId', 'requestedChange', 'category', 'longitude',
-  'latitude', 'building', 'floor',
+  'latitude', 'building', 'floor', 'suggestedDetails',
 ])
 const REMOVAL_FIELDS = new Set(['kind', 'waypointId', 'reason'])
 
@@ -139,6 +216,9 @@ export function parseCommunityWaypointSubmission(input: unknown): CommunityWaypo
     const category = requiredCategory(input)
     const coordinates = readCoordinates(input, true)!
     const explanation = optionalText(input, 'explanation', EXPLANATION_LIMIT)
+    const suggestedDetails = Object.prototype.hasOwnProperty.call(input, 'suggestedDetails')
+      ? readSuggestedDetails(input.suggestedDetails, category)
+      : undefined
     return {
       kind,
       category,
@@ -146,6 +226,7 @@ export function parseCommunityWaypointSubmission(input: unknown): CommunityWaypo
       ...(fields.building === undefined ? {} : { building: fields.building }),
       ...(fields.floor === undefined ? {} : { floor: fields.floor }),
       ...(explanation === undefined ? {} : { explanation }),
+      ...(suggestedDetails === undefined ? {} : { suggestedDetails }),
     }
   }
 
@@ -153,7 +234,17 @@ export function parseCommunityWaypointSubmission(input: unknown): CommunityWaypo
     assertAllowedFields(input, CORRECTION_FIELDS)
     const waypointId = readWaypointId(input)
     const requestedChange = requiredText(input, 'requestedChange', EXPLANATION_LIMIT)
-    return { kind, waypointId, requestedChange, ...readProposedFields(input) }
+    const fields = readProposedFields(input)
+    const suggestedDetails = Object.prototype.hasOwnProperty.call(input, 'suggestedDetails')
+      ? readSuggestedDetails(input.suggestedDetails, fields.category)
+      : undefined
+    return {
+      kind,
+      waypointId,
+      requestedChange,
+      ...fields,
+      ...(suggestedDetails === undefined ? {} : { suggestedDetails }),
+    }
   }
 
   if (kind === 'removal') {

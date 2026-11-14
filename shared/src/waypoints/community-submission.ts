@@ -1,4 +1,8 @@
-import type { ActiveCommunityWaypointCategory, CommunityWaypointId } from './community.ts'
+import type {
+  ActiveCommunityWaypointCategory,
+  CommunityWaypointDetailsSuggestion,
+  CommunityWaypointId,
+} from './community.ts'
 
 export interface ProposedCommunityWaypointFields {
   readonly category?: ActiveCommunityWaypointCategory
@@ -15,11 +19,13 @@ export type CommunityWaypointSubmission =
       readonly longitude: number
       readonly latitude: number
       readonly explanation?: string
+      readonly suggestedDetails?: CommunityWaypointDetailsSuggestion
     } & Omit<ProposedCommunityWaypointFields, 'category' | 'longitude' | 'latitude'>)
   | ({
       readonly kind: 'correction'
       readonly waypointId: CommunityWaypointId
       readonly requestedChange: string
+      readonly suggestedDetails?: CommunityWaypointDetailsSuggestion
     } & ProposedCommunityWaypointFields)
   | {
       readonly kind: 'removal'

@@ -31,12 +31,20 @@ Keep fields flat in `properties` so they remain ordinary columns in GIS tools. `
 | `building` | No | Reviewed building name as plain text, 1–80 characters. It is not a venue ID or link. |
 | `floor` | No | Signed integer using the glossary meaning: below ground is negative, ground is zero, and above ground is positive. |
 | `details` | No | Maintainer-written public display text, 1–500 characters. Include only a fact verified during review. Never copy submitter explanations or other private issue text into this field. |
+| `services` | No | Non-empty array of unique `print` and/or `photocopy` values; printing only. |
+| `colour` | No | Boolean for whether colour service is available; printing only. |
+| `grayscalePriceCentsPerPage` | No | Non-negative integer SGD cents per page; printing only. |
+| `colourPriceCentsPerPage` | No | Non-negative integer SGD cents per page; printing only, and only when `colour` is `true`. |
+| `items` | No | Non-empty array of unique `drinks`, `snacks`, `meals`, `supplies`, and/or `desserts` values; vending machines only. |
+| `prep` | No | Non-empty array of unique `made-live`, `pre-packaged`, and/or `microwaved` values; vending machines only. |
 
-Text is trimmed at the parser boundary and length limits count Unicode code points. Optional fields may be omitted or set to `null`; the parsed model omits empty optional values. The round-trip fixture uses `null` for empty optional columns so GIS tools can retain a fixed set of fields.
+Text is trimmed at the parser boundary and length limits count Unicode code points. Optional fields may be omitted or set to `null`; the parsed model omits empty optional values. The round-trip fixture uses `null` for empty optional columns so GIS tools can retain a fixed set of fields. Empty arrays are invalid; omit the property or use `null` when no reviewed values are available. Category-specific properties are rejected on other categories.
 
 The initial category labels are **Water cooler**, **Printing / photocopying**, **Toilet**, and **Vending machine**. `COMMUNITY_WAYPOINT_CATEGORIES` contains categories available to new submissions. If a category is retired, keep it in the readable retired-category list while published records still use it. Remove it from that list only after those records have been reviewed and migrated.
 
-The app derives `CommunityWaypoint.displayLabel` from the category label and any available building and floor. It displays optional `details` separately in the waypoint detail view; details are not part of the label. The anonymous submission contract does not accept `details`; maintainers may add verified display text while reviewing a public data change. Do not add an `accessibilityNote` or `name` property to public GeoJSON.
+The app derives `CommunityWaypoint.displayLabel` from the category label and any available building and floor. It displays optional `details` text and structured category fields in the waypoint detail view; neither is part of the label. The anonymous submission contract accepts optional `suggestedDetails` as unverified private review data, not as public `details`. Maintainers must verify each value and then copy approved facts into the flat public properties above. Do not add an `accessibilityNote` or `name` property to public GeoJSON.
+
+Submission issues keep the existing schema version 1 envelope and `NUSGO_SUBMISSION_JSON_V1_START` / `NUSGO_SUBMISSION_JSON_V1_END` markers. The private review repository should update its version 1 submission schema to accept optional `suggestedDetails` fields before the updated public endpoint is deployed.
 
 Never publish reporter identity, private submission URLs, review notes, photo IDs, or photo URLs. Photo intake is disabled for the text-only launch; photos are not collected and do not belong in Community Waypoint properties. Public source wording must be clean and must not disclose private submission contents.
 
@@ -50,7 +58,7 @@ Keep moderation metadata in the private submission issue only. That private reco
 
 `parseCommunityWaypointsGeoJson(input)` accepts `unknown` and returns a complete readonly Community Waypoint list. It throws `CommunityWaypointGeoJsonValidationError` with the failing path and reason if the collection, any feature, coordinate, property, category, date, ID, or value is invalid. A bad feature rejects the whole dataset; the parser never silently drops it or returns a partial list.
 
-The allowlist for `properties` is `id`, `category`, `source`, `updatedAt`, `building`, `floor`, and `details`. This prevents display labels, unsupported accessibility claims, and private moderation fields from being carried into the public dataset.
+The allowlist for `properties` is `id`, `category`, `source`, `updatedAt`, `building`, `floor`, `details`, `services`, `colour`, `grayscalePriceCentsPerPage`, `colourPriceCentsPerPage`, `items`, and `prep`. The parser validates each controlled value, rejects duplicates and incompatible category fields, and prevents private moderation fields from being carried into the public dataset.
 
 ## GIS import and export settings
 

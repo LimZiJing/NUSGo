@@ -1,5 +1,8 @@
 import { useLayoutEffect, useRef } from 'react'
 import {
+  COMMUNITY_WAYPOINT_PRINTING_SERVICES,
+  COMMUNITY_WAYPOINT_VENDING_ITEMS,
+  COMMUNITY_WAYPOINT_VENDING_PREP_OPTIONS,
   getCommunityWaypointCategoryLabel,
   getCommunityWaypointFloorLabel,
   type CommunityWaypoint,
@@ -9,6 +12,7 @@ import { BackButton } from '../../../ui/back-button.tsx'
 import { Button } from '../../../ui/button.tsx'
 import { FileTextIcon, MapPinIcon, MapPinPlusIcon } from '../../../ui/icons'
 import { CommunityWaypointCategoryIcon } from './community-waypoint-category-icon'
+import { CommunityWaypointVendingItemIcon } from './community-waypoint-vending-item-icon'
 import type { CommunityWaypointDiscovery } from './use-community-waypoint-discovery'
 import './community-waypoint-panel.css'
 
@@ -29,6 +33,12 @@ function WaypointDetails({
 }) {
   const headingRef = useRef<HTMLHeadingElement>(null)
   const categoryLabel = getCommunityWaypointCategoryLabel(waypoint.category)
+  const hasCategoryDetails = waypoint.category === 'printing'
+    ? (waypoint.services?.length ?? 0) > 0 || waypoint.colour !== undefined ||
+      waypoint.grayscalePriceCentsPerPage !== undefined || waypoint.colourPriceCentsPerPage !== undefined
+    : waypoint.category === 'vending_machine'
+      ? (waypoint.items?.length ?? 0) > 0 || (waypoint.prep?.length ?? 0) > 0
+      : false
 
   useLayoutEffect(() => {
     headingRef.current?.focus()
@@ -63,13 +73,68 @@ function WaypointDetails({
           </div>
         </header>
         <div className="community-waypoint-details-fields">
-          {waypoint.details && (
+          {(waypoint.details || hasCategoryDetails) && (
             <section className="community-waypoint-note" aria-label="Details">
               <h4 className="community-waypoint-note-title">
                 <FileTextIcon size={14} />
                 <span>Details</span>
               </h4>
-              <p>{waypoint.details}</p>
+              {waypoint.details && <p>{waypoint.details}</p>}
+              {waypoint.category === 'printing' && hasCategoryDetails && (
+                <dl className="community-waypoint-facts">
+                  {(waypoint.services?.length ?? 0) > 0 && (
+                    <div>
+                      <dt>Services</dt>
+                      <dd><ul>{waypoint.services?.map((service) => (
+                        <li key={service}>{COMMUNITY_WAYPOINT_PRINTING_SERVICES.find(({ value }) => value === service)?.label ?? service}</li>
+                      ))}</ul></dd>
+                    </div>
+                  )}
+                  {waypoint.colour !== undefined && (
+                    <div><dt>Colour</dt><dd>{waypoint.colour ? 'Yes' : 'No'}</dd></div>
+                  )}
+                  {(waypoint.grayscalePriceCentsPerPage !== undefined || waypoint.colourPriceCentsPerPage !== undefined) && (
+                    <div>
+                      <dt>Price per page</dt>
+                      <dd><ul>
+                        {waypoint.grayscalePriceCentsPerPage !== undefined && (
+                          <li>Grayscale: S${(waypoint.grayscalePriceCentsPerPage / 100).toFixed(2)}</li>
+                        )}
+                        {waypoint.colourPriceCentsPerPage !== undefined && (
+                          <li>Colour: S${(waypoint.colourPriceCentsPerPage / 100).toFixed(2)}</li>
+                        )}
+                      </ul></dd>
+                    </div>
+                  )}
+                </dl>
+              )}
+              {waypoint.category === 'vending_machine' && hasCategoryDetails && (
+                <dl className="community-waypoint-facts">
+                  {(waypoint.items?.length ?? 0) > 0 && (
+                    <div>
+                      <dt>Items</dt>
+                      <dd><ul className="community-waypoint-item-list">{waypoint.items?.map((item) => (
+                        <li key={item}>
+                          <CommunityWaypointVendingItemIcon
+                            className="community-waypoint-item-icon"
+                            item={item}
+                            size={15}
+                          />
+                          <span>{COMMUNITY_WAYPOINT_VENDING_ITEMS.find(({ value }) => value === item)?.label ?? item}</span>
+                        </li>
+                      ))}</ul></dd>
+                    </div>
+                  )}
+                  {(waypoint.prep?.length ?? 0) > 0 && (
+                    <div>
+                      <dt>Prep</dt>
+                      <dd><ul>{waypoint.prep?.map((prep) => (
+                        <li key={prep}>{COMMUNITY_WAYPOINT_VENDING_PREP_OPTIONS.find(({ value }) => value === prep)?.label ?? prep}</li>
+                      ))}</ul></dd>
+                    </div>
+                  )}
+                </dl>
+              )}
             </section>
           )}
           <dl className="community-waypoint-metadata">

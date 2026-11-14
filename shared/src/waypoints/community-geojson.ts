@@ -1,6 +1,9 @@
 import {
   COMMUNITY_WAYPOINT_READABLE_CATEGORIES,
+  COMMUNITY_WAYPOINT_PRINTING_SERVICES,
   COMMUNITY_WAYPOINT_TEXT_LIMITS,
+  COMMUNITY_WAYPOINT_VENDING_ITEMS,
+  COMMUNITY_WAYPOINT_VENDING_PREP_OPTIONS,
   getCommunityWaypointCategoryLabel,
   getCommunityWaypointFloorLabel,
   type CommunityWaypoint,
@@ -22,6 +25,12 @@ const PROPERTY_MEMBERS = new Set([
   'building',
   'floor',
   'details',
+  'services',
+  'colour',
+  'grayscalePriceCentsPerPage',
+  'colourPriceCentsPerPage',
+  'items',
+  'prep',
 ])
 
 export class CommunityWaypointGeoJsonValidationError extends Error {
@@ -74,6 +83,53 @@ function readOptionalString(
     invalid(`${location}.${field}`, `must be at most ${COMMUNITY_WAYPOINT_TEXT_LIMITS[field]} characters`)
   }
   return trimmed
+}
+
+function readOptionalEnumArray<T extends string>(
+  properties: Record<string, unknown>,
+  field: string,
+  allowedValues: readonly { readonly value: T }[],
+  location: string,
+): readonly T[] | undefined {
+  const value = properties[field]
+  if (value === undefined || value === null) return undefined
+  if (!Array.isArray(value) || value.length === 0) {
+    invalid(`${location}.${field}`, 'must be a non-empty list, null, or missing')
+  }
+  const allowed = new Set<string>(allowedValues.map(({ value: option }) => option))
+  const result: T[] = []
+  for (const item of value) {
+    if (typeof item !== 'string' || !allowed.has(item)) {
+      invalid(`${location}.${field}`, 'contains an unsupported value')
+    }
+    if (result.includes(item as T)) invalid(`${location}.${field}`, 'must not contain duplicates')
+    result.push(item as T)
+  }
+  return result
+}
+
+function readOptionalBoolean(
+  properties: Record<string, unknown>,
+  field: string,
+  location: string,
+): boolean | undefined {
+  const value = properties[field]
+  if (value === undefined || value === null) return undefined
+  if (typeof value !== 'boolean') invalid(`${location}.${field}`, 'must be true, false, null, or missing')
+  return value
+}
+
+function readOptionalPriceCents(
+  properties: Record<string, unknown>,
+  field: string,
+  location: string,
+): number | undefined {
+  const value = properties[field]
+  if (value === undefined || value === null) return undefined
+  if (typeof value !== 'number' || !Number.isSafeInteger(value) || value < 0) {
+    invalid(`${location}.${field}`, 'must be a non-negative integer number of cents, null, or missing')
+  }
+  return value
 }
 
 function isCommunityWaypointCategory(value: string): value is CommunityWaypointCategory {
@@ -154,6 +210,47 @@ function parseFeature(input: unknown, index: number): CommunityWaypoint {
   }
   const building = readOptionalString(properties, 'building', `${location}.properties`)
   const details = readOptionalString(properties, 'details', `${location}.properties`)
+  const services = readOptionalEnumArray(
+    properties,
+    'services',
+    COMMUNITY_WAYPOINT_PRINTING_SERVICES,
+    `${location}.properties`,
+  )
+  const colour = readOptionalBoolean(properties, 'colour', `${location}.properties`)
+  const grayscalePriceCentsPerPage = readOptionalPriceCents(
+    properties,
+    'grayscalePriceCentsPerPage',
+    `${location}.properties`,
+  )
+  const colourPriceCentsPerPage = readOptionalPriceCents(
+    properties,
+    'colourPriceCentsPerPage',
+    `${location}.properties`,
+  )
+  const items = readOptionalEnumArray(
+    properties,
+    'items',
+    COMMUNITY_WAYPOINT_VENDING_ITEMS,
+    `${location}.properties`,
+  )
+  const prep = readOptionalEnumArray(
+    properties,
+    'prep',
+    COMMUNITY_WAYPOINT_VENDING_PREP_OPTIONS,
+    `${location}.properties`,
+  )
+  const hasPrintingDetails = services !== undefined || colour !== undefined ||
+    grayscalePriceCentsPerPage !== undefined || colourPriceCentsPerPage !== undefined
+  const hasVendingDetails = items !== undefined || prep !== undefined
+  if (category !== 'printing' && hasPrintingDetails) {
+    invalid(`${location}.properties`, 'printing details are only allowed for printing waypoints')
+  }
+  if (category !== 'vending_machine' && hasVendingDetails) {
+    invalid(`${location}.properties`, 'vending details are only allowed for vending machine waypoints')
+  }
+  if (colour !== true && colourPriceCentsPerPage !== undefined) {
+    invalid(`${location}.properties.colourPriceCentsPerPage`, 'requires colour to be true')
+  }
   const floorValue = properties.floor
   if (
     floorValue !== undefined &&
@@ -183,6 +280,12 @@ function parseFeature(input: unknown, index: number): CommunityWaypoint {
     ...(building === undefined ? {} : { building }),
     ...(floor === undefined ? {} : { floor }),
     ...(details === undefined ? {} : { details }),
+    ...(services === undefined ? {} : { services }),
+    ...(colour === undefined ? {} : { colour }),
+    ...(grayscalePriceCentsPerPage === undefined ? {} : { grayscalePriceCentsPerPage }),
+    ...(colourPriceCentsPerPage === undefined ? {} : { colourPriceCentsPerPage }),
+    ...(items === undefined ? {} : { items }),
+    ...(prep === undefined ? {} : { prep }),
   }
 }
 

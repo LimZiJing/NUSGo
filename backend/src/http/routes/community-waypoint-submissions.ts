@@ -1,5 +1,11 @@
 import type { Express } from 'express'
-import { COMMUNITY_WAYPOINT_CATEGORIES } from '@nusgo/shared/waypoints/community'
+import {
+  COMMUNITY_WAYPOINT_CATEGORIES,
+  COMMUNITY_WAYPOINT_PRINTING_SERVICES,
+  COMMUNITY_WAYPOINT_VENDING_ITEMS,
+  COMMUNITY_WAYPOINT_VENDING_PREP_OPTIONS,
+  type CommunityWaypointDetailsSuggestion,
+} from '@nusgo/shared/waypoints/community'
 import { InvalidCommunityWaypointSubmissionError, parseCommunityWaypointSubmission, type CommunityWaypointSubmission } from '../validation/community-waypoint-submission.ts'
 import { sendApiError } from '../error-response.ts'
 import { createClientRateLimiter } from '../rate-limiter.ts'
@@ -39,6 +45,49 @@ function getCategoryLabel(category: string): string {
   return COMMUNITY_WAYPOINT_CATEGORIES.find(({ value }) => value === category)?.label ?? category
 }
 
+function getOptionLabels<T extends string>(
+  values: readonly T[],
+  options: readonly { readonly value: T; readonly label: string }[],
+): string {
+  return values.map((value) => options.find((option) => option.value === value)?.label ?? value).join(', ')
+}
+
+function formatPriceCents(value: number | null): string {
+  return value === null ? 'Not provided' : `S$${(value / 100).toFixed(2)}`
+}
+
+function getSuggestedDetailsSummary(details: CommunityWaypointDetailsSuggestion): string {
+  if (details.category === 'printing') {
+    return [
+      'Services: ' + (getOptionLabels(details.services, COMMUNITY_WAYPOINT_PRINTING_SERVICES) || 'Not provided'),
+      'Colour: ' + (details.colour === null ? 'Not provided' : details.colour ? 'Yes' : 'No'),
+      'Grayscale: ' + formatPriceCents(details.grayscalePriceCentsPerPage),
+      'Colour: ' + formatPriceCents(details.colourPriceCentsPerPage),
+    ].join('; ')
+  }
+  return [
+    'Items: ' + (getOptionLabels(details.items, COMMUNITY_WAYPOINT_VENDING_ITEMS) || 'Not provided'),
+    'Prep: ' + (getOptionLabels(details.prep, COMMUNITY_WAYPOINT_VENDING_PREP_OPTIONS) || 'Not provided'),
+  ].join('; ')
+}
+
+function getSuggestedDetailsLines(details: CommunityWaypointDetailsSuggestion): readonly string[] {
+  if (details.category === 'printing') {
+    return [
+      formatIssueField('Category', getCategoryLabel(details.category)),
+      formatIssueField('Services', getOptionLabels(details.services, COMMUNITY_WAYPOINT_PRINTING_SERVICES) || 'Not provided'),
+      formatIssueField('Colour', details.colour === null ? 'Not provided' : details.colour ? 'Yes' : 'No'),
+      formatIssueField('Grayscale price per page', formatPriceCents(details.grayscalePriceCentsPerPage)),
+      formatIssueField('Colour price per page', formatPriceCents(details.colourPriceCentsPerPage)),
+    ]
+  }
+  return [
+    formatIssueField('Category', getCategoryLabel(details.category)),
+    formatIssueField('Items', getOptionLabels(details.items, COMMUNITY_WAYPOINT_VENDING_ITEMS) || 'Not provided'),
+    formatIssueField('Prep', getOptionLabels(details.prep, COMMUNITY_WAYPOINT_VENDING_PREP_OPTIONS) || 'Not provided'),
+  ]
+}
+
 function getIssueTitle(submission: CommunityWaypointSubmission): string {
   if (submission.kind === 'new-place') {
     return '[New place] ' + getCategoryLabel(submission.category) + ' waypoint'
@@ -60,6 +109,9 @@ function getSummaryRows(submission: CommunityWaypointSubmission): readonly (read
       ['Location', locationSummary(submission.latitude, submission.longitude)],
       ...(submission.building === undefined ? [] : [['Building', submission.building] as const]),
       ...(submission.floor === undefined ? [] : [['Floor', String(submission.floor)] as const]),
+      ...(submission.suggestedDetails === undefined
+        ? []
+        : [['More details', getSuggestedDetailsSummary(submission.suggestedDetails)] as const]),
     ]
   }
   if (submission.kind === 'correction') {
@@ -72,6 +124,9 @@ function getSummaryRows(submission: CommunityWaypointSubmission): readonly (read
         : [['Proposed location', locationSummary(submission.latitude, submission.longitude)] as const]),
       ...(submission.building === undefined ? [] : [['Proposed building', submission.building] as const]),
       ...(submission.floor === undefined ? [] : [['Proposed floor', String(submission.floor)] as const]),
+      ...(submission.suggestedDetails === undefined
+        ? []
+        : [['More details', getSuggestedDetailsSummary(submission.suggestedDetails)] as const]),
     ]
   }
   return [
@@ -88,6 +143,9 @@ function getSubmissionDetailLines(submission: CommunityWaypointSubmission): read
       formatIssueField('Building or nearby landmark', submission.building ?? 'Not provided'),
       formatIssueField('Floor', submission.floor ?? 'Not provided'),
       formatIssueField('Submitter explanation (unverified)', submission.explanation ?? 'Not provided'),
+      ...(submission.suggestedDetails === undefined
+        ? []
+        : ['', '### More details (unverified)', '', ...getSuggestedDetailsLines(submission.suggestedDetails)]),
     ]
   }
   if (submission.kind === 'correction') {
@@ -103,6 +161,9 @@ function getSubmissionDetailLines(submission: CommunityWaypointSubmission): read
       formatIssueField('Public waypoint ID', submission.waypointId),
       formatIssueField('Requested change (unverified)', submission.requestedChange),
       ...(proposedFields.length === 0 ? [] : ['', '### Proposed field values', '', ...proposedFields]),
+      ...(submission.suggestedDetails === undefined
+        ? []
+        : ['', '### More details (unverified)', '', ...getSuggestedDetailsLines(submission.suggestedDetails)]),
     ]
   }
   return [

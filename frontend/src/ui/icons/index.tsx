@@ -5,6 +5,7 @@ import {
   ArrowUpRight,
   ArrowLeft,
   Armchair,
+  CakeSlice,
   Printer,
   Building2,
   BusFront,
@@ -35,7 +36,9 @@ import {
   MoreHorizontal,
   Navigation,
   Palette,
+  Package,
   Plus,
+  Popcorn,
   Moon,
   RotateCw,
   Route,
@@ -45,6 +48,7 @@ import {
   Sun,
   Toilet,
   TreePine,
+  Utensils,
   X,
 } from 'lucide-react'
 import type { LucideIcon } from 'lucide-react'
@@ -123,8 +127,20 @@ export function CupSodaIcon(props: IconProps) {
   return renderDecorativeIcon(CupSoda, props)
 }
 
+export function CakeSliceIcon(props: IconProps) {
+  return renderDecorativeIcon(CakeSlice, props)
+}
+
 export function DropletsIcon(props: IconProps) {
   return renderDecorativeIcon(Droplets, props)
+}
+
+export function PackageIcon(props: IconProps) {
+  return renderDecorativeIcon(Package, props)
+}
+
+export function PopcornIcon(props: IconProps) {
+  return renderDecorativeIcon(Popcorn, props)
 }
 
 export function CircleDotIcon(props: IconProps) {
@@ -209,6 +225,10 @@ export function SunIcon(props: IconProps) {
 
 export function ToiletIcon(props: IconProps) {
   return renderDecorativeIcon(Toilet, props)
+}
+
+export function UtensilsIcon(props: IconProps) {
+  return renderDecorativeIcon(Utensils, props)
 }
 
 export function TreePineIcon(props: IconProps) {

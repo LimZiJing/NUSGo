@@ -13,6 +13,7 @@ import {
   createSubmission,
   getSubmissionErrorMessage,
   initialSubmissionDraft,
+  priceCentsToDraft,
   validateSubmissionDraft,
   type LocationStatus,
   type SubmissionDraft,
@@ -101,8 +102,42 @@ export function CommunityWaypointSubmissionForm({
     if (status === 'received') receiptHeadingRef.current?.focus()
   }, [status])
 
-  const updateField = (field: keyof SubmissionDraft, value: string): void => {
-    setDraft((current) => ({ ...current, [field]: value }))
+  const updateField = (
+    field: keyof SubmissionDraft,
+    value: SubmissionDraft[keyof SubmissionDraft],
+  ): void => {
+    setDraft((current) => {
+      if (field === 'category' && typeof value === 'string' && current.category !== value) {
+        const selectedCategory = value || waypoint?.category
+        const preserveExisting = waypoint?.category === selectedCategory
+        return {
+          ...current,
+          category: value,
+          services: preserveExisting ? waypoint?.services ?? [] : [],
+          colour: preserveExisting && waypoint?.colour !== undefined
+            ? waypoint.colour ? 'yes' : 'no'
+            : '',
+          grayscalePricePerPage: preserveExisting
+            ? priceCentsToDraft(waypoint?.grayscalePriceCentsPerPage)
+            : '',
+          colourPricePerPage: preserveExisting
+            ? priceCentsToDraft(waypoint?.colourPriceCentsPerPage)
+            : '',
+          items: preserveExisting ? waypoint?.items ?? [] : [],
+          prep: preserveExisting ? waypoint?.prep ?? [] : [],
+          detailsTouched: false,
+        }
+      }
+
+      const isDetailsField = field === 'services' || field === 'colour' ||
+        field === 'grayscalePricePerPage' || field === 'colourPricePerPage' ||
+        field === 'items' || field === 'prep'
+      return {
+        ...current,
+        [field]: value,
+        ...(isDetailsField ? { detailsTouched: true } : {}),
+      } as SubmissionDraft
+    })
     setErrors((current) => {
       const errorField = field === 'otherFloor' ? 'floor' : field
       if (!current[errorField]) return current

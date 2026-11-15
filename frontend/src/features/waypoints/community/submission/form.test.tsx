@@ -56,11 +56,6 @@ function renderForm(overrides: Partial<Parameters<typeof CommunityWaypointSubmis
 }
 
 describe('CommunityWaypointSubmissionForm', () => {
-  it('preselects the category supplied by the category quick-add action', () => {
-    renderForm({ initialCategory: 'printing' })
-
-    expect((screen.getByRole('radio', { name: 'Printing / photocopying' }) as HTMLInputElement).checked).toBe(true)
-  })
   it('validates a Community Waypoint suggestion and shows a private-safe review receipt', async () => {
     const user = userEvent.setup()
     const { props } = renderForm()

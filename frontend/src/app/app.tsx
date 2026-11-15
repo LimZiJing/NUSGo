@@ -1358,7 +1358,6 @@ function App() {
             /> : morePage === 'community-submission' || morePage === 'community-placing' ? (
               <CommunityWaypointSubmissionForm
                 waypoint={communitySubmissionWaypoint}
-                initialCategory={null}
                 coordinate={communitySubmissionCoordinate}
                 locationStatus={communitySubmissionLocationStatus}
                 locationAccuracy={communitySubmissionLocationAccuracy}

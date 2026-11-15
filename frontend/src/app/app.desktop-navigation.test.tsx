@@ -1010,14 +1010,12 @@ describe('More surface', () => {
     const panel = document.querySelector('.more-panel-surface')
     expect(panel?.getAttribute('data-page')).toBe('waypoint-details')
     expect(screen.getByText('Near the garden')).toBeTruthy()
-    // A details screen is allowed one overflow trigger; Navigate stays the only filled action and
-    // Move is visible beside it rather than hidden in that menu.
+    // A details screen is allowed one overflow trigger, and Navigate is its only visible action.
     expect(document.querySelectorAll('.overflow-menu-trigger')).toHaveLength(1)
     const details = document.querySelector('.personal-waypoint-details') as HTMLElement
     expect(within(details).getAllByRole('button')
-      .map((button) => button.getAttribute('aria-label') ?? button.textContent))
-      .toEqual(['Waypoint actions', 'Navigate', 'Move to category'])
-    expect([...details.querySelectorAll('.button[data-variant="primary"]')]).toHaveLength(1)
+      .map((button) => button.textContent || button.getAttribute('aria-label')))
+      .toEqual(['Waypoint actions', 'Navigate'])
 
     await chooseWaypointAction(user, 'Edit waypoint')
     expect(panel?.getAttribute('data-page')).toBe('editing-waypoint')
@@ -1046,63 +1044,6 @@ describe('More surface', () => {
     expect(panel?.getAttribute('data-page')).toBe('waypoints')
     expect(JSON.parse(localStorage.getItem('navus:personal-waypoints:v1') ?? '{}').waypoints).toEqual([])
     confirm.mockRestore()
-  })
-
-  it('moves a place to another category and undoes it from the confirmation', async () => {
-    const storageKey = 'navus:personal-waypoints:v1'
-    const bench = {
-      id: '00000000-0000-4000-8000-000000000001',
-      name: 'Quiet bench',
-      category: 'Rest spot',
-      coordinate: { longitude: 103.78, latitude: 1.29 },
-      createdAt: '2026-10-26T00:00:00.000Z',
-      updatedAt: '2026-10-26T00:00:00.000Z',
-    }
-    const library = {
-      id: '00000000-0000-4000-8000-000000000002',
-      name: 'Library desk',
-      category: 'Study spot',
-      coordinate: { longitude: 103.79, latitude: 1.3 },
-      createdAt: '2026-10-26T00:00:00.000Z',
-      updatedAt: '2026-10-26T00:00:00.000Z',
-    }
-    localStorage.setItem(storageKey, JSON.stringify({ version: 1, waypoints: [bench, library] }))
-    const user = userEvent.setup()
-    render(<App />)
-
-    await user.click(screen.getByRole('button', { name: 'More' }))
-    await user.click(screen.getByRole('button', { name: 'My waypoints' }))
-    await user.click(screen.getByRole('button', { name: 'Expand Rest spot' }))
-    await user.click(screen.getByRole('button', { name: 'Open Quiet bench details' }))
-
-    await user.click(screen.getByRole('button', { name: 'Move to category' }))
-    await user.click(screen.getByRole('combobox', { name: 'Move to' }))
-    await user.click(await screen.findByRole('option', { name: 'Study spot' }))
-
-    // The move writes at once and returns to the collection, where the popup offers Undo.
-    const panel = document.querySelector('.more-panel-surface')
-    expect(panel?.getAttribute('data-page')).toBe('waypoints')
-    const stored = JSON.parse(localStorage.getItem(storageKey) ?? '{}').waypoints
-    expect(stored.map(({ category }: { category: string }) => category)).toEqual(['Study spot', 'Study spot'])
-
-    // Other live regions mention the same phrases on this screen, so the popup is the target.
-    expect(document.querySelector('.more-panel-status')?.textContent).toBe('Moved to Study spot.')
-    // The emptied Rest spot group is gone and the place now sits under Study spot.
-    expect(screen.queryByRole('button', { name: /Rest spot/ })).toBeNull()
-    expect(screen.getByRole('button', { name: /Study spot/ })).toBeTruthy()
-
-    await user.click(screen.getByRole('button', { name: 'Undo' }))
-
-    // Undo restores the category and the original saved order. The store fills the marker defaults
-    // a hand-written fixture omits, so compare the fields this interaction owns.
-    expect(JSON.parse(localStorage.getItem(storageKey) ?? '{}').waypoints.map(
-      ({ id, name, category }: { id: string; name: string; category: string }) => ({ id, name, category }),
-    )).toEqual([
-      { id: bench.id, name: bench.name, category: bench.category },
-      { id: library.id, name: library.name, category: library.category },
-    ])
-    expect(document.querySelector('.more-panel-status')?.textContent).toBe('Move undone.')
-    expect(screen.queryByRole('button', { name: 'Undo' })).toBeNull()
   })
 
   it('shows the latest saved waypoint before allowing a conflicted edit to replace it', async () => {
@@ -1259,8 +1200,9 @@ describe('More surface', () => {
     await user.click(screen.getByRole('button', { name: 'Done adjusting location' }))
 
     expect((screen.getByLabelText('Name') as HTMLInputElement).value).toBe('Quiet bench')
-    // The chosen category is shown as the picker's current value; the input itself is only a query.
-    expect(screen.getByText('Rest spot', { selector: '.connected-category-picker-current' })).toBeTruthy()
+    // The chosen category is displayed by the field itself; no caption repeats it beneath.
+    expect((screen.getByLabelText('Category') as HTMLInputElement).value).toBe('Rest spot')
+    expect(document.querySelector('.connected-category-picker-current')).toBeNull()
     expect((screen.getByLabelText('Note (optional)') as HTMLTextAreaElement).value).toBe('Near the garden')
     expect(screen.getByText('1.500000, 104.250000')).toBeTruthy()
     expect(document.querySelector('.navigation-column')?.hasAttribute('hidden')).toBe(false)

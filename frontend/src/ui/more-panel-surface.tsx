@@ -17,8 +17,6 @@ interface MorePanelSurfaceProps {
   readonly title: string
   readonly statusMessage: string | null
   readonly statusRevision: number
-  /** A short action attached to the status popup, such as Undo for the message it announces. */
-  readonly statusAction?: ReactNode
   readonly headerAction?: ReactNode
   readonly initialFocusRef: Ref<HTMLButtonElement>
   readonly onClose: () => void
@@ -30,7 +28,6 @@ export function MorePanelSurface({
   title,
   statusMessage,
   statusRevision,
-  statusAction,
   headerAction,
   initialFocusRef,
   onClose,
@@ -40,17 +37,12 @@ export function MorePanelSurface({
 
   return (
     <div className={`more-panel-body${isMenu ? ' more-panel-body-menu' : ''}`}>
-      {/* The message is the live region; the action sits beside it rather than inside it, so the
-          announcement is the sentence alone and never the button's label. */}
-      {statusMessage && <div className="more-panel-status-row">
-        <p
-          key={statusRevision}
-          className="more-panel-status"
-          role="status"
-          aria-live="polite"
-        >{statusMessage}</p>
-        {statusAction}
-      </div>}
+      {statusMessage && <p
+        key={statusRevision}
+        className="more-panel-status"
+        role="status"
+        aria-live="polite"
+      >{statusMessage}</p>}
       <header className="more-panel-header">
         {isMenu ? <h2 id="more-panel-heading">{title}</h2> : (
           <>

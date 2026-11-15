@@ -163,60 +163,6 @@ describe('usePersonalWaypointWorkflow', () => {
     expect(store.replaceAll).toHaveBeenCalledTimes(1)
   })
 
-  it('moves a place to another category, offers Undo, and restores it exactly', () => {
-    const first = createWaypoint(1, 'Bench')
-    const second = { ...createWaypoint(2, 'Library'), category: 'Study spot' }
-    const { store, getWaypoints } = createMutableStore([first, second])
-    const { result } = renderHook(() => usePersonalWaypointWorkflow(store))
-
-    let moved = false
-    act(() => { moved = result.current.moveWaypointToCategory(first.id, 'Study spot') })
-
-    expect(moved).toBe(true)
-    expect(getWaypoints().map(({ category }) => category)).toEqual(['Study spot', 'Study spot'])
-    expect(result.current.status).toBe('Moved to Study spot.')
-    expect(result.current.canUndoMove).toBe(true)
-
-    let undone = false
-    act(() => { undone = result.current.undoMoveWaypoint() })
-
-    expect(undone).toBe(true)
-    // Undo restores the category AND the saved order of every place.
-    expect(getWaypoints()).toEqual([first, second])
-    expect(result.current.canUndoMove).toBe(false)
-    expect(result.current.status).toBe('Move undone.')
-  })
-
-  it('does not report success or lose the place when the move cannot be written', () => {
-    const first = createWaypoint(1, 'Bench')
-    const { store, getWaypoints } = createMutableStore([first])
-    store.replaceAll = vi.fn((): PersonalWaypointStoreMutationResult => ({ kind: 'conflict' }))
-    const { result } = renderHook(() => usePersonalWaypointWorkflow(store))
-
-    let moved = true
-    act(() => { moved = result.current.moveWaypointToCategory(first.id, 'Work') })
-
-    expect(moved).toBe(false)
-    expect(getWaypoints()).toEqual([first])
-    expect(result.current.statusKind).toBe('problem')
-    expect(result.current.canUndoMove).toBe(false)
-  })
-
-  it('withdraws Undo once another write happens', () => {
-    const first = createWaypoint(1, 'Bench')
-    const second = { ...createWaypoint(2, 'Library'), category: 'Study spot' }
-    const { store } = createMutableStore([first, second])
-    const { result } = renderHook(() => usePersonalWaypointWorkflow(store))
-
-    act(() => { result.current.moveWaypointToCategory(first.id, 'Study spot') })
-    expect(result.current.canUndoMove).toBe(true)
-
-    act(() => { result.current.removeWaypoint(second.id) })
-
-    // The move is no longer the last thing that happened, so offering Undo for it would be a lie.
-    expect(result.current.canUndoMove).toBe(false)
-  })
-
   it('saves waypoint edits while preserving the saved identity and creation time', () => {
     const original = createWaypoint(3, 'Quiet bench')
     const { store, getWaypoints } = createMutableStore([original])

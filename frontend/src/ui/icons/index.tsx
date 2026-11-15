@@ -20,7 +20,6 @@ import {
   EllipsisVertical,
   ExternalLink,
   FileText,
-  FolderInput,
   Footprints,
   GripVertical,
   Info,
@@ -235,8 +234,4 @@ export function CloseIcon(props: IconProps) {
 
 export function DownloadIcon(props: IconProps) {
   return renderDecorativeIcon(Download, props)
-}
-
-export function MoveToCategoryIcon(props: IconProps) {
-  return renderDecorativeIcon(FolderInput, props)
 }

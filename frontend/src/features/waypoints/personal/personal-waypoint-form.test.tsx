@@ -64,4 +64,24 @@ describe('PersonalWaypointForm', () => {
     await user.click(await screen.findByRole('button', { name: 'Create “New category”' }))
     expect(onChange).toHaveBeenLastCalledWith({ category: 'New category' })
   })
+
+  it('shows the current category, then empties the field when opened for searching', async () => {
+    const user = userEvent.setup()
+    render(<StatefulPersonalWaypointForm onChange={() => undefined} />)
+
+    const categoryInput = screen.getByRole('combobox', { name: 'Category' }) as HTMLInputElement
+    // Closed, the field is the display of the chosen category: no redundant caption repeats it.
+    expect(categoryInput.value).toBe('Rest spot')
+    expect(document.querySelector('.connected-category-picker-current')).toBeNull()
+
+    // Opened, it becomes an empty search box so a new name starts from nothing.
+    await user.click(categoryInput)
+    expect(categoryInput.value).toBe('')
+    expect(categoryInput.placeholder).toBe('Search or create a category')
+    expect(await screen.findByRole('option', { name: 'Cafe' })).toBeTruthy()
+
+    // Closing without choosing restores the category that is actually set.
+    await user.keyboard('{Escape}')
+    expect(categoryInput.value).toBe('Rest spot')
+  })
 })

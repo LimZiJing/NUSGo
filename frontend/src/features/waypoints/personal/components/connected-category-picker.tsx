@@ -15,6 +15,7 @@ interface ConnectedCategoryPickerProps {
   readonly onSelect: (category: string) => void
   readonly disabled?: boolean
   readonly maxLength?: number
+  /** Shown only while the list is open and the query is empty. */
   readonly placeholder?: string
 }
 
@@ -23,8 +24,11 @@ interface ConnectedCategoryPickerProps {
  * result. The results panel extends from the field with no gap, sharing its surface and outer
  * outline, so it reads as one control rather than a floating list.
  *
- * This is the only category input in the app: the waypoint form and the Move-to-category workflow
- * both use it, so the two cannot drift apart.
+ * Closed, the field displays the category that is set. Opening it clears the field to a search box,
+ * so searching and creating start from nothing instead of from the existing name. The current value
+ * is never repeated as separate text: the field itself is the display.
+ *
+ * This is the only category input in the app, so the waypoint form cannot drift from any other use.
  */
 export function ConnectedCategoryPicker({
   label,
@@ -33,7 +37,7 @@ export function ConnectedCategoryPicker({
   onSelect,
   disabled = false,
   maxLength,
-  placeholder,
+  placeholder = 'Search or create a category',
 }: ConnectedCategoryPickerProps) {
   const [query, setQuery] = useState('')
   const [open, setOpen] = useState(false)
@@ -49,6 +53,16 @@ export function ConnectedCategoryPicker({
     && trimmedQuery.length > 0
     && !options.some((option) => option.toLocaleLowerCase() === trimmedQuery.toLocaleLowerCase())
 
+  const changeOpen = (next: boolean): void => {
+    setOpen(next)
+    // Closing always abandons a half-typed query, so the field falls back to showing the chosen
+    // category. Only an explicit choice ever changes the value.
+    if (!next) {
+      setQuery('')
+      setFiltering(false)
+    }
+  }
+
   const commit = (category: string): void => {
     onSelect(category)
     setQuery('')
@@ -56,14 +70,32 @@ export function ConnectedCategoryPicker({
     setOpen(false)
   }
 
-  return <div className="connected-category-picker" data-open={open ? 'true' : 'false'}>
+  // Closed, the field shows the category that is actually set. Opened, it empties so the person can
+  // search or type a new name; the current value is no longer repeated as separate text beneath.
+  const displayValue = open ? query : value
+
+  // `data-owns-escape` is the app's existing contract for a popup that handles Escape itself.
+  // Without it the More panel's capture-phase Escape listener closes the whole form while the
+  // person only meant to dismiss the list.
+  return <div
+    className="connected-category-picker"
+    data-open={open ? 'true' : 'false'}
+    data-owns-escape={open ? 'true' : undefined}
+    onKeyDown={(event) => {
+      if (event.key !== 'Escape' || !open) return
+      // Closing the list must not also leave the form, and the field returns to the set category.
+      event.preventDefault()
+      event.stopPropagation()
+      changeOpen(false)
+    }}
+  >
     <label className="connected-category-picker-label" htmlFor={inputId}>{label}</label>
     <Autocomplete.Root
       items={matches}
-      value={query}
+      value={displayValue}
       disabled={disabled}
       open={open}
-      onOpenChange={setOpen}
+      onOpenChange={changeOpen}
       onValueChange={(next, details) => {
         setQuery(next)
         // Only input edits narrow the list; choosing an option goes through `onSelect`.
@@ -77,8 +109,8 @@ export function ConnectedCategoryPicker({
           className="connected-category-picker-input"
           aria-label={label}
           maxLength={maxLength}
-          placeholder={placeholder ?? value}
-          onFocus={() => setOpen(true)}
+          placeholder={placeholder}
+          onFocus={() => changeOpen(true)}
         />
         <Autocomplete.Trigger className="connected-category-picker-trigger" aria-label={`Show ${label.toLowerCase()} options`} disabled={disabled}>
           <ChevronDownIcon size={16} />
@@ -115,8 +147,5 @@ export function ConnectedCategoryPicker({
         </Autocomplete.Positioner>
       </Autocomplete.Portal>
     </Autocomplete.Root>
-    <p className="connected-category-picker-current">
-      <span className="visually-hidden">Current category: </span>{value}
-    </p>
   </div>
 }

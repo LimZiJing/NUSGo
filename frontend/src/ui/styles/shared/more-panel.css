@@ -33,7 +33,20 @@
   font: var(--font-size-sm)/1.35 var(--sans);
 }
 
-.more-panel-body:has(.more-panel-status) .more-panel-content-scroll {
+/* The region stays mounted so a later message is announced. While it has no text it is
+   clipped rather than removed, so it remains in the accessibility tree for that announcement. */
+.more-panel-status[data-empty='true'] {
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  overflow: hidden;
+  clip: rect(0 0 0 0);
+  white-space: nowrap;
+  border: 0;
+  box-shadow: none;
+}
+
+.more-panel-body:has(.more-panel-status[data-empty='false']) .more-panel-content-scroll {
   margin-bottom: 64px;
 }
 

@@ -4,6 +4,7 @@ import { Input } from '@base-ui/react/input'
 import {
   COMMUNITY_WAYPOINT_CATEGORIES,
   COMMUNITY_WAYPOINT_PRINTING_SERVICES,
+  COMMUNITY_WAYPOINT_SUBMISSION_TEXT_LIMIT,
   COMMUNITY_WAYPOINT_TEXT_LIMITS,
   COMMUNITY_WAYPOINT_VENDING_ITEMS,
   COMMUNITY_WAYPOINT_VENDING_PREP_OPTIONS,
@@ -43,6 +44,9 @@ const COLOUR_ANSWERS = [
   { value: 'no', label: 'No' },
   { value: 'unsure', label: 'Not sure' },
 ] as const satisfies readonly { readonly value: ColourAnswer; readonly label: string }[]
+
+// HTML maxLength counts UTF-16 code units; allow one trimmed character at each edge.
+const MAX_SUBMISSION_TEXT_CODE_UNITS = (COMMUNITY_WAYPOINT_SUBMISSION_TEXT_LIMIT + 1) * 2
 
 function coordinateValue(value: number, positiveDirection: string, negativeDirection: string): string {
   return `${Math.abs(value).toFixed(6)}° ${value < 0 ? negativeDirection : positiveDirection}`
@@ -581,7 +585,7 @@ export function CommunityWaypointSubmissionFields({
         value={draft.requestedChange}
         error={errors.requestedChange}
         required
-        maxLength={2_002}
+        maxLength={MAX_SUBMISSION_TEXT_CODE_UNITS}
         onChange={(value) => onFieldChange('requestedChange', value)}
       />}
 
@@ -624,7 +628,7 @@ export function CommunityWaypointSubmissionFields({
         label="Note for reviewers"
         value={draft.explanation}
         error={errors.explanation}
-        maxLength={2_002}
+        maxLength={MAX_SUBMISSION_TEXT_CODE_UNITS}
         onChange={(value) => onFieldChange('explanation', value)}
       />}
     </>

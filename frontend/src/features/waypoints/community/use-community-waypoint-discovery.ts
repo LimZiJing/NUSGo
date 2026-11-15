@@ -22,7 +22,7 @@ export interface CommunityWaypointDiscovery {
   readonly visibleWaypoints: readonly CommunityWaypoint[]
   readonly categoryOptions: ReturnType<typeof getCommunityWaypointCategoryOptions>
   readonly visibleCategories: readonly CommunityWaypointCategory[]
-  readonly visibilitySaveStatus: string | null
+  readonly visibilityStatus: string | null
   readonly selectedWaypoint: CommunityWaypoint | null
   toggleCategory(category: CommunityWaypointCategory): void
   showCategoryPanel(): void
@@ -129,7 +129,7 @@ export function useCommunityWaypointDiscovery(
     visibleWaypoints,
     categoryOptions,
     visibleCategories: selection.categories,
-    visibilitySaveStatus: selection.status,
+    visibilityStatus: selection.status,
     selectedWaypoint,
     toggleCategory,
     showCategoryPanel,

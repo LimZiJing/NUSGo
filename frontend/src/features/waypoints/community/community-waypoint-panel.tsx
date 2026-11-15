@@ -206,7 +206,7 @@ export function CommunityWaypointPanel({
     status,
     categoryOptions,
     visibleCategories,
-    visibilitySaveStatus,
+    visibilityStatus,
     selectedWaypoint,
     toggleCategory,
     clearSelectedWaypoint,
@@ -251,7 +251,7 @@ export function CommunityWaypointPanel({
               />
             </div>
             <p className="visually-hidden" role="status" aria-live="polite">
-              {visibilitySaveStatus}
+              {visibilityStatus}
             </p>
           </>
         )}

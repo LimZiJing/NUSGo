@@ -41,7 +41,8 @@ const baseProps = {
   editing: false,
   onOpenDetails: () => undefined,
   onRemove: () => undefined,
-  onMove: () => true,
+  onMove: () => undefined,
+  onReorder: () => undefined,
 }
 
 function StatefulPersonalWaypointList() {
@@ -55,7 +56,12 @@ function StatefulPersonalWaypointList() {
       onRemove={(waypointId) => setSavedWaypoints((current) => (
         current.filter((waypoint) => waypoint.id !== waypointId)
       ))}
-      onMove={(waypointId, targetIndex) => {
+      onMove={(waypointId, category) => {
+        setSavedWaypoints((current) => current.map((waypoint) => (
+          waypoint.id === waypointId ? { ...waypoint, category } : waypoint
+        )))
+      }}
+      onReorder={(waypointId, targetIndex) => {
         setSavedWaypoints((current) => {
           const from = current.findIndex((waypoint) => waypoint.id === waypointId)
           if (from < 0 || targetIndex < 0 || targetIndex >= current.length) return current
@@ -64,7 +70,6 @@ function StatefulPersonalWaypointList() {
           next.splice(targetIndex, 0, movedWaypoint)
           return next
         })
-        return true
       }}
     />
   )
@@ -259,14 +264,14 @@ describe('PersonalWaypointList', () => {
 
   it('supports keyboard start, movement, drop, and focus restoration', async () => {
     const user = userEvent.setup()
-    const onMove = vi.fn<(waypointId: string, targetIndex: number) => boolean>(() => true)
+    const onReorder = vi.fn<(waypointId: string, targetIndex: number) => void>()
     const onEditAnnouncement = vi.fn()
     render(
       <PersonalWaypointList
         {...baseProps}
         waypoints={reorderWaypoints}
         editing
-        onMove={onMove}
+        onReorder={onReorder}
         onEditAnnouncement={onEditAnnouncement}
       />,
     )
@@ -284,15 +289,15 @@ describe('PersonalWaypointList', () => {
     await user.keyboard('{ArrowUp}')
     // Keyboard reordering is scoped to the place's own category, which here holds only two places.
     expect(onEditAnnouncement).toHaveBeenLastCalledWith('Beta desk, position 1 of 2.')
-    expect(onMove).not.toHaveBeenCalled()
+    expect(onReorder).not.toHaveBeenCalled()
 
     await user.keyboard('{Enter}')
-    expect(onMove).toHaveBeenCalledOnce()
-    expect(onMove.mock.calls[0]?.[0]).toBe(reorderWaypoints[1]?.id)
+    expect(onReorder).toHaveBeenCalledOnce()
+    expect(onReorder.mock.calls[0]?.[0]).toBe(reorderWaypoints[1]?.id)
     // Beta desk moves up within Study place, so it must displace Alpha desk, whose flat index is 0.
     // Asserting the exact index is what proves the move is saved: passing the place's own index
     // would make moveWaypoint a no-op and silently lose the reorder.
-    expect(onMove.mock.calls[0]?.[1]).toBe(0)
+    expect(onReorder.mock.calls[0]?.[1]).toBe(0)
     expect(onEditAnnouncement).toHaveBeenLastCalledWith('Beta desk moved to position 1 of 2.')
     expect(document.activeElement).toBe(handle)
   })
@@ -305,14 +310,13 @@ describe('PersonalWaypointList', () => {
         {...baseProps}
         waypoints={reorderWaypoints}
         editing
-        onMove={(waypointId, targetIndex) => {
-          // Mirror the store: splice out, insert at the target index, record the result.
+        onReorder={(waypointId, targetIndex) => {
+          // Mirror the session: splice out, insert at the target index, record the result.
           const next = [...reorderWaypoints]
           const from = next.findIndex((waypoint) => waypoint.id === waypointId)
           const [moved] = next.splice(from, 1)
           next.splice(targetIndex, 0, moved)
           saved.push(next.map((waypoint) => waypoint.name))
-          return true
         }}
       />,
     )
@@ -327,14 +331,14 @@ describe('PersonalWaypointList', () => {
 
   it('cancels keyboard reordering and skips writes for a no-op', async () => {
     const user = userEvent.setup()
-    const onMove = vi.fn<(waypointId: string, targetIndex: number) => boolean>(() => true)
+    const onReorder = vi.fn<(waypointId: string, targetIndex: number) => void>()
     const onEditAnnouncement = vi.fn()
     render(
       <PersonalWaypointList
         {...baseProps}
         waypoints={reorderWaypoints}
         editing
-        onMove={onMove}
+        onReorder={onReorder}
         onEditAnnouncement={onEditAnnouncement}
       />,
     )
@@ -343,14 +347,14 @@ describe('PersonalWaypointList', () => {
     handle.focus()
     await user.keyboard('{Space}')
     await user.keyboard('{Escape}')
-    expect(onMove).not.toHaveBeenCalled()
+    expect(onReorder).not.toHaveBeenCalled()
     expect(onEditAnnouncement).toHaveBeenLastCalledWith('Reordering Alpha desk canceled.')
 
     await user.keyboard('{Space}')
     await user.keyboard('{ArrowDown}')
     await user.keyboard('{ArrowUp}')
     await user.keyboard('{Enter}')
-    expect(onMove).not.toHaveBeenCalled()
+    expect(onReorder).not.toHaveBeenCalled()
     expect(onEditAnnouncement).toHaveBeenLastCalledWith('Alpha desk remains at position 1 of 2.')
   })
 
@@ -368,18 +372,18 @@ describe('PersonalWaypointList', () => {
 
   it('disables reordering while search is active', async () => {
     const user = userEvent.setup()
-    const onMove = vi.fn()
-    render(<PersonalWaypointList {...baseProps} editing onMove={onMove} />)
+    const onReorder = vi.fn()
+    render(<PersonalWaypointList {...baseProps} editing onReorder={onReorder} />)
 
     await user.type(screen.getByRole('searchbox', { name: 'Search saved places' }), 'design')
     expect(screen.getByRole('button', { name: 'Reorder Design studio' }).hasAttribute('disabled'))
       .toBe(true)
-    expect(screen.getByText('Clear search to reorder or clear all saved places.'))
+    expect(screen.getByText('Clear search to reorder or move saved places.'))
       .toBeTruthy()
     // Search pauses reordering and pins the matching group open.
     expect(screen.getByRole('button', { name: 'Collapse Study place' }).getAttribute('aria-disabled'))
       .toBe('true')
-    expect(onMove).not.toHaveBeenCalled()
+    expect(onReorder).not.toHaveBeenCalled()
 
     await user.clear(screen.getByRole('searchbox', { name: 'Search saved places' }))
     expect(screen.getByRole('button', { name: 'Reorder Quiet bench' }).hasAttribute('disabled'))
@@ -582,5 +586,54 @@ describe('PersonalWaypointList category renaming', () => {
 
     expect(onRenameCategory).not.toHaveBeenCalled()
     expect(screen.queryByRole('dialog')).toBeNull()
+  })
+})
+
+describe('PersonalWaypointList cross-category movement', () => {
+  it('renders a category the pending edits emptied, so it stays a drop target', () => {
+    // A group with no place left still has to exist on screen, because it is where a place can be
+    // moved back into before confirming.
+    render(
+      <PersonalWaypointList
+        {...baseProps}
+        waypoints={[createWaypoint(1, 'Water cooler', 'Work')]}
+        editing
+        editingCategories={['Misc', 'Work']}
+      />,
+    )
+
+    expect(screen.getByRole('button', { name: /Misc/ })).toBeTruthy()
+    expect(screen.getByRole('button', { name: /Work/ })).toBeTruthy()
+  })
+
+  it('says an emptied category is a drop target instead of showing a bare gap', async () => {
+    const user = userEvent.setup()
+    render(
+      <PersonalWaypointList
+        {...baseProps}
+        waypoints={[createWaypoint(1, 'Water cooler', 'Work')]}
+        editing
+        editingCategories={['Misc', 'Work']}
+      />,
+    )
+
+    // Edit mode expands every group, so the emptied category's rows are already showing.
+    expect(screen.getByRole('button', { name: 'Collapse Misc' })).toBeTruthy()
+    expect(screen.getByText(/Drop one here to move it into this category/)).toBeTruthy()
+
+    // Collapsing still works, which proves the heading is the real disclosure rather than a label.
+    await user.click(screen.getByRole('button', { name: 'Collapse Misc' }))
+    expect(screen.getByRole('button', { name: 'Expand Misc' })).toBeTruthy()
+  })
+
+  it('marks a category card as a drop target so the pointer has something to aim at', () => {
+    render(<PersonalWaypointList {...baseProps} editing />)
+
+    const cards = document.querySelectorAll('.personal-waypoint-category-group')
+    expect(cards.length).toBeGreaterThan(0)
+    // Every card declares its drop state, which is what the highlight is drawn from.
+    for (const card of cards) {
+      expect(card.getAttribute('data-drop-target')).toBe('false')
+    }
   })
 })

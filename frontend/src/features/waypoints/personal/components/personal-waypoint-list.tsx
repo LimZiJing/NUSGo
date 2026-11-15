@@ -1,17 +1,16 @@
 import { useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState } from 'react'
 import type { ReactNode } from 'react'
 import type { KeyboardEvent } from 'react'
-import { move } from '@dnd-kit/helpers'
 import { DragDropProvider, PointerSensor } from '@dnd-kit/react'
-import type { DragEndEvent } from '@dnd-kit/react'
+import type { DragEndEvent, DragOverEvent } from '@dnd-kit/react'
 import type { PersonalWaypoint } from '../../../../domain/waypoints/personal/personal-waypoint'
 import { Button } from '../../../../ui/button'
 import { ConfirmDialog } from '../../../../ui/confirm-dialog'
-import { DisclosureHeader } from '../../../../ui/disclosure-header'
 import { SearchField } from '../../../../ui/search-field'
 import { categoryMergeConfirmation } from '../../../../domain/waypoints/personal/personal-waypoint-category-rename'
 import { filterPersonalWaypoints } from '../data/filter-personal-waypoints'
-import { groupPersonalWaypointsByCategory, personalWaypointCountLabel } from '../data/group-personal-waypoints'
+import { groupPersonalWaypointsByCategory } from '../data/group-personal-waypoints'
+import { PersonalWaypointCategoryGroup } from './personal-waypoint-category-group'
 import {
   PersonalWaypointListRow,
   PersonalWaypointSortableListRow,
@@ -19,6 +18,8 @@ import {
 
 const reorderInstructionsId = 'personal-waypoint-reorder-instructions'
 const expandedCategoriesStorageKey = 'navus:personal-waypoint-expanded-categories:v1'
+/** How long a dragged place must rest over a collapsed category before it opens. */
+const hoverExpandDelayMs = 1500
 
 interface KeyboardReorderState {
   readonly waypointId: string
@@ -60,10 +61,14 @@ interface PersonalWaypointListProps {
   readonly canEdit: boolean
   readonly editing: boolean
   readonly categoryPicker?: ReactNode
+  /** Categories to keep on screen while editing, including ones the pending edits have emptied. */
+  readonly editingCategories?: readonly string[]
   readonly onOpenDetails: (waypoint: PersonalWaypoint, trigger: HTMLElement) => void
   readonly onSearchFilterChange?: (active: boolean) => void
   readonly onRemove: (waypointId: string) => void
-  readonly onMove: (waypointId: string, targetIndex: number) => boolean
+  /** Reorders within a category, or moves to another category when the destination differs. */
+  readonly onMove: (waypointId: string, category: string) => void
+  readonly onReorder: (waypointId: string, targetIndex: number) => void
   readonly onEditAnnouncement?: (message: string) => void
   /** Renames (or merges) a category. Returns the saved collection, or null when nothing was written. */
   readonly onRenameCategory?: (from: string, to: string) => readonly PersonalWaypoint[] | null
@@ -100,6 +105,13 @@ function PersonalWaypointRowList({
   readonly onOpenDetails: (waypoint: PersonalWaypoint, trigger: HTMLElement) => void
   readonly registerHandleRef: (waypointId: string, element: HTMLButtonElement | null) => void
 }) {
+  if (categoryWaypoints.length === 0) {
+    // An emptied category stays droppable, so it says what it is for rather than showing a bare gap.
+    return <p className="personal-waypoint-category-empty">
+      No places. Drop one here to move it into this category.
+    </p>
+  }
+
   return (
     <ul
       className="personal-waypoint-list-rows"
@@ -139,10 +151,12 @@ export function PersonalWaypointList({
   canEdit,
   editing,
   categoryPicker,
+  editingCategories,
   onOpenDetails,
   onSearchFilterChange,
   onRemove,
   onMove,
+  onReorder,
   onEditAnnouncement,
   onRenameCategory,
   onMergeCategoryVisibility,
@@ -152,10 +166,12 @@ export function PersonalWaypointList({
   const [collapsedEditCategories, setCollapsedEditCategories] = useState<string[]>([])
   const [keyboardReorder, setKeyboardReorder] = useState<KeyboardReorderState | null>(null)
   const [mergeRequest, setMergeRequest] = useState<{ readonly from: string; readonly to: string } | null>(null)
+  const [hoverCategory, setHoverCategory] = useState<string | null>(null)
   const previousEditing = useRef(editing)
   const searchInputRef = useRef<HTMLInputElement>(null)
   const handleRefs = useRef(new Map<string, HTMLButtonElement>())
   const pendingFocusRef = useRef<{ readonly waypointId: string; readonly action: 'reorder' | 'remove' } | null>(null)
+  const hoverTimerRef = useRef<number | null>(null)
   const hasSearchFilter = searchQuery.trim().length > 0
   const visibleWaypoints = useMemo(
     () => filterPersonalWaypoints(waypoints, searchQuery, null),
@@ -164,6 +180,12 @@ export function PersonalWaypointList({
   const groups = useMemo(() => groupPersonalWaypointsByCategory(visibleWaypoints), [visibleWaypoints])
   const editMode = canEdit && editing && waypoints.length > 0
   const canReorder = editMode && waypoints.length > 1 && !hasSearchFilter
+
+  // A category the pending edits have emptied keeps its place in the list, so it remains a drop
+  // target. It is appended rather than merged into the group order because it has no places left.
+  const emptyEditingCategories = (editingCategories ?? []).filter(
+    (category) => !groups.some((group) => group.category === category),
+  )
 
   // A rename that lands on an existing category merges the two, so it asks first.
   const requestRenameCategory = (from: string, to: string): void => {
@@ -198,7 +220,18 @@ export function PersonalWaypointList({
     onSearchFilterChange?.(query.trim().length > 0)
   }
 
+  const isCategoryExpanded = (name: string): boolean => (
+    hasSearchFilter || (editMode
+      ? !collapsedEditCategories.includes(name)
+      : expandedCategories.includes(name))
+  )
+
   const setCategoryExpanded = (name: string, expanded: boolean): void => {
+    if (editMode) {
+      setCollapsedEditCategories((current) => expanded
+        ? current.filter((entry) => entry !== name)
+        : [...new Set([...current, name])])
+    }
     setExpandedCategories((current) => {
       const next = expanded
         ? [...new Set([...current, name])]
@@ -209,14 +242,14 @@ export function PersonalWaypointList({
   }
 
   const expandAll = (): void => {
-    const names = groupPersonalWaypointsByCategory(waypoints).map(({ category: name }) => name)
+    const names = [...new Set([...groupPersonalWaypointsByCategory(waypoints).map(({ category }) => category), ...emptyEditingCategories])]
     setCollapsedEditCategories([])
     setExpandedCategories(names)
     writeExpandedCategories(names)
   }
 
   const collapseAll = (): void => {
-    if (editMode) setCollapsedEditCategories(groups.map(({ category: name }) => name))
+    if (editMode) setCollapsedEditCategories([...groups.map(({ category }) => category), ...emptyEditingCategories])
     setExpandedCategories([])
     writeExpandedCategories([])
   }
@@ -228,6 +261,12 @@ export function PersonalWaypointList({
   }, [editing, onEditAnnouncement])
 
   useEffect(() => () => onSearchFilterChange?.(false), [onSearchFilterChange])
+
+  // Only disposes the timer on unmount. The highlight itself is cleared by the drag handlers and by
+  // leaving edit mode, so no state is set here.
+  useEffect(() => () => {
+    if (hoverTimerRef.current !== null) window.clearTimeout(hoverTimerRef.current)
+  }, [])
 
   useLayoutEffect(() => {
     const pendingFocus = pendingFocusRef.current
@@ -294,17 +333,12 @@ export function PersonalWaypointList({
           return
         }
 
-        // `moveWaypoint` splices the place out and re-inserts it at the FINAL flat index. Stepping
-        // within a category means displacing whichever place currently sits at the destination
-        // position, so the final index is that neighbour's flat index. Using the moved place's own
+        // Reordering is a flat-index operation, so stepping within a category means displacing
+        // whichever place currently sits at the destination position. Using the moved place's own
         // index would point at where it already is and save nothing.
         const neighbour = groupWaypoints[targetPosition]
         const targetIndex = waypoints.findIndex(({ id }) => id === neighbour.id)
-        if (!onMove(waypointId, targetIndex)) {
-          onEditAnnouncement?.(`Could not save the new position for ${waypoint.name}.`)
-          return
-        }
-
+        onReorder(waypointId, targetIndex)
         pendingFocusRef.current = { waypointId, action: 'reorder' }
         onEditAnnouncement?.(`${waypoint.name} moved to position ${targetPosition + 1} of ${groupWaypoints.length}.`)
       }
@@ -320,7 +354,66 @@ export function PersonalWaypointList({
     onEditAnnouncement?.(`Picked up ${waypoint.name}, position ${startIndex + 1} of ${groupWaypoints.length}. Use the arrow keys to move it. Press Enter or Space to save, or Escape to cancel.`)
   }
 
+  const clearHoverTimer = (): void => {
+    if (hoverTimerRef.current !== null) window.clearTimeout(hoverTimerRef.current)
+    hoverTimerRef.current = null
+  }
+
+  /**
+   * The category whose card contains a point, from the rendered geometry.
+   *
+   * The drag's own collision result cannot answer this: a sortable row is a droppable too, and it
+   * wins the collision against the card around it, so the reported target is always whichever row
+   * sits under the pointer — usually the dragged row itself. Reading the cards' rectangles instead
+   * gives the category the person is visibly dragging over, which is also what the highlight shows.
+   */
+  const categoryAtPoint = (point: { readonly x: number; readonly y: number } | null): string | null => {
+    if (!point) return null
+    for (const element of document.querySelectorAll<HTMLElement>('.personal-waypoint-category-group')) {
+      const box = element.getBoundingClientRect()
+      const inside = point.x >= box.left && point.x <= box.right && point.y >= box.top && point.y <= box.bottom
+      if (!inside) continue
+      // The card carries its category on its own heading, which is the same string the list groups by.
+      return element.querySelector('.disclosure-header-label')?.textContent?.trim() ?? null
+    }
+    return null
+  }
+
+  // Every drag starts with no highlight, so a previous drag can never leak one into this one.
+  const handleDragStart = (): void => {
+    setHoverCategory(null)
+    clearHoverTimer()
+  }
+
+  // Resting over a collapsed category highlights it and, after a short dwell, opens it so its rows
+  // become reachable without dropping blind. Leaving the card cancels both.
+  const handleDragOver = (event: DragOverEvent): void => {
+    const category = canReorder ? categoryAtPoint(event.operation.position.current) : null
+    if (!category) {
+      clearHoverTimer()
+      setHoverCategory(null)
+      return
+    }
+    if (category === hoverCategory) return
+
+    clearHoverTimer()
+    setHoverCategory(category)
+    if (isCategoryExpanded(category)) return
+
+    hoverTimerRef.current = window.setTimeout(() => {
+      hoverTimerRef.current = null
+      setCategoryExpanded(category, true)
+      onEditAnnouncement?.(`${category} expanded.`)
+    }, hoverExpandDelayMs)
+  }
+
   const handleDragEnd = (event: DragEndEvent): void => {
+    // Where the pointer finished, resolved against the cards. This is the category the bounding box
+    // was drawn around, so the place lands where the highlight said it would.
+    const droppedOnCategory = categoryAtPoint(event.operation.position.current) ?? hoverCategory
+    clearHoverTimer()
+    setHoverCategory(null)
+
     const source = event.operation.source
     if (!source) return
     const waypointId = String(source.id)
@@ -334,20 +427,28 @@ export function PersonalWaypointList({
       return
     }
 
-    const reordered = move([...waypoints], event)
-    const targetIndex = reordered.findIndex(({ id }) => id === waypointId)
+    // Dropping onto a different category card is a move.
+    if (droppedOnCategory && droppedOnCategory !== waypoint.category.trim()) {
+      onMove(waypointId, droppedOnCategory)
+      handleRefs.current.get(waypointId)?.focus()
+      onEditAnnouncement?.(`${waypoint.name} moved to ${droppedOnCategory}.`)
+      return
+    }
+
+    // Otherwise the drop reorders within the current category. The saved order is flat while the
+    // screen is grouped, so the destination is the flat index of whichever place now sits where the
+    // dragged one was dropped.
+    const targetWaypointId = event.operation.target.id === undefined ? null : String(event.operation.target.id)
+    const targetIndex = targetWaypointId === null
+      ? originalIndex
+      : waypoints.findIndex(({ id }) => id === targetWaypointId)
     if (targetIndex < 0 || targetIndex === originalIndex) {
       onEditAnnouncement?.(`${waypoint.name} remains at position ${originalIndex + 1} of ${waypoints.length}.`)
       handleRefs.current.get(waypointId)?.focus()
       return
     }
 
-    if (!onMove(waypointId, targetIndex)) {
-      onEditAnnouncement?.(`Could not save the new position for ${waypoint.name}.`)
-      handleRefs.current.get(waypointId)?.focus()
-      return
-    }
-
+    onReorder(waypointId, targetIndex)
     pendingFocusRef.current = { waypointId, action: 'reorder' }
     onEditAnnouncement?.(`${waypoint.name} moved to position ${targetIndex + 1} of ${waypoints.length}.`)
   }
@@ -372,11 +473,30 @@ export function PersonalWaypointList({
     />
   )
 
+  const renderGroup = (category: string, categoryWaypoints: readonly PersonalWaypoint[]) => (
+    <PersonalWaypointCategoryGroup
+      key={category}
+      category={category}
+      waypoints={categoryWaypoints}
+      expanded={isCategoryExpanded(category)}
+      listId={categoryListId(category)}
+      headingId={categoryHeadingId(category)}
+      highlighted={hoverCategory === category}
+      expandDisabled={hasSearchFilter}
+      onToggle={() => setCategoryExpanded(category, !isCategoryExpanded(category))}
+      onRename={onRenameCategory && editMode ? (next) => requestRenameCategory(category, next) : undefined}
+    >
+      {renderRows(categoryWaypoints)}
+    </PersonalWaypointCategoryGroup>
+  )
+
   const reorderInstructions = editMode
     ? <p id={reorderInstructionsId} className="visually-hidden">
       Press Space or Enter to start reordering. Use the Up and Down arrow keys to change position. Press Space or Enter to save, or Escape to cancel.
     </p>
     : null
+
+  const noGroupsAtAll = groups.length === 0 && emptyEditingCategories.length === 0
 
   return <section className="personal-waypoint-list" aria-label="Saved places">
     <div className="personal-waypoint-list-controls">
@@ -392,61 +512,30 @@ export function PersonalWaypointList({
 
     {editMode && hasSearchFilter && (
       <p className="personal-waypoint-list-filter-note">
-        Clear search to reorder or clear all saved places.
+        Clear search to reorder or move saved places.
       </p>
     )}
 
-    {visibleWaypoints.length > 0 ? (
+    {!noGroupsAtAll ? (
       <>
         {reorderInstructions}
-        {canReorder ? <DragDropProvider sensors={[PointerSensor]} onDragEnd={handleDragEnd}>
-          {groups.map(({ category: name, waypoints: grouped }) => {
-            const expanded = !collapsedEditCategories.includes(name)
-            return <section className="personal-waypoint-category-group" key={name}>
-              <DisclosureHeader
-                id={categoryHeadingId(name)}
-                label={name}
-                detail={personalWaypointCountLabel(grouped.length)}
-                expanded={expanded}
-                controls={categoryListId(name)}
-                expandDisabled={hasSearchFilter}
-                onToggle={() => {
-                  setCollapsedEditCategories((current) => current.includes(name)
-                    ? current.filter((entry) => entry !== name)
-                    : [...current, name])
-                  setCategoryExpanded(name, !expanded)
-                }}
-                onRename={onRenameCategory ? (next) => requestRenameCategory(name, next) : undefined}
-              />
-              <div id={categoryListId(name)} hidden={!expanded}>{renderRows(grouped)}</div>
-            </section>
-          })}
-        </DragDropProvider> : <>
-          {!hasSearchFilter && <div className="personal-waypoint-groups-actions">
-            <Button label="Expand all" variant="ghost" onClick={expandAll} />
-            <Button label="Collapse all" variant="ghost" onClick={collapseAll} />
-          </div>}
-          <div className="personal-waypoint-groups">
-          {groups.map(({ category: name, waypoints: grouped }) => {
-            const expanded = hasSearchFilter || (editMode
-              ? !collapsedEditCategories.includes(name)
-              : expandedCategories.includes(name))
-            return <section className="personal-waypoint-category-group" key={name}>
-              <DisclosureHeader
-                id={categoryHeadingId(name)}
-                label={name}
-                detail={personalWaypointCountLabel(grouped.length)}
-                expanded={expanded}
-                controls={categoryListId(name)}
-                expandDisabled={hasSearchFilter}
-                onToggle={() => setCategoryExpanded(name, !expanded)}
-                onRename={onRenameCategory && editMode ? (next) => requestRenameCategory(name, next) : undefined}
-              />
-              <div id={categoryListId(name)} hidden={!expanded}>{renderRows(grouped)}</div>
-            </section>
-          })}
-          </div>
-        </>}
+        {canReorder ? (
+          <DragDropProvider sensors={[PointerSensor]} onDragStart={handleDragStart} onDragOver={handleDragOver} onDragEnd={handleDragEnd}>
+            {groups.map(({ category, waypoints: grouped }) => renderGroup(category, grouped))}
+            {emptyEditingCategories.map((category) => renderGroup(category, []))}
+          </DragDropProvider>
+        ) : (
+          <>
+            {!hasSearchFilter && <div className="personal-waypoint-groups-actions">
+              <Button label="Expand all" variant="ghost" onClick={expandAll} />
+              <Button label="Collapse all" variant="ghost" onClick={collapseAll} />
+            </div>}
+            <div className="personal-waypoint-groups">
+              {groups.map(({ category, waypoints: grouped }) => renderGroup(category, grouped))}
+              {editMode && emptyEditingCategories.map((category) => renderGroup(category, []))}
+            </div>
+          </>
+        )}
       </>
     ) : (
       <div className="personal-waypoint-list-empty">

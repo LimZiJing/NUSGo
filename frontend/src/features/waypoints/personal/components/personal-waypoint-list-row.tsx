@@ -98,7 +98,14 @@ export function PersonalWaypointSortableListRow({
   index,
   ...props
 }: PersonalWaypointListRowProps & { readonly index: number }) {
-  const { ref, handleRef, isDragging } = useSortable({ id: waypoint.id, index })
+  // The row carries its own category, so a drop on it reports the destination directly. dnd-kit
+  // resolves the innermost droppable, which is the row rather than the card around it, so without
+  // this the drag would know a row was under the pointer but not which category it belongs to.
+  const { ref, handleRef, isDragging } = useSortable({
+    id: waypoint.id,
+    index,
+    data: { category: waypoint.category.trim() },
+  })
 
   return (
     <PersonalWaypointListRow

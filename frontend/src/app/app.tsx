@@ -69,6 +69,7 @@ import {
   PersonalWaypointListActions,
   usePersonalWaypointWorkflow,
   usePersonalWaypointCategoryVisibility,
+  usePersonalWaypointEditSession,
 } from '../features/waypoints/personal'
 import { createLocalPersonalWaypointStore } from '../infrastructure/data/local-personal-waypoint-store'
 import { createLocalPersonalWaypointCategoryVisibilityStore } from '../infrastructure/data/local-personal-waypoint-category-visibility-store'
@@ -129,7 +130,12 @@ function App() {
   const [session, setSession] = useState<NavigationSession | null>(null)
   const [morePage, setMorePage] = useState<MorePanelPage>('closed')
   const [moreSheetDetent, setMoreSheetDetent] = useState<MobileSheetDetent>('partial')
-  const [isEditingPersonalWaypoints, setIsEditingPersonalWaypoints] = useState(false)
+  // True while the edit-mode command bar is showing and the pending list owns the screen.
+  const [personalWaypointsEditing, setPersonalWaypointsEditing] = useState(false)
+  const [pendingEditDiscard, setPendingEditDiscard] = useState(false)
+  const [personalWaypointEditRevision, setPersonalWaypointEditRevision] = useState(0)
+  // The outcome of the last confirmed list edit, shown in the popup with its revision.
+  const [personalWaypointEditMessage, setPersonalWaypointEditMessage] = useState<string | null>(null)
   const [hasPersonalWaypointSearchFilter, setHasPersonalWaypointSearchFilter] = useState(false)
   const [personalWaypointEditReturnPage, setPersonalWaypointEditReturnPage] = useState<'waypoints' | 'waypoint-details'>('waypoint-details')
   const [placementReturnPage, setPlacementReturnPage] = useState<'creating' | 'editing-waypoint' | null>(null)
@@ -140,6 +146,7 @@ function App() {
   const pendingWaypointReturnFocusRef = useRef<HTMLElement | null>(null)
   const [personalWaypointStore] = useState(createLocalPersonalWaypointStore)
   const personalWaypoints = usePersonalWaypointWorkflow(personalWaypointStore)
+  const personalWaypointEdits = usePersonalWaypointEditSession(personalWaypointStore)
   const [personalWaypointCategoryVisibilityStore] = useState(createLocalPersonalWaypointCategoryVisibilityStore)
   const personalWaypointCategoryVisibility = usePersonalWaypointCategoryVisibility(
     personalWaypointCategoryVisibilityStore,
@@ -392,7 +399,6 @@ function App() {
     setPersonalWaypointDetails(null)
     setMorePage('closed')
     setMoreSheetDetent('partial')
-    setIsEditingPersonalWaypoints(false)
   }, [appNavigation])
   // Feature hooks own view behavior; App wires their bindings into the content components.
   const explorePanelFocus = useExplorePanelFocus({
@@ -739,28 +745,23 @@ function App() {
       skipMoreFocusRestoreRef.current = true
       setMorePage('closed')
     }
-    setIsEditingPersonalWaypoints(false)
     appNavigation.selectView(view, stopsPanelState.selectedStopList)
   }
   const openWaypoints = (): void => {
     personalWaypoints.refresh()
-    setIsEditingPersonalWaypoints(false)
     setHasPersonalWaypointSearchFilter(false)
     setMoreSheetDetent('full')
     setMorePage('waypoints')
   }
   const openSettings = (): void => {
-    setIsEditingPersonalWaypoints(false)
     setMoreSheetDetent('full')
     setMorePage('settings')
   }
   const openReleaseNotes = (): void => {
-    setIsEditingPersonalWaypoints(false)
     setMoreSheetDetent('full')
     setMorePage('release-notes')
   }
   const beginWaypointCreation = (): void => {
-    setIsEditingPersonalWaypoints(false)
     personalWaypoints.startDraft(mapCenter ?? DEFAULT_PERSONAL_WAYPOINT_COORDINATE)
     setPlacementReturnPage(null)
     setMorePage('creating')
@@ -771,22 +772,49 @@ function App() {
   }
   const cancelWaypointPlacement = (): void => {
     const returnPage = placementReturnPage
-    if (!returnPage) setIsEditingPersonalWaypoints(false)
+    if (!returnPage) return
     setPlacementReturnPage(null)
     setMoreSheetDetent('full')
     setMorePage(returnPage ?? 'waypoints')
   }
   const clearPersonalWaypoints = (): void => {
+    // Clearing removes every place, so any pending edit refers to records that no longer exist.
+    // End the transaction first rather than leaving a staged list of deleted places on screen.
+    personalWaypointEdits.cancel()
+    setPersonalWaypointsEditing(false)
+    setPersonalWaypointEditMessage(null)
     personalWaypoints.clearAll()
-    setIsEditingPersonalWaypoints(false)
     setHasPersonalWaypointSearchFilter(false)
   }
   const removePersonalWaypoint = (waypointId: string): boolean => {
-    const removingLastWaypoint = personalWaypoints.readResult.kind === 'ready' &&
-      personalWaypoints.readResult.waypoints.length === 1
-    const removed = personalWaypoints.removeWaypoint(waypointId)
-    if (removed && removingLastWaypoint) setIsEditingPersonalWaypoints(false)
-    return removed
+    return personalWaypoints.removeWaypoint(waypointId)
+  }
+  // Editing is a transaction: these three own the pending list, and only Confirm writes it.
+  const beginPersonalWaypointEdits = (): void => {
+    const blocked = personalWaypointEdits.begin()
+    if (blocked) {
+      personalWaypoints.refresh()
+      return
+    }
+    setPersonalWaypointEditMessage(null)
+    setPersonalWaypointsEditing(true)
+  }
+  const confirmPersonalWaypointEdits = (): void => {
+    const outcome = personalWaypointEdits.commit()
+    if (outcome.kind === 'failed') return
+    setPersonalWaypointEditMessage(outcome.kind === 'saved' ? `List changes saved.` : null)
+    setPersonalWaypointEditRevision((revision) => revision + 1)
+    setPersonalWaypointsEditing(false)
+    personalWaypointsInitialFocusRef.current?.focus()
+  }
+  const cancelPersonalWaypointEdits = (): void => {
+    if (personalWaypointEdits.dirty) {
+      setPendingEditDiscard(true)
+      return
+    }
+    personalWaypointEdits.cancel()
+    setPersonalWaypointEditMessage(null)
+    setPersonalWaypointsEditing(false)
   }
   const deleteSelectedPersonalWaypoint = (): void => {
     if (!selectedPersonalWaypointId) return
@@ -806,7 +834,6 @@ function App() {
   const goBackInMore = useCallback((): void => {
     if (morePage === 'placing') {
       const returnPage = placementReturnPage
-      if (!returnPage) setIsEditingPersonalWaypoints(false)
       setPlacementReturnPage(null)
       setMorePage(returnPage ?? 'waypoints')
       setMoreSheetDetent('full')
@@ -845,7 +872,6 @@ function App() {
 
     setMorePage('menu')
     setMoreSheetDetent('partial')
-    setIsEditingPersonalWaypoints(false)
   }, [
     cancelPersonalWaypointEdit,
     morePage,
@@ -867,7 +893,6 @@ function App() {
     }
     setMorePage('closed')
     setMoreSheetDetent('partial')
-    setIsEditingPersonalWaypoints(false)
   }
 
   const selectedPersonalWaypoint = personalWaypoints.readResult.kind === 'ready'
@@ -888,11 +913,14 @@ function App() {
     setMorePage('editing-waypoint')
     setMoreSheetDetent('full')
   }
+  // Edit list starts a transaction; finishing it is the command bar's job, so the menu offers only
+  // the way in. Clear all stays available, because removing it while editing would take a command
+  // away rather than move one.
   const personalWaypointHeaderAction = morePage === 'waypoints' && canEditPersonalWaypoints
     ? <PersonalWaypointListActions
-      editing={isEditingPersonalWaypoints}
+      editing={personalWaypointsEditing}
       hasSearchFilter={hasPersonalWaypointSearchFilter}
-      onToggleEditing={() => setIsEditingPersonalWaypoints((editing) => !editing)}
+      onToggleEditing={beginPersonalWaypointEdits}
       onClearAll={clearPersonalWaypoints}
     />
     : undefined
@@ -1047,8 +1075,11 @@ function App() {
             open: isMoreOpen,
             page: morePage,
             detent: moreSheetDetent,
-            statusMessage: personalWaypoints.statusKind === 'success' ? personalWaypoints.status : null,
-            statusRevision: personalWaypoints.statusRevision,
+            // A confirmed edit is announced from here, because the write is the edit session's, not
+            // the per-waypoint workflow's.
+            statusMessage: personalWaypointEditMessage
+              ?? (personalWaypoints.statusKind === 'success' ? personalWaypoints.status : null),
+            statusRevision: personalWaypointEditMessage ? personalWaypointEditRevision : personalWaypoints.statusRevision,
             headerAction: personalWaypointHeaderAction,
             title: morePage === 'waypoints'
               ? 'My waypoints'
@@ -1069,8 +1100,15 @@ function App() {
               onOpenSettings={openSettings}
               onOpenReleaseNotes={openReleaseNotes}
             /> : morePage === 'waypoints' ? <PersonalWaypointsHome
-              readResult={personalWaypoints.readResult}
-              status={personalWaypoints.statusKind === 'problem' ? personalWaypoints.status : null}
+              // While a pending edit exists the list renders those places, so what is on screen is
+              // always exactly what Confirm would write.
+              readResult={personalWaypointEdits.working === null
+                ? personalWaypoints.readResult
+                : personalWaypoints.readResult.kind === 'ready'
+                  ? { ...personalWaypoints.readResult, waypoints: personalWaypointEdits.working }
+                  : personalWaypoints.readResult}
+              status={personalWaypointEdits.issue
+                ?? (personalWaypoints.statusKind === 'problem' ? personalWaypoints.status : null)}
               onAdd={beginWaypointCreation}
               onRenameCategory={personalWaypoints.renameCategory}
               onMergeCategoryVisibility={personalWaypointCategoryVisibility.mergeCategoryVisibilityFor}
@@ -1081,9 +1119,13 @@ function App() {
                 trigger,
               )}
               onSearchFilterChange={setHasPersonalWaypointSearchFilter}
-              editing={isEditingPersonalWaypoints}
-              onRemove={removePersonalWaypoint}
-              onMove={personalWaypoints.moveWaypoint}
+              editing={personalWaypointsEditing}
+              onRemove={personalWaypointEdits.remove}
+              onMove={personalWaypointEdits.move}
+              onReorder={personalWaypointEdits.reorder}
+              editingCategories={personalWaypointEdits.categories}
+              onConfirmEdits={confirmPersonalWaypointEdits}
+              onCancelEdits={cancelPersonalWaypointEdits}
               onResetUnreadableData={personalWaypoints.resetUnreadableData}
               onDiscardRejectedRecords={personalWaypoints.discardRejectedRecords}
               categoryOptions={personalWaypointCategoryOptions}
@@ -1125,7 +1167,6 @@ function App() {
                   cancelPersonalWaypointEdit()
                   setMorePage(personalWaypointEditReturnPage)
                 } else {
-                  setIsEditingPersonalWaypoints(false)
                   setMorePage('waypoints')
                 }
               }}
@@ -1133,7 +1174,6 @@ function App() {
                 if (personalWaypoints.save()) {
                   if (morePage === 'editing-waypoint') setMorePage(personalWaypointEditReturnPage)
                   else {
-                    setIsEditingPersonalWaypoints(false)
                     setMorePage('waypoints')
                   }
                 }
@@ -1201,7 +1241,6 @@ function App() {
               setMorePage(personalWaypointEditReturnPage)
             } else if (morePage === 'creating') {
               personalWaypoints.cancelEdit()
-              setIsEditingPersonalWaypoints(false)
               setMorePage('waypoints')
             }
             setMoreSheetDetent('full')
@@ -1209,6 +1248,27 @@ function App() {
           onCancel={() => setPendingDraftLeave(null)}
         >
           <p>Your changes to this waypoint have not been saved.</p>
+        </ConfirmDialog>
+        {/* Cancelling an edit discards staged moves and removals, so it says what will be lost. */}
+        <ConfirmDialog
+          open={pendingEditDiscard}
+          title="Discard these list changes?"
+          confirmLabel="Discard changes"
+          cancelLabel="Keep editing"
+          destructive
+          onConfirm={() => {
+            setPendingEditDiscard(false)
+            personalWaypointEdits.cancel()
+            setPersonalWaypointsEditing(false)
+            personalWaypointsInitialFocusRef.current?.focus()
+          }}
+          onCancel={() => setPendingEditDiscard(false)}
+        >
+          <p>
+            {personalWaypointEdits.changeSummary
+              ? `${personalWaypointEdits.changeSummary}. Nothing has been saved yet.`
+              : 'Nothing has been saved yet.'}
+          </p>
         </ConfirmDialog>
       </MobileSheetMetricsContext.Provider>
     </main>

@@ -45,7 +45,7 @@ describe('PersonalWaypointListActions', () => {
     expect(screen.queryByRole('group', { name: 'Waypoint list commands' })).toBeNull()
   })
 
-  it('swaps Edit list for Done while editing', async () => {
+  it('offers no way to finish an edit while editing, and keeps Clear all', async () => {
     const user = userEvent.setup()
     render(
       <PersonalWaypointListActions
@@ -56,8 +56,12 @@ describe('PersonalWaypointListActions', () => {
       />,
     )
 
+    // Confirm and Cancel are visible commands on the screen, so the menu carries neither them nor
+    // an Edit list entry that would start a second edit. Clear all is not a way to end an edit, so
+    // removing it would take a command away.
     const menu = await openListMenu(user)
-    expect(within(menu).getByRole('button', { name: 'Done' })).toBeTruthy()
+    expect(within(menu).getAllByRole('button').map((button) => button.textContent)).toEqual(['Clear all'])
+    expect(within(menu).queryByRole('button', { name: 'Done' })).toBeNull()
     expect(within(menu).queryByRole('button', { name: 'Edit list' })).toBeNull()
   })
 

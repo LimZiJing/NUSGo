@@ -58,7 +58,10 @@ function StatefulPersonalWaypointsHome() {
           waypoints: current.waypoints.filter(({ id }) => id !== waypointId),
         }
       })}
-      onMove={() => true}
+      onMove={() => undefined}
+      onReorder={() => undefined}
+      onConfirmEdits={() => undefined}
+      onCancelEdits={() => undefined}
       onResetUnreadableData={() => undefined}
       onDiscardRejectedRecords={() => undefined}
       categoryOptions={[{ category: 'Rest spot', waypointCount: 1 }]}
@@ -86,7 +89,10 @@ describe('PersonalWaypointsHome', () => {
       status: 'Waypoint order saved.',
       onAdd: () => undefined,
       onRemove: () => undefined,
-      onMove: () => true,
+      onMove: () => undefined,
+  onReorder: () => undefined,
+  onConfirmEdits: () => undefined,
+  onCancelEdits: () => undefined,
       onResetUnreadableData: () => undefined,
       onDiscardRejectedRecords: () => undefined,
       categoryOptions: [{ category: 'Rest spot', waypointCount: 1 }],
@@ -122,7 +128,10 @@ describe('PersonalWaypointsHome', () => {
         onAdd={() => undefined}
         editing={false}
         onRemove={() => undefined}
-        onMove={() => true}
+        onMove={() => undefined}
+        onReorder={() => undefined}
+        onConfirmEdits={() => undefined}
+        onCancelEdits={() => undefined}
         onResetUnreadableData={() => undefined}
         onDiscardRejectedRecords={() => undefined}
         categoryOptions={[
@@ -164,7 +173,10 @@ describe('PersonalWaypointsHome', () => {
         onOpenDetails={onOpenDetails}
         editing={false}
         onRemove={() => undefined}
-        onMove={() => true}
+        onMove={() => undefined}
+        onReorder={() => undefined}
+        onConfirmEdits={() => undefined}
+        onCancelEdits={() => undefined}
         onResetUnreadableData={() => undefined}
         onDiscardRejectedRecords={() => undefined}
         categoryOptions={[{ category: 'Rest spot', waypointCount: 1 }]}
@@ -195,7 +207,10 @@ describe('PersonalWaypointsHome', () => {
         onAdd={() => undefined}
         editing={false}
         onRemove={() => undefined}
-        onMove={() => true}
+        onMove={() => undefined}
+        onReorder={() => undefined}
+        onConfirmEdits={() => undefined}
+        onCancelEdits={() => undefined}
         onResetUnreadableData={() => undefined}
         onDiscardRejectedRecords={() => undefined}
         categoryOptions={[{ category: 'Rest spot', waypointCount: 1 }]}
@@ -238,7 +253,10 @@ describe('PersonalWaypointsHome', () => {
         onAdd={() => undefined}
         editing={false}
         onRemove={() => undefined}
-        onMove={() => true}
+        onMove={() => undefined}
+        onReorder={() => undefined}
+        onConfirmEdits={() => undefined}
+        onCancelEdits={() => undefined}
         onResetUnreadableData={onResetUnreadableData}
         onDiscardRejectedRecords={() => undefined}
       />,
@@ -271,7 +289,10 @@ describe('PersonalWaypointsHome', () => {
         onAdd={() => undefined}
         editing={false}
         onRemove={() => undefined}
-        onMove={() => true}
+        onMove={() => undefined}
+        onReorder={() => undefined}
+        onConfirmEdits={() => undefined}
+        onCancelEdits={() => undefined}
         onResetUnreadableData={() => undefined}
         onDiscardRejectedRecords={onDiscardRejectedRecords}
       />,

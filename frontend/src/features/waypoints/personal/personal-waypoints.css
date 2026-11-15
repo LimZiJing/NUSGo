@@ -309,6 +309,37 @@
   background: var(--surface-card);
 }
 
+/* A category is a drop target while a place is dragged over it. The bounding box is the card's own
+   outline, so the highlight says exactly which category the place will land in. */
+.personal-waypoint-category-group[data-drop-target='true'] {
+  border-color: var(--accent);
+  background: var(--accent-soft);
+  box-shadow: 0 0 0 1px var(--accent);
+}
+
+/* An emptied category keeps its card and explains what it is for, so it remains a place to drop
+   into rather than a gap in the list. */
+.personal-waypoint-category-empty {
+  margin: 0;
+  padding: var(--space-3);
+  color: var(--text-muted);
+  font-size: var(--font-size-sm);
+  line-height: 1.4;
+}
+
+/* Confirm and Cancel replace Add waypoint while editing: an even pair, with the decisive action
+   last and filled. */
+.personal-waypoint-edit-actions {
+  display: flex;
+  gap: var(--space-2);
+}
+
+.personal-waypoint-edit-action {
+  flex: 1 1 0;
+  min-height: 40px;
+  border-radius: 12px;
+}
+
 .personal-waypoint-category-group > .disclosure-header {
   padding-inline: var(--space-3);
 }

@@ -6,6 +6,7 @@ import { useLayoutEffect, useRef, useState } from 'react'
 import type { Ref } from 'react'
 import { Button } from '../../../ui/button'
 import { PersonalWaypointCategoryVisibility } from './components/personal-waypoint-category-visibility'
+import { PersonalWaypointEditActions } from './components/personal-waypoint-edit-actions'
 import { PersonalWaypointList } from './components/personal-waypoint-list'
 
 export function PersonalWaypointsHome({
@@ -17,8 +18,12 @@ export function PersonalWaypointsHome({
   editing,
   onRemove,
   onMove,
+  onReorder,
   onResetUnreadableData,
   onDiscardRejectedRecords,
+  editingCategories,
+  onConfirmEdits,
+  onCancelEdits,
   categoryOptions,
   hiddenCategories,
   draftHiddenCategories,
@@ -41,7 +46,12 @@ export function PersonalWaypointsHome({
   readonly onSearchFilterChange?: (active: boolean) => void
   readonly editing: boolean
   readonly onRemove: (waypointId: string) => void
-  readonly onMove: (waypointId: string, targetIndex: number) => boolean
+  readonly onMove: (waypointId: string, category: string) => void
+  readonly onReorder: (waypointId: string, targetIndex: number) => void
+  /** Categories to keep visible while editing, including any the pending edits have emptied. */
+  readonly editingCategories?: readonly string[]
+  readonly onConfirmEdits: () => void
+  readonly onCancelEdits: () => void
   readonly onResetUnreadableData: () => void
   readonly onDiscardRejectedRecords: () => void
   readonly categoryOptions: readonly PersonalWaypointCategoryOption[]
@@ -78,7 +88,11 @@ export function PersonalWaypointsHome({
   }, [waypointCount])
 
   return <div className="personal-waypoints-home">
-    <Button label="Add waypoint" variant="primary" onClick={onAdd} disabled={!canAdd} ref={initialFocusRef} />
+    {/* While editing, the confirm/cancel pair takes the place of Add waypoint, so the screen has
+        one decisive action rather than a primary button that cannot be used mid-edit. */}
+    {editing
+      ? <PersonalWaypointEditActions onConfirm={onConfirmEdits} onCancel={onCancelEdits} />
+      : <Button label="Add waypoint" variant="primary" onClick={onAdd} disabled={!canAdd} ref={initialFocusRef} />}
     {status && <p className="personal-waypoints-status personal-waypoints-status-problem" role="status">{status}</p>}
     {atWaypointLimit && <p className="personal-waypoints-limit">
       The limit of {PERSONAL_WAYPOINTS_MAX_COUNT} waypoints has been reached.
@@ -138,6 +152,8 @@ export function PersonalWaypointsHome({
           onSearchFilterChange={onSearchFilterChange}
           onRemove={onRemove}
           onMove={onMove}
+          onReorder={onReorder}
+          editingCategories={editingCategories}
           onEditAnnouncement={setEditAnnouncement}
           onRenameCategory={onRenameCategory}
           onMergeCategoryVisibility={onMergeCategoryVisibility}

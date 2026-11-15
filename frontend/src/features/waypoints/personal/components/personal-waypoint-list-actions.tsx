@@ -5,6 +5,10 @@ import { OverflowMenu } from '../../../../ui/overflow-menu'
 /**
  * The collection's own commands. They live in the one overflow menu this screen is allowed, rather
  * than as header buttons competing with the page title.
+ *
+ * While editing, this menu offers no way to finish: Confirm and Cancel are visible commands on the
+ * screen itself. Clear all keeps its place, because it is a collection command rather than a way to
+ * end the edit.
  */
 export function PersonalWaypointListActions({
   editing,
@@ -18,11 +22,11 @@ export function PersonalWaypointListActions({
   readonly onClearAll: () => void
 }) {
   return <OverflowMenu label="Waypoint list options" menuLabel="Waypoint list commands">
-    <MenuItem
-      label={editing ? 'Done' : 'Edit list'}
+    {!editing && <MenuItem
+      label="Edit list"
       icon={<EditIcon />}
       onClick={onToggleEditing}
-    />
+    />}
     <MenuItem
       label="Clear all"
       icon={<TrashIcon />}

@@ -1342,9 +1342,11 @@ describe('More surface', () => {
 
     await chooseWaypointListCommand(user, 'Edit list')
     expect(createdWaypointsList.getAttribute('data-editing')).toBe('true')
-    await user.click(screen.getByRole('button', { name: 'Add waypoint' }))
+    // Add waypoint is replaced by the confirm/cancel pair while editing.
+    expect(screen.queryByRole('button', { name: 'Add waypoint' })).toBeNull()
     await user.click(screen.getByRole('button', { name: 'Cancel' }))
     expect(screen.getByRole('list', { name: 'Saved places' }).getAttribute('data-editing')).toBe('false')
+    expect(screen.getByRole('button', { name: 'Add waypoint' })).toBeTruthy()
 
     confirm.mockRestore()
     vi.unstubAllGlobals()
@@ -1470,7 +1472,10 @@ describe('More surface', () => {
     expect(waypointsList.getAttribute('data-editing')).toBe('true')
     expect(screen.getByRole('button', { name: 'Reorder Quiet bench' }).hasAttribute('disabled'))
       .toBe(true)
-    await chooseWaypointListCommand(user, 'Done')
+    // Finishing an edit is a visible pair, not a menu entry, and it replaces Add waypoint.
+    expect(screen.queryByRole('button', { name: 'Add waypoint' })).toBeNull()
+    await user.click(screen.getByRole('button', { name: 'Confirm' }))
+    expect(screen.getByRole('button', { name: 'Add waypoint' })).toBeTruthy()
 
     await user.click(screen.getByRole('button', { name: 'Back to previous view' }))
     expect(sheet?.getAttribute('data-page')).toBe('menu')

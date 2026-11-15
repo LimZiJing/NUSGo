@@ -1,19 +1,37 @@
+import { useState } from 'react'
 import { FileText } from 'lucide-react'
 import type { PersonalWaypoint } from '../../../../domain/waypoints/personal/personal-waypoint'
-import { EditIcon, MapPinIcon, TrashIcon } from '../../../../ui/icons'
+import { PERSONAL_WAYPOINT_CATEGORY_MAX_LENGTH } from '../../../../domain/waypoints/personal/personal-waypoint'
+import { Button, IconButton } from '../../../../ui/button'
+import { CloseIcon, EditIcon, MapPinIcon, MoveToCategoryIcon, TrashIcon } from '../../../../ui/icons'
 import { NavigateButton } from '../../../../ui/navigate-button'
 import { MenuItem } from '../../../../ui/menu-item'
 import { OverflowMenu } from '../../../../ui/overflow-menu'
+import { ConnectedCategoryPicker } from './connected-category-picker'
 import { PersonalWaypointMarkerGlyph } from './personal-waypoint-marker-glyph'
 import { personalWaypointMarkerColorClass } from './personal-waypoint-marker-color'
 
-export function PersonalWaypointDetails({ waypoint, canManage, onDirections, onEdit, onDelete }: {
+export function PersonalWaypointDetails({
+  waypoint,
+  canManage,
+  categories,
+  onDirections,
+  onEdit,
+  onDelete,
+  onMove,
+}: {
   readonly waypoint: PersonalWaypoint | null
   readonly canManage: boolean
+  /** Every category currently in the collection, for the Move picker. */
+  readonly categories: readonly string[]
   readonly onDirections: () => void
   readonly onEdit: () => void
   readonly onDelete: () => void
+  /** Commits the move; the caller returns to the collection, where the popup offers Undo. */
+  readonly onMove: (category: string) => void
 }) {
+  const [moving, setMoving] = useState(false)
+
   if (!waypoint) {
     return <p className="personal-waypoint-details-unavailable" role="status">
       This waypoint is no longer available in the saved list.
@@ -64,10 +82,44 @@ export function PersonalWaypointDetails({ waypoint, canManage, onDirections, onE
     </div>
 
     {!canManage && <p className="personal-waypoint-details-status" role="status">
-      Editing and deleting are unavailable until saved data is recovered.
+      Moving, editing and deleting are unavailable until saved data is recovered.
     </p>}
+
     <div className="personal-waypoint-details-actions">
       <NavigateButton className="personal-waypoint-details-navigate" onClick={onDirections} />
+      {/* Move sits beside Navigate as its own action instead of hiding in the overflow menu. */}
+      <div className="personal-waypoint-details-actions-row">
+        <Button
+          className="personal-waypoint-details-move-trigger"
+          label="Move to category"
+          icon={<MoveToCategoryIcon />}
+          variant="secondary"
+          onClick={() => setMoving((open) => !open)}
+          expanded={moving}
+          controls="personal-waypoint-move"
+          disabled={!canManage}
+        />
+        {moving && <IconButton
+          label="Cancel moving this waypoint"
+          icon={<CloseIcon />}
+          variant="plain"
+          onClick={() => setMoving(false)}
+        />}
+      </div>
     </div>
+
+    {moving && <div id="personal-waypoint-move" className="personal-waypoint-details-move">
+      <ConnectedCategoryPicker
+        label="Move to"
+        value={waypoint.category}
+        options={categories.filter((category) => category !== waypoint.category)}
+        placeholder="Search or create a category"
+        maxLength={PERSONAL_WAYPOINT_CATEGORY_MAX_LENGTH}
+        onSelect={(category) => {
+          setMoving(false)
+          onMove(category)
+        }}
+      />
+    </div>}
   </section>
 }

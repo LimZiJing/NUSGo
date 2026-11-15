@@ -8,6 +8,7 @@ import {
 import { createPersonalWaypoint, type PersonalWaypointDraft } from '../../../../domain/waypoints/personal/create-personal-waypoint'
 import type { PersonalWaypoint, PersonalWaypointValidationIssue } from '../../../../domain/waypoints/personal/personal-waypoint'
 import { updatePersonalWaypoint } from '../../../../domain/waypoints/personal/update-personal-waypoint'
+import { movePersonalWaypointToCategory } from '../../../../domain/waypoints/personal/move-personal-waypoint'
 import { renamePersonalWaypointCategory } from '../../../../domain/waypoints/personal/personal-waypoint-category-rename'
 import type {
   PersonalWaypointStore,
@@ -65,6 +66,18 @@ interface PersonalWaypointWorkflowStatus {
   readonly revision: number
 }
 
+/**
+ * The record of a move that can still be undone. `original` is the collection before the move, so
+ * undo restores the place's category AND its position along with every other place's order.
+ */
+interface PersonalWaypointMoveUndo {
+  readonly waypointId: string
+  readonly original: readonly PersonalWaypoint[]
+  readonly revision: PersonalWaypointStoreRevision
+  /** The status revision of the "Moved to…" message, so Undo never outlives its own popup. */
+  readonly statusRevision: number
+}
+
 function createEmptyPersonalWaypointDraft(
   coordinate: WaypointCoordinate = DEFAULT_PERSONAL_WAYPOINT_COORDINATE,
 ): PersonalWaypointDraft {
@@ -98,14 +111,19 @@ export function usePersonalWaypointWorkflow(store: PersonalWaypointStore) {
   const [draftBaseline, setDraftBaseline] = useState<PersonalWaypointDraft>(() => createEmptyPersonalWaypointDraft())
   const [statusUpdate, setStatusUpdate] = useState<PersonalWaypointWorkflowStatus | null>(null)
   const statusRevision = useRef(0)
+  // A move can be undone from its own popup message. Any other write clears it, so Undo can never
+  // reverse a move that is no longer the last thing that happened. It is state rather than a ref
+  // because whether Undo is offered is rendered, and a ref read during render would not re-render.
+  const [moveUndo, setMoveUndo] = useState<PersonalWaypointMoveUndo | null>(null)
   const [issues, setIssues] = useState<readonly PersonalWaypointValidationIssue[]>([])
   const [editing, setEditing] = useState<PersonalWaypointEditingState | null>(null)
   const editingWaypointId = editing?.waypointId ?? null
   const editConflict = editing?.conflict ?? null
 
-  const setStatus = useCallback((message: string, kind: PersonalWaypointWorkflowStatusKind) => {
+  const setStatus = useCallback((message: string, kind: PersonalWaypointWorkflowStatusKind): number => {
     statusRevision.current += 1
     setStatusUpdate({ message, kind, revision: statusRevision.current })
+    return statusRevision.current
   }, [])
   const clearStatus = useCallback(() => setStatusUpdate(null), [])
 
@@ -121,12 +139,16 @@ export function usePersonalWaypointWorkflow(store: PersonalWaypointStore) {
 
   const refresh = useCallback(() => setReadResult(store.read()), [store])
 
+  const forgetMoveUndo = useCallback(() => setMoveUndo(null), [])
+
   const finishMutation = useCallback((
     outcome: PersonalWaypointStoreMutationResult,
     successKind: 'saved' | 'cleared',
     successMessage: string,
     failureMessage?: string,
   ): boolean => {
+    // Every write supersedes the previous move, so its Undo must not survive.
+    forgetMoveUndo()
     setReadResult(store.read())
     const succeeded = outcome.kind === successKind
     setStatus(
@@ -134,7 +156,7 @@ export function usePersonalWaypointWorkflow(store: PersonalWaypointStore) {
       succeeded ? 'success' : 'problem',
     )
     return succeeded
-  }, [setStatus, store])
+  }, [forgetMoveUndo, setStatus, store])
 
   const updateCollection = useCallback((
     update: (waypoints: readonly PersonalWaypoint[]) => readonly PersonalWaypoint[],
@@ -178,6 +200,70 @@ export function usePersonalWaypointWorkflow(store: PersonalWaypointStore) {
     },
     'Order saved.',
   ), [updateCollection])
+
+  /**
+   * Moves one place into a category and keeps enough to undo it. Returns true only when the move was
+   * written; a blocked, invalid or failed write reports a problem and returns false.
+   */
+  const moveWaypointToCategory = useCallback((waypointId: string, category: string): boolean => {
+    const current = store.read()
+    setReadResult(current)
+    const blockedMessage = getBlockedMutationMessage(current)
+    if (blockedMessage) {
+      setStatus(blockedMessage, 'problem')
+      return false
+    }
+    // A null revision is a legitimate first write, so it is not a reason to refuse.
+    if (current.kind !== 'ready' || current.rejectedRecords.count > 0) return false
+
+    const next = movePersonalWaypointToCategory(current.waypoints, waypointId, category, {
+      now: () => new Date().toISOString(),
+    })
+    if (!next) return false
+
+    const destination = category.trim()
+    const outcome = store.replaceAll(next, current.revision)
+    if (outcome.kind !== 'saved') {
+      finishMutation(outcome, 'saved', '', 'The waypoint could not be moved. Saved data was not changed.')
+      return false
+    }
+
+    forgetMoveUndo()
+    setReadResult(store.read())
+    // Remember the pre-move collection under the revision this move produced, so Undo can prove
+    // nothing else has been written in between.
+    const statusId = setStatus(`Moved to ${destination}.`, 'success')
+    setMoveUndo({ waypointId, original: current.waypoints, revision: outcome.revision, statusRevision: statusId })
+    return true
+  }, [finishMutation, forgetMoveUndo, setStatus, store])
+
+  /**
+   * Reverses the last move. Undo is offered only from the move's own popup message, so a store that
+   * changed in the meantime (another tab, or any other command here) refuses rather than reverting
+   * the wrong state.
+   */
+  const undoMoveWaypoint = useCallback((): boolean => {
+    if (!moveUndo) return false
+
+    const current = store.read()
+    setReadResult(current)
+    if (current.kind !== 'ready' || current.rejectedRecords.count > 0 || current.revision !== moveUndo.revision) {
+      forgetMoveUndo()
+      setStatus('Undo is no longer available because the saved list changed.', 'problem')
+      return false
+    }
+
+    const outcome = store.replaceAll(moveUndo.original, moveUndo.revision)
+    if (outcome.kind !== 'saved') {
+      finishMutation(outcome, 'saved', '', 'Undo could not be saved. The waypoint stays in its new category.')
+      return false
+    }
+
+    forgetMoveUndo()
+    setReadResult(store.read())
+    setStatus('Move undone.', 'success')
+    return true
+  }, [finishMutation, forgetMoveUndo, moveUndo, setStatus, store])
 
   /**
    * Renames a category, merging into an existing one when the name is already taken. Returns the
@@ -406,12 +492,21 @@ export function usePersonalWaypointWorkflow(store: PersonalWaypointStore) {
     return finishMutation(outcome, 'saved', 'Unreadable waypoint records were discarded. Readable waypoints were kept.')
   }, [finishMutation, store])
 
+  // A move's Undo belongs to the popup that announced the move: once that message is replaced or
+  // has timed out, there is nothing left offering it.
+  const currentStatusRevision = statusUpdate?.revision ?? 0
+  const canUndoMove = moveUndo !== null &&
+    moveUndo.statusRevision === currentStatusRevision &&
+    readResult.kind === 'ready' &&
+    readResult.rejectedRecords.count === 0
+
   return {
     readResult,
     draft,
     status: statusUpdate?.message ?? null,
     statusKind: statusUpdate?.kind ?? null,
-    statusRevision: statusUpdate?.revision ?? 0,
+    statusRevision: currentStatusRevision,
+    canUndoMove,
     issues,
     editingWaypointId,
     editConflict,
@@ -426,6 +521,8 @@ export function usePersonalWaypointWorkflow(store: PersonalWaypointStore) {
     acceptDraft,
     renameCategory,
     moveWaypoint,
+    moveWaypointToCategory,
+    undoMoveWaypoint,
     clearAll,
     resetUnreadableData,
     discardRejectedRecords,

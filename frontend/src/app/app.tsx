@@ -39,6 +39,8 @@ import {
   type ThemePreference,
 } from '../ui/theme'
 import { ConfirmDialog } from '../ui/confirm-dialog'
+import { Button } from '../ui/button'
+import { UndoIcon } from '../ui/icons'
 import { MobileSheetMetricsContext } from '../ui/mobile/mobile-sheet/mobile-sheet-metrics'
 // Dev-only: import.meta.env.DEV is a build-time constant, so production builds drop this
 // dynamic import, the control module and its CSS.
@@ -803,6 +805,28 @@ function App() {
         : moreInitialFocusRef.current
     returnFromWaypointDetails(focusTarget)
   }
+  // A move writes immediately, so the place leaves this screen: return to the collection, where the
+  // popup message carries Undo, and land somewhere that still exists.
+  const moveSelectedPersonalWaypoint = (category: string): void => {
+    if (!selectedPersonalWaypointId) return
+    const moved = personalWaypoints.moveWaypointToCategory(selectedPersonalWaypointId, category)
+    if (!moved) return
+    const returnTarget = personalWaypointDetails?.returnTarget
+    const focusTarget = returnTarget?.page === 'waypoints'
+      ? personalWaypointsInitialFocusRef.current
+      : returnTarget?.page === 'closed'
+        ? moreEntryButtonRef.current
+        : moreInitialFocusRef.current
+    returnFromWaypointDetails(focusTarget)
+  }
+  // Undo is offered only on the collection, from the popup that announced the move.
+  const canUndoPersonalWaypointMove = morePage === 'waypoints' && personalWaypoints.canUndoMove
+  const undoPersonalWaypointMove = (): void => {
+    personalWaypoints.undoMoveWaypoint()
+    // Undo removes the button that was just pressed, so focus deliberately lands on the Add waypoint
+    // control rather than being left on a detached node.
+    personalWaypointsInitialFocusRef.current?.focus({ preventScroll: true })
+  }
   const goBackInMore = useCallback((): void => {
     if (morePage === 'placing') {
       const returnPage = placementReturnPage
@@ -1049,6 +1073,13 @@ function App() {
             detent: moreSheetDetent,
             statusMessage: personalWaypoints.statusKind === 'success' ? personalWaypoints.status : null,
             statusRevision: personalWaypoints.statusRevision,
+            // Undo lives on the popup that announced the move, not as a standing control.
+            statusAction: canUndoPersonalWaypointMove ? <Button
+              label="Undo"
+              icon={<UndoIcon />}
+              variant="ghost"
+              onClick={undoPersonalWaypointMove}
+            /> : undefined,
             headerAction: personalWaypointHeaderAction,
             title: morePage === 'waypoints'
               ? 'My waypoints'
@@ -1101,6 +1132,7 @@ function App() {
             /> : morePage === 'waypoint-details' ? <PersonalWaypointDetails
               waypoint={selectedPersonalWaypoint}
               canManage={canManageSelectedPersonalWaypoint}
+              categories={personalWaypointCategoryOptions.map(({ category }) => category)}
               onDirections={() => {
                 if (selectedPersonalWaypoint) navigateToPersonalWaypoint(selectedPersonalWaypoint)
               }}
@@ -1109,6 +1141,7 @@ function App() {
                 beginPersonalWaypointEdit(selectedPersonalWaypoint, 'waypoint-details')
               }}
               onDelete={deleteSelectedPersonalWaypoint}
+              onMove={moveSelectedPersonalWaypoint}
             /> : morePage === 'creating' || morePage === 'editing-waypoint' ? <PersonalWaypointForm
               draft={personalWaypoints.draft}
               categoryOptions={personalWaypointCategoryOptions}

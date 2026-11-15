@@ -65,25 +65,35 @@
   flex-direction: column;
 }
 
-.more-panel-status {
+.more-panel-status-row {
   position: absolute;
   z-index: 20;
   right: 12px;
   bottom: max(12px, env(safe-area-inset-bottom, 0px));
   left: 12px;
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
   margin: 0 auto;
   box-sizing: border-box;
   width: min(360px, 100%);
-  padding: 8px 12px;
+  padding: 4px 8px 4px 12px;
   border: 1px solid var(--border-card);
   border-radius: var(--radius-control);
-  color: var(--text-secondary);
   background: var(--surface-card);
   box-shadow: var(--shadow-md);
+}
+
+/* The message wraps inside the row so a long one cannot push its action off the edge. */
+.more-panel-status {
+  min-width: 0;
+  flex: 1 1 auto;
+  margin: 0;
+  color: var(--text-secondary);
   font: var(--font-size-sm)/1.35 var(--sans);
 }
 
-.more-panel-body:has(.more-panel-status) .more-panel-content-scroll {
+.more-panel-body:has(.more-panel-status-row) .more-panel-content-scroll {
   margin-bottom: 64px;
 }
 

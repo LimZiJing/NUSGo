@@ -148,18 +148,18 @@
 
 .personal-waypoint-details-actions {
   display: grid;
-  gap: var(--space-1);
+  gap: var(--space-2);
 }
 /* Full-width primary action, matching the Stop and venue details hierarchy. */
 .personal-waypoint-details-navigate { width: 100%; }
-.personal-waypoint-details-secondary-actions {
+/* Move shares the row with its own Cancel, so it is a labelled control beside Navigate. */
+.personal-waypoint-details-actions-row {
   display: flex;
   align-items: center;
   gap: var(--space-2);
 }
-.personal-waypoint-details-actions .button[data-variant='ghost'].personal-waypoint-details-delete {
-  color: var(--text-error-strong);
-}
+.personal-waypoint-details-move-trigger { flex: 1 1 auto; }
+.personal-waypoint-details-move { display: grid; gap: var(--space-1); }
 
 .personal-waypoint-list {
   display: grid;

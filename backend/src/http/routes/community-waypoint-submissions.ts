@@ -5,6 +5,7 @@ import {
   COMMUNITY_WAYPOINT_VENDING_ITEMS,
   COMMUNITY_WAYPOINT_VENDING_PREP_OPTIONS,
   type CommunityWaypointDetailsSuggestion,
+  type ActiveCommunityWaypointCategory,
 } from '@nusgo/shared/waypoints/community'
 import { InvalidCommunityWaypointSubmissionError, parseCommunityWaypointSubmission, type CommunityWaypointSubmission } from '../validation/community-waypoint-submission.ts'
 import { sendApiError } from '../error-response.ts'
@@ -41,7 +42,7 @@ function formatIssueField(label: string, value: string | number): string {
   return '- **' + label + ':** ' + cleanMarkdownText(String(value))
 }
 
-function getCategoryLabel(category: string): string {
+function getCategoryLabel(category: ActiveCommunityWaypointCategory): string {
   return COMMUNITY_WAYPOINT_CATEGORIES.find(({ value }) => value === category)?.label ?? category
 }
 

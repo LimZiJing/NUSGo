@@ -63,6 +63,7 @@ export function PersonalWaypointListRow({
           className="personal-waypoint-grip"
           label={`Reorder ${label}`}
           icon={<GripVerticalIcon />}
+          variant="plain"
           onClick={() => undefined}
           onKeyDown={(event) => onHandleKeyDown?.(waypoint.id, event)}
           ariaDescribedBy={handleDescriptionId}
@@ -84,6 +85,7 @@ export function PersonalWaypointListRow({
           className="personal-waypoint-remove"
           label={`Remove ${label}`}
           icon={<CloseIcon />}
+          variant="plain"
           onClick={() => onRemove(waypoint.id)}
         />
       ) : undefined}

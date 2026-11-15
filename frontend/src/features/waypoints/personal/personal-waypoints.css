@@ -223,13 +223,32 @@
   height: 15px;
 }
 
+/* The grip is a bare handle, not a button in a box: `plain` gives it no border or fill, so only
+   the dots show. It keeps the 36px minimum touch target while sitting tight against the marker
+   beside it, so the row reads as one line rather than three separate boxes. */
 .personal-waypoint-grip {
-  width: 40px;
-  min-width: 40px;
-  min-height: 40px;
-  color: var(--text-muted);
+  width: var(--control-height-sm);
+  min-width: var(--control-height-sm);
+  min-height: var(--control-height-sm);
+  padding: 0;
   cursor: grab;
   touch-action: none;
+}
+
+/* `plain` inherits colour, so the muted grip states its own; the selector matches the primitive's
+   specificity rather than relying on source order. */
+.personal-waypoint-row .button[data-variant='plain'].personal-waypoint-grip {
+  color: var(--text-muted);
+}
+
+/* Closer than the row's default leading gap: the handle and the marker are one visual unit. */
+.personal-waypoint-row .saved-list-row-leading { gap: var(--space-1); }
+
+/* In edit mode the handle sits closest to the card edge, with the marker just inside it, so the
+   grip reads as part of the card's leading edge rather than floating in the middle of a gap. The
+   36px button keeps its touch target; only the row's inset shrinks. */
+.personal-waypoint-row.saved-list-row[data-density='compact'] {
+  padding-inline-start: var(--space-1);
 }
 
 .personal-waypoint-grip:active { cursor: grabbing; }
@@ -260,7 +279,11 @@
   color: var(--text-secondary);
 }
 
-.personal-waypoint-remove { color: var(--text-error-strong); }
+/* Plain icon buttons inherit their colour, so the remove action states its own. The selector
+   matches the primitive's `[data-variant]` specificity so the error colour is not overridden. */
+.personal-waypoint-row .button[data-variant='plain'].personal-waypoint-remove {
+  color: var(--text-error-strong);
+}
 
 .personal-waypoint-list-empty {
   display: flex;

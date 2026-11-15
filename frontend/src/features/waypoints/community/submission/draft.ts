@@ -1,7 +1,6 @@
 import {
   COMMUNITY_WAYPOINT_TEXT_LIMITS,
   SINGAPORE_COORDINATE_BOUNDS,
-  type ActiveCommunityWaypointCategory,
   type CommunityWaypoint,
   type CommunityWaypointDetailsSuggestion,
   type CommunityWaypointPrintingService,
@@ -40,10 +39,9 @@ export const FLOOR_UNSET = 'unset'
 
 export function initialSubmissionDraft(
   waypoint: CommunityWaypoint | null,
-  initialCategory: ActiveCommunityWaypointCategory | null = null,
 ): SubmissionDraft {
   return {
-    category: waypoint ? '' : initialCategory ?? '',
+    category: '',
     building: waypoint?.building ?? '',
     floor: waypoint?.floor === undefined ? '' : String(waypoint.floor),
     otherFloor: '',

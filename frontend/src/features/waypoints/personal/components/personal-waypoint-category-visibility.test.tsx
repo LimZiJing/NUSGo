@@ -40,24 +40,25 @@ describe('PersonalWaypointCategoryVisibility', () => {
     expect(screen.queryByRole('button', { name: /Open Food & drink/ })).toBeNull()
     expect(screen.queryByRole('button', { name: /^Open / })).toBeNull()
 
-    // A hidden category still has a visibility control, and it is a toggle button, not a row action.
-    const studyToggle = screen.getByRole('button', { name: 'Show Study markers' })
-    expect(studyToggle.getAttribute('aria-pressed')).toBe('false')
-    expect(screen.getByRole('button', { name: 'Show Food & drink markers' }).getAttribute('aria-pressed'))
-      .toBe('true')
-    expect(screen.queryByRole('checkbox')).toBeNull()
+    // Visibility is membership, so each row carries a checkbox named after its category. A hidden
+    // category is simply unchecked; the ✕ that used to appear here reads as "delete" elsewhere in
+    // this screen, so no row borrows that icon for a map preference.
+    const studyCheck = screen.getByRole('checkbox', { name: 'Show Study on the map' })
+    expect((studyCheck as HTMLInputElement).checked).toBe(false)
+    expect((screen.getByRole('checkbox', { name: 'Show Food & drink on the map' }) as HTMLInputElement).checked).toBe(true)
+    expect(screen.getByRole('checkbox', { name: 'Show Rest spot on the map' })).toBeTruthy()
+    expect(document.querySelector('.personal-waypoint-category-toggle')).toBeNull()
 
-    // The only buttons inside the category rows are the visibility toggles.
+    // The rows carry no action buttons at all: the checkbox is the whole control.
     const categoryRows = document.querySelectorAll('.personal-waypoint-category-option')
     expect(categoryRows).toHaveLength(3)
     for (const row of categoryRows) {
-      const buttons = [...row.querySelectorAll('button')]
-      expect(buttons).toHaveLength(1)
-      expect(buttons[0].getAttribute('aria-label')).toMatch(/^Show .+ markers$/)
+      expect(row.querySelectorAll('button')).toHaveLength(0)
+      expect(row.querySelectorAll('input[type="checkbox"]')).toHaveLength(1)
     }
 
-    await user.click(screen.getByRole('button', { name: 'Show Rest spot markers' }))
-    expect(onSetCategoryVisible).toHaveBeenCalledWith('Rest spot', false)
+    await user.click(studyCheck)
+    expect(onSetCategoryVisible).toHaveBeenCalledWith('Study', true)
     expect(onSetCategoryVisible).toHaveBeenCalledOnce()
   })
 
@@ -81,16 +82,54 @@ describe('PersonalWaypointCategoryVisibility', () => {
     )
 
     await user.type(screen.getByRole('searchbox', { name: 'Search categories' }), 'study')
-    expect(screen.getByRole('button', { name: 'Show Study markers' })).toBeTruthy()
+    expect(screen.getByRole('checkbox', { name: 'Show Study on the map' })).toBeTruthy()
     expect(screen.getByText('Study')).toBeTruthy()
     expect(screen.queryByText('Food & drink')).toBeNull()
 
     await user.clear(screen.getByRole('searchbox', { name: 'Search categories' }))
     await user.click(screen.getByRole('button', { name: 'Clear' }))
     await user.click(screen.getByRole('button', { name: 'Cancel' }))
-    await user.click(screen.getByRole('button', { name: 'Done (2)' }))
+    // Nothing is staged in this render (draft equals committed), so Done promises no change and
+    // says so plainly. It used to read "Done (2)", the number of categories shown, which never
+    // changes with the draft and so counted the wrong thing.
+    await user.click(screen.getByRole('button', { name: 'Done' }))
     expect(onClear).toHaveBeenCalledOnce()
     expect(onCancel).toHaveBeenCalledOnce()
     expect(onDone).toHaveBeenCalledOnce()
+  })
+
+  it('counts the pending changes on Done rather than the categories shown', () => {
+    const { rerender } = render(
+      <PersonalWaypointCategoryVisibility
+        categories={categories}
+        hiddenCategories={[]}
+        draftHiddenCategories={[]}
+        pickerOpen
+        onTogglePicker={() => undefined}
+        onSetCategoryVisible={() => undefined}
+        onClear={() => undefined}
+        onCancel={() => undefined}
+        onDone={() => undefined}
+      />,
+    )
+
+    // Draft matches what is saved, so there is nothing to apply.
+    expect(screen.getByRole('button', { name: 'Done' })).toBeTruthy()
+
+    // Two categories staged as hidden: Done says how many changes it will apply.
+    rerender(
+      <PersonalWaypointCategoryVisibility
+        categories={categories}
+        hiddenCategories={[]}
+        draftHiddenCategories={['Study', 'Rest spot']}
+        pickerOpen
+        onTogglePicker={() => undefined}
+        onSetCategoryVisible={() => undefined}
+        onClear={() => undefined}
+        onCancel={() => undefined}
+        onDone={() => undefined}
+      />,
+    )
+    expect(screen.getByRole('button', { name: 'Done (2)' })).toBeTruthy()
   })
 })

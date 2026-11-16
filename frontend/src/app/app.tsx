@@ -348,14 +348,16 @@ function App() {
     setMorePage('waypoint-details')
   }, [commands, session])
   const handlePersonalWaypointMapSelection = useCallback((waypointId: string, trigger: HTMLButtonElement): void => {
-    if (morePage === 'editing-waypoint' || morePage === 'placing') return
+    // A marker opens details, except while a place is being edited or the list is mid-transaction:
+    // either would replace screens the person is working in.
+    if (morePage === 'editing-waypoint' || morePage === 'placing' || personalWaypointsEditing) return
     if (personalWaypointDetails) {
       // Switching to another place keeps the snapshot and return page captured on first open.
       setPersonalWaypointDetails({ ...personalWaypointDetails, waypointId })
       return
     }
     openPersonalWaypointDetails(waypointId, morePage, moreSheetDetent, trigger)
-  }, [morePage, moreSheetDetent, openPersonalWaypointDetails, personalWaypointDetails])
+  }, [morePage, moreSheetDetent, openPersonalWaypointDetails, personalWaypointDetails, personalWaypointsEditing])
   const personalWaypointsForMap = personalWaypoints.readResult.kind === 'ready'
     ? personalWaypoints.readResult.waypoints
     : EMPTY_PERSONAL_WAYPOINTS

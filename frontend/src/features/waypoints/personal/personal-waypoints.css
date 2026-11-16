@@ -721,43 +721,39 @@
   font-weight: 600;
 }
 
+/* One category row. The whole row is the checkbox's label, so anywhere on it toggles visibility
+   and the target is the full row rather than a small box at its end. */
 .personal-waypoint-category-option {
   display: grid;
   min-height: 50px;
-  grid-template-columns: minmax(0, 1fr) 40px;
+  grid-template-columns: auto minmax(0, 1fr) auto;
   align-items: center;
-  border-bottom: 1px solid var(--border-subtle);
-}
-
-.personal-waypoint-category-link {
-  display: flex;
-  min-width: 0;
-  min-height: 48px;
-  align-items: center;
-  gap: 8px;
+  gap: 10px;
   padding: 5px 6px;
-  border: 0;
+  border-bottom: 1px solid var(--border-subtle);
   color: var(--text-primary);
-  background: transparent;
-  text-align: left;
   cursor: pointer;
 }
 
-.personal-waypoint-category-link:hover { color: var(--accent); }
+.personal-waypoint-category-option:hover { color: var(--accent); }
 
-.personal-waypoint-category-link > svg {
-  width: 15px;
-  height: 15px;
-  flex: 0 0 15px;
+/* A category that will not be shown is the one that needs attention, so it keeps full-strength
+   text and only the box is empty. Before, hidden rows were the quietest thing on screen. */
+.personal-waypoint-category-option-hidden .personal-waypoint-category-name {
   color: var(--text-secondary);
 }
 
-.personal-waypoint-category-dot {
-  width: 12px;
-  height: 12px;
-  flex: 0 0 12px;
-  border-radius: 50%;
-  background: var(--accent);
+.personal-waypoint-category-check {
+  width: 19px;
+  height: 19px;
+  margin: 0;
+  accent-color: var(--accent);
+  cursor: pointer;
+}
+
+.personal-waypoint-category-check:focus-visible {
+  outline: 2px solid var(--focus-ring-strong);
+  outline-offset: 2px;
 }
 
 .personal-waypoint-category-name {
@@ -767,7 +763,7 @@
   white-space: nowrap;
 }
 
-.personal-waypoint-category-link small {
+.personal-waypoint-category-option small {
   flex: 0 0 auto;
   padding: 3px 8px;
   border-radius: 999px;
@@ -775,27 +771,6 @@
   background: var(--surface-raised);
   font-size: var(--font-size-xs);
   white-space: nowrap;
-}
-
-.personal-waypoint-category-toggle {
-  display: grid;
-  min-width: 40px;
-  min-height: 44px;
-  place-items: center;
-  border-inline-start: 1px solid var(--border-subtle);
-  cursor: pointer;
-}
-
-.personal-waypoint-category-toggle input {
-  width: 19px;
-  height: 19px;
-  margin: 0;
-  accent-color: var(--accent);
-}
-
-.personal-waypoint-category-toggle input:focus-visible {
-  outline: 2px solid var(--focus-ring-strong);
-  outline-offset: 2px;
 }
 
 .personal-waypoint-category-empty {

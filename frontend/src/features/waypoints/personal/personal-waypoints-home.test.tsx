@@ -147,8 +147,9 @@ describe('PersonalWaypointsHome', () => {
       />,
     )
 
-    const foodToggle = screen.getByRole('button', { name: 'Show Food & drink markers' })
-    expect(foodToggle.getAttribute('aria-label')).toBe('Show Food & drink markers')
+    // Food & drink is hidden, so its checkbox is unchecked: checked means shown on the map.
+    const foodToggle = screen.getByRole('checkbox', { name: 'Show Food & drink on the map' }) as HTMLInputElement
+    expect(foodToggle.checked).toBe(false)
     // Group headings stay readable while the category visibility panel is open; that panel renders
     // its own category labels, so the headings are selected through the shared header toggles.
     const headingLabels = [...document.querySelectorAll('.disclosure-header-toggle')]

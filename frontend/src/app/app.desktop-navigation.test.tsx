@@ -950,19 +950,22 @@ describe('More surface', () => {
     // The collection screen has exactly one overflow trigger, and it owns the list commands.
     expect(document.querySelectorAll('.overflow-menu-trigger')).toHaveLength(1)
 
-    // Map visibility is a themed toggle button now, not a native checkbox. Its state is only a
-    // draft while the picker is open, so it shows as the category moving into the "All categories"
+    // Map visibility is a checkbox per category now: it is a membership question, and the ✕ the
+    // row used before already means "delete" elsewhere on this screen. Its state is only a draft
+    // while the picker is open, so it shows as the category moving into the "All categories"
     // group rather than being saved.
     const visibilityPicker = () => within(screen.getByRole('group', { name: 'Category places and map visibility' }))
     const visibilityGroupName = (category: string): string | null => visibilityPicker()
-      .getByRole('button', { name: `Show ${category} markers` })
+      .getByRole('checkbox', { name: `Show ${category} on the map` })
       .closest('.personal-waypoint-visibility-group')
       ?.querySelector('h3')?.textContent ?? null
     await user.click(screen.getByRole('button', { name: /Categories/ }))
     expect(visibilityGroupName('Food & drink')).toBe('Selected')
-    // Category rows are labels plus a visibility toggle; there is no category screen to open.
+    // Category rows are a checkbox plus a name; there is no category screen to open and no
+    // per-row action button.
     expect(visibilityPicker().queryByRole('button', { name: /^Open / })).toBeNull()
-    await user.click(screen.getByRole('button', { name: 'Show Food & drink markers' }))
+    expect(visibilityPicker().queryAllByRole('button')).toHaveLength(0)
+    await user.click(screen.getByRole('checkbox', { name: 'Show Food & drink on the map' }))
     expect(visibilityGroupName('Food & drink')).toBe('All categories')
     expect(localStorage.getItem(categoryVisibilityKey)).toBeNull()
 
@@ -992,9 +995,9 @@ describe('More surface', () => {
 
     await user.click(screen.getByRole('button', { name: /Categories/ }))
     expect(visibilityGroupName('Food & drink')).toBe('Selected')
-    // The toggle exposes its state to assistive technology as a pressed button.
-    expect(screen.getByRole('button', { name: 'Show Food & drink markers' }).getAttribute('aria-pressed'))
-      .toBe('true')
+    // The checkbox exposes its state directly: checked means shown on the map.
+    expect((screen.getByRole('checkbox', { name: 'Show Food & drink on the map' }) as HTMLInputElement).checked)
+      .toBe(true)
   })
 
   it('opens waypoint details, edits the record, and confirms deletion', async () => {

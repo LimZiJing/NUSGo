@@ -2,8 +2,7 @@ import { useMemo, useState } from 'react'
 import type { Ref } from 'react'
 import type { PersonalWaypointCategoryOption } from '../../../../domain/waypoints/personal/personal-waypoint-category-visibility'
 import { Button } from '../../../../ui/button'
-import { IconButton } from '../../../../ui/button'
-import { ChevronDownIcon, CloseIcon, MapIcon } from '../../../../ui/icons'
+import { ChevronDownIcon } from '../../../../ui/icons'
 import { SearchField } from '../../../../ui/search-field'
 
 export function PersonalWaypointCategoryVisibility({
@@ -41,27 +40,33 @@ export function PersonalWaypointCategoryVisibility({
   const visibleSelectedCategories = filterCategories(selectedCategories)
   const visibleUnselectedCategories = filterCategories(unselectedCategories)
   const hasPendingChanges = categories.some(({ category }) => draftHidden.has(category) !== committedHidden.has(category))
+  // How many categories this draft would change, which is what the person is about to apply.
+  const pendingChangeCount = categories.filter(
+    ({ category }) => draftHidden.has(category) !== committedHidden.has(category),
+  ).length
 
   const renderCategory = ({ category, waypointCount }: PersonalWaypointCategoryOption) => {
     const placeLabel = waypointCount === 1 ? 'place' : 'places'
     const visible = !draftHidden.has(category)
-    // The row is a label plus its map-visibility toggle. There is no category screen to open:
-    // the collection already groups and searches by category.
-    return <div className="personal-waypoint-category-option" key={category}>
-      <span className="personal-waypoint-category-link">
-        <span className="personal-waypoint-category-dot" aria-hidden="true" />
-        <span className="personal-waypoint-category-name">{category}</span>
-        <small>{waypointCount} {placeLabel}</small>
-      </span>
-      <IconButton
-        className="personal-waypoint-category-toggle"
-        label={`Show ${category} markers`}
-        icon={visible ? <MapIcon /> : <CloseIcon />}
-        variant={visible ? 'secondary' : 'ghost'}
-        pressed={visible}
-        onClick={() => onSetCategoryVisible(category, !visible)}
+    // Membership, so a checkbox rather than an icon button. The row used to end in a ✕ when
+    // hidden, which in this screen already means "delete this waypoint"; a checkbox says
+    // "included or not" without borrowing the vocabulary of destruction. The whole row is the
+    // label, so the tap target is the row and the box stays purely visual.
+    return <label
+      className={`personal-waypoint-category-option${visible ? '' : ' personal-waypoint-category-option-hidden'}`}
+      key={category}
+    >
+      <input
+        type="checkbox"
+        className="personal-waypoint-category-check"
+        // The row is the label, so this is what a screen reader announces for the whole row.
+        aria-label={`Show ${category} on the map`}
+        checked={visible}
+        onChange={(event) => onSetCategoryVisible(category, event.target.checked)}
       />
-    </div>
+      <span className="personal-waypoint-category-name">{category}</span>
+      <small>{waypointCount} {placeLabel}</small>
+    </label>
   }
 
   return <section className="personal-waypoint-visibility" aria-label="Map categories">
@@ -77,9 +82,10 @@ export function PersonalWaypointCategoryVisibility({
       >
         <span className="personal-waypoint-visibility-summary">
           <span className="personal-waypoint-visibility-label">Categories</span>
+          {/* Only what fits. "Changes pending" used to be appended here and was clipped mid-word
+              at phone width; the pending count now sits on Done, which states it exactly. */}
           <span className="personal-waypoint-visibility-selection" aria-live="polite">
             {selectedCategories.length} of {categories.length} shown
-            {hasPendingChanges && <span className="personal-waypoint-visibility-pending"> · Changes pending</span>}
           </span>
         </span>
         <ChevronDownIcon aria-hidden="true" />
@@ -123,7 +129,13 @@ export function PersonalWaypointCategoryVisibility({
         </div>
         <div className="personal-waypoint-visibility-actions-end">
           <Button label="Cancel" onClick={onCancel} />
-          <Button label={`Done (${selectedCategories.length})`} variant="primary" onClick={onDone} />
+          {/* The count says what Done will actually apply. It used to show how many categories were
+              shown, which never changes with the draft and so described the wrong thing entirely. */}
+          <Button
+            label={hasPendingChanges ? `Done (${pendingChangeCount})` : 'Done'}
+            variant="primary"
+            onClick={onDone}
+          />
         </div>
       </div>
     </div>

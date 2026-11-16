@@ -394,6 +394,22 @@ describe('PersonalWaypointList', () => {
     expect(screen.getByRole('button', { name: 'Open Quiet bench details' })).toBeTruthy()
   })
 
+  it('does not let a row open details while the list is being edited', async () => {
+    // Editing the list is a separate job from editing a place. A tap that opened details would
+    // replace the whole pending edit — moves, reorders and removals that are not written yet — so
+    // the row stops being a way in until the edit is confirmed or cancelled.
+    const onOpenDetails = vi.fn()
+    render(<PersonalWaypointList {...baseProps} editing onOpenDetails={onOpenDetails} />)
+
+    expect(screen.queryByRole('button', { name: /^Open .* details$/ })).toBeNull()
+    // The row is still present and still shows the place, just not as a control.
+    expect(screen.getByText('Quiet bench')).toBeTruthy()
+    // The edit affordances are the ones that remain.
+    expect(screen.getByRole('button', { name: 'Reorder Quiet bench' })).toBeTruthy()
+    expect(screen.getByRole('button', { name: 'Remove Quiet bench' })).toBeTruthy()
+    expect(onOpenDetails).not.toHaveBeenCalled()
+  })
+
   it('disables reordering while search is active', async () => {
     const user = userEvent.setup()
     const onReorder = vi.fn()
@@ -687,9 +703,11 @@ describe('PersonalWaypointList cross-category movement', () => {
       for (const row of rows) {
         expect(Object.keys(row).some((key) => key.startsWith('__reactFiber$'))).toBe(true)
       }
-      expect(screen.getAllByRole('button', { name: /^Open Water cooler/ }).length).toBe(1)
+      // Each place renders once. While editing, the row is not a way into details (see the
+      // edit-mode test below), so the count is taken from the titles rather than the buttons.
+      const waterCoolerTitles = rows.filter((row) => row.textContent?.includes('Water cooler'))
+      expect(waterCoolerTitles.length).toBe(1)
     }
-
     assertOneRowPerPlace()
 
     // The same place, moved out and back — the sequence that used to leave a stray row behind.

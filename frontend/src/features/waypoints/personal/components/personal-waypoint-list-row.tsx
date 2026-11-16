@@ -84,7 +84,11 @@ export function PersonalWaypointListRow({
       </>}
       title={waypoint.name}
       // No subtitle: in a grouped collection the category is already the heading above this row.
-      onSelect={openDetails}
+      //
+      // Editing a place is not part of editing the list. While the list is being edited the row is
+      // a thing to reorder, move between categories or remove, so its title stops being a way into
+      // details — otherwise a stray tap replaces the whole pending edit with another screen.
+      onSelect={editing ? undefined : openDetails}
       selectLabel={`Open ${label} details`}
       trailing={editing ? (
         <IconButton

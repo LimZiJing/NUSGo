@@ -314,7 +314,7 @@ describe('ExploreContent accessibility workflows', () => {
     await user.keyboard('{Enter}')
     const detailHeading = await screen.findByRole('heading', { name: /COM1-0210/ })
     await waitFor(() => expect(document.activeElement).toBe(detailHeading))
-    expect(screen.getByText('Venue details opened for COM1-0210.')).toBeTruthy()
+    expect(screen.getByText('Venue details opened for Computing 1, Level 2.')).toBeTruthy()
     expect(screen.getByRole('button', { name: 'Find venue' })).toBeTruthy()
     expect(screen.queryByRole('button', { name: 'Back to venue search' })).toBeNull()
     expect(screen.queryByRole('button', { name: 'Hide explore panel' })).toBeNull()
@@ -356,6 +356,7 @@ describe('ExploreContent accessibility workflows', () => {
     await user.click(screen.getByRole('option', { name: 'Canteens' }))
     await user.click(await screen.findByRole('button', { name: 'YIH (Central Square), Canteen' }))
     expect(await screen.findByRole('heading', { name: 'YIH (Central Square), Canteen' })).toBeTruthy()
+    expect(screen.getByText('Venue details opened for YIH (Central Square).')).toBeTruthy()
     await user.click(screen.getByRole('button', { name: 'Navigate' }))
 
     expect(onNavigateToVenue).toHaveBeenCalledWith('yih-central-square')

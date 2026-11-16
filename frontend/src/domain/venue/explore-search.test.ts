@@ -185,6 +185,21 @@ describe('searchExplore with the real data', () => {
     expect(linkVenuesToBuildings(realVenues, realBuildings).buildingByVenueCode.has('frontier-canteen')).toBe(false)
   })
 
+  it('keeps a reused whole-building venue linked while searching it as an eatery', () => {
+    const venuesWithFrontierEatery = mergeVenueAndEateryMaps(
+      validateVenueLocationMap({ Frontier: { roomName: 'Frontier', floor: 4 } }),
+      validateEateryLocationMap({
+        Frontier: { name: 'Frontier Canteen', category: 'canteen', location: { x: 103.78, y: 1.29 } },
+      }),
+    )
+    const links = linkVenuesToBuildings(venuesWithFrontierEatery, realBuildings)
+    const results = searchExplore({ venues: venuesWithFrontierEatery, buildings: realBuildings, links }, 'frontier')
+
+    expect(links.wholeBuildingVenueCodes.has('Frontier')).toBe(true)
+    expect(links.nusmodsVenueCodeByBuildingId.get('frontier')).toBe('Frontier')
+    expect(results.map(label)).toEqual(['building:frontier', 'venue:Frontier'])
+  })
+
   it('shows Cendana, Saga and Elm College once each', () => {
     for (const [query, id, parts] of [['cendana', 'cendana-college', 5], ['saga', 'saga-college', 6], ['elm college', 'elm-college', 3]] as const) {
       const results = searchExplore(sources, query).filter((result) => result.kind === 'building' && result.entry.id === id)

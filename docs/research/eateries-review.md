@@ -1,6 +1,6 @@
 # Eateries data review
 
-Updated 12 November 2026. The [eateries data](../../frontend/public/data/eateries.json) contains 39 entries. New records use exact OpenStreetMap points or coordinates supplied by the user.
+Updated 16 November 2026. The [eateries data](../../frontend/public/data/eateries.json) contains 39 entries. Locations use exact OpenStreetMap points, coordinates supplied by the user, or shared building points as noted below.
 
 ## Still needs confirmation
 
@@ -9,6 +9,9 @@ Updated 12 November 2026. The [eateries data](../../frontend/public/data/eaterie
 - **Bueno Bueno** — NUS groups it with Waa Cow; OSM has a separate point for Waa Cow only.
 - **Wonderful Cafe (CDE)** — NUS lists the location, but no exact OSM point matched.
 - **Tomoro Coffee (NUS College)** — NUS lists the location, but no exact OSM point matched.
+- **Fine Food, Hwang's Korean Restaurant, Jollibee (UTown), and Makan Malah!** — share the UTown building point at (103.77398, 1.3039); exact venue locations need confirmation.
+- **Flavours @ UTown, Bismillah Biryani, and Sapore** — share the UTown building point at (103.77252, 1.30462); exact venue locations need confirmation.
+- **South & East and Poonsti Cafe** — share the Prince George's Park building point at (103.7736, 1.29325); exact venue locations need confirmation.
 
 ## Map matches not added
 
@@ -21,7 +24,7 @@ These have map points but are outside the current scope or still need a kiosk/ca
 
 ## Location and source notes
 
-- Each `location.x` is longitude and `location.y` is latitude. New records use exact OSM POI coordinates or coordinates supplied by the user; earlier entries use existing map-derived building points from `buildings.json`. The JSON stores only the name, category, and location.
+- Each `location.x` is longitude and `location.y` is latitude. Exact OSM POI coordinates, user-supplied coordinates, and existing building points from `buildings.json` are documented separately above. Shared points are approximations, so overlapping markers are expected until exact locations are confirmed. The JSON stores only the name, category, and location.
 - Display names use **HSSML**, **ERC**, and **CDE** for the corresponding campus locations.
 - The added records now include BTC Cafeteria, A Hot Hideout (PGP), Arise and Shine, CHAGEE, Nami, The Spread, Subway (UTown), Udon Don Bar, Waa Cow, Cool Spot, Starbucks (CDE), Supersnacks (PGPR), Supersnacks (UTown), and Wild Skew.
 - The user supplied the coordinates for A Hot Hideout and both Supersnacks entries. NUS lists A Hot Hideout at PGP and Supersnacks at PGPR and Stephen Riady Centre. OSM points are linked below for Starbucks (CDE) and Wild Skew.

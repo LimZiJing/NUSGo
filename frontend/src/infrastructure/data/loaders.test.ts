@@ -111,11 +111,47 @@ describe('data loaders', () => {
     expect(invalid.buildings?.entries).toEqual([])
   })
 
+  it('still loads validated venues when the eatery catalogue is unavailable or invalid', async () => {
+    const errors = vi.spyOn(console, 'error').mockImplementation(() => undefined)
+    const unavailable = await loadVenueData(
+      new AbortController().signal,
+      createFetcher({ 'data/venues.json': venues, 'data/buildings.json': buildings }),
+    )
+    const invalid = await loadVenueData(
+      new AbortController().signal,
+      createFetcher({
+        'data/venues.json': venues,
+        'data/eateries.json': {
+          broken: { name: 'Broken', category: 'cafe', location: { x: 103, y: 1 } },
+        },
+        'data/buildings.json': buildings,
+      }),
+    )
+
+    expect(unavailable.venueCount).toBeGreaterThan(0)
+    expect(unavailable.venues['yih-central-square']).toBeUndefined()
+    expect(invalid.venueCount).toBeGreaterThan(0)
+    expect(invalid.venues['yih-central-square']).toBeUndefined()
+    expect(errors).toHaveBeenCalledTimes(2)
+    errors.mockRestore()
+  })
+
   it('does not swallow an abort while loading the building catalogue', async () => {
     const controller = new AbortController()
     const fetcher: JsonFetcher = async (path) => {
       if (path === 'data/venues.json') return venues
       if (path === 'data/eateries.json') return eateries
+      controller.abort()
+      throw new DOMException('Aborted', 'AbortError')
+    }
+
+    await expect(loadVenueData(controller.signal, fetcher)).rejects.toMatchObject({ name: 'AbortError' })
+  })
+
+  it('does not swallow an abort while loading the eatery catalogue', async () => {
+    const controller = new AbortController()
+    const fetcher: JsonFetcher = async (path) => {
+      if (path === 'data/venues.json') return venues
       controller.abort()
       throw new DOMException('Aborted', 'AbortError')
     }
@@ -212,16 +248,6 @@ describe('data loaders', () => {
       createFetcher({
         'data/venues.json': malformedVenues,
         'data/eateries.json': eateries,
-      }),
-    )).rejects.toBeInstanceOf(VenueValidationError)
-
-    await expect(loadVenueData(
-      new AbortController().signal,
-      createFetcher({
-        'data/venues.json': venues,
-        'data/eateries.json': {
-          broken: { name: 'Broken', category: 'cafe', location: { x: 103, y: 1 } },
-        },
       }),
     )).rejects.toBeInstanceOf(VenueValidationError)
 

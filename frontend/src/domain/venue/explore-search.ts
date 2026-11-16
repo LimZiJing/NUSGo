@@ -95,6 +95,7 @@ export function searchExplore(
   }
 
   for (const [code, venue] of Object.entries(venues)) {
+    // A reused venue can still be linked as a whole building and also needs its eatery result.
     if (links.wholeBuildingVenueCodes.has(code) && !venue.category) continue
     candidates.push({
       result: { kind: 'venue', result: { code, venue } },

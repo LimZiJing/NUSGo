@@ -25,13 +25,20 @@ export async function loadVenueData(
   signal: AbortSignal,
   fetcher: JsonFetcher = fetchJson,
 ): Promise<LoadedVenueData> {
-  const [venueInput, eateryInput] = await Promise.all([
-    fetcher('data/venues.json', signal, 'Venue data'),
-    fetcher('data/eateries.json', signal, 'Eatery data'),
-  ])
+  const venueInput = await fetcher('data/venues.json', signal, 'Venue data')
+  const venueMap = validateVenueLocationMap(venueInput)
+  let eateryMap = validateEateryLocationMap({})
+  try {
+    eateryMap = validateEateryLocationMap(
+      await fetcher('data/eateries.json', signal, 'Eatery data'),
+    )
+  } catch (error) {
+    if (signal.aborted || (error instanceof Error && error.name === 'AbortError')) throw error
+    console.error('Eatery data unavailable; continuing without eateries:', error)
+  }
   const venues = mergeVenueAndEateryMaps(
-    validateVenueLocationMap(venueInput),
-    validateEateryLocationMap(eateryInput),
+    venueMap,
+    eateryMap,
   )
   return {
     venues,

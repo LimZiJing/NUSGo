@@ -21,6 +21,8 @@ export type VenueLocation = {
   readonly displayName?: string
   /** Present for categorized campus eateries. */
   readonly category?: EateryCategory
+  /** Runtime merge metadata: true when this eatery has no matching venue-catalogue identity. */
+  readonly isStandaloneEatery?: boolean
   readonly floor?: number | null
   readonly location?: GeoLocation
 }

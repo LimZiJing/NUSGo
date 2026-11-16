@@ -110,6 +110,16 @@ describe('VenueSearch stop results', () => {
     expect(screen.getByRole('button', { name: 'Wild Skew, Restaurant' })).toBeTruthy()
   })
 
+  it('uses the category helper for each filter label', () => {
+    renderSearch('')
+
+    fireEvent.click(screen.getByRole('button', { name: 'Place category All places' }))
+
+    expect(screen.getByRole('option', { name: 'Canteens' })).toBeTruthy()
+    expect(screen.getByRole('option', { name: 'Restaurants' })).toBeTruthy()
+    expect(screen.getByRole('option', { name: 'Drinks & snacks' })).toBeTruthy()
+  })
+
   it('searches within the selected category and passes through category changes', () => {
     const { onEateryCategoryChange } = renderSearch('cde', 'drinks & snacks')
 

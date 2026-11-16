@@ -1,7 +1,7 @@
 import { useMemo, type MouseEvent, type RefObject } from 'react'
 import type { VenueSearchResult } from '../../../domain/venue/search'
 import { searchEateries, searchExplore, type ExploreSearchResult } from '../../../domain/venue/explore-search'
-import { getEateryCategoryLabel } from '../../../domain/venue/eatery'
+import { getEateryCategoryFilterLabel, getEateryCategoryLabel } from '../../../domain/venue/eatery'
 import { EMPTY_BUILDING_INDEX, describeBuildingEntry, type BuildingIndex } from '../../../domain/venue/building-index'
 import type { BuildingVenueLinks } from '../../../domain/venue/building-links'
 import type { TransitIndex } from '../../../domain/transit'
@@ -114,7 +114,7 @@ export function VenueSearch({
           { value: 'all', label: 'All places' },
           ...EATERY_CATEGORIES.map((category) => ({
             value: category,
-            label: category === 'canteen' ? 'Canteens' : category === 'restaurant' ? 'Restaurants' : 'Drinks & snacks',
+            label: getEateryCategoryFilterLabel(category),
           })),
         ]}
         onChange={(value) => onEateryCategoryChange(value as 'all' | EateryCategory)}

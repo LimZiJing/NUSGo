@@ -90,8 +90,10 @@ export function validateVenueLocationMap(input: unknown): VenueLocationMap {
   if (issues.length > 0) throw new VenueValidationError(issues)
   const validatedVenues = Object.fromEntries(Object.entries(input).map(([code, value]) => {
     const venue = value as VenueLocation
+    const validatedVenue = { ...venue }
+    delete validatedVenue.isStandaloneEatery
     return [code, Object.freeze({
-      ...venue,
+      ...validatedVenue,
       location: venue.location ? Object.freeze({ ...venue.location }) : undefined,
     })]
   }))
@@ -155,7 +157,7 @@ export function mergeVenueAndEateryMaps(
       ...(existing ?? { roomName: eatery.name }),
       displayName: eatery.name,
       category: eatery.category,
-      floor: undefined,
+      isStandaloneEatery: existing === undefined,
       location: Object.freeze({ ...eatery.location }),
     })
   }

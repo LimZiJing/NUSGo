@@ -20,6 +20,7 @@ const LAYOUT_FEATURES = new Set([
 // Component-level breakpoints that are deliberately not the mobile/desktop layout breakpoint.
 const OTHER_BREAKPOINTS = new Set([
   'max-width: 480px', // Component-level breakpoint in plan-content.css.
+  'max-width: 768px', // Component-level breakpoint in community waypoint panel and submission styles.
   'max-width: 1024px', // Component-level breakpoint in shared/base.css and shared/tokens.css.
 ])
 

@@ -5,9 +5,9 @@ export interface VenueSearchResult {
   readonly venue: VenueLocation
 }
 
-/** Every name a venue can be found by: its code and room name. */
+/** Every name a venue can be found by: its code, display name and existing room name. */
 export function getVenueSearchFields(code: string, venue: VenueLocation): string[] {
-  return [code, venue.roomName]
+  return [code, venue.displayName ?? venue.roomName, venue.roomName]
 }
 
 const MAX_RESULTS = 8
@@ -37,16 +37,17 @@ export function searchVenues(
   return Object.entries(venues)
     .filter(([code, venue]) => {
       const normalizedCode = normalize(code)
-      const normalizedRoomName = normalize(venue.roomName)
+      const normalizedRoomName = normalize(venue.displayName ?? venue.roomName)
       return (
         normalizedCode.includes(normalizedQuery) ||
-        normalizedRoomName.includes(normalizedQuery)
+        normalizedRoomName.includes(normalizedQuery) ||
+        normalize(venue.roomName).includes(normalizedQuery)
       )
     })
     .sort(([codeA, venueA], [codeB, venueB]) => {
       const priorityDifference =
-        resultPriority(codeA, venueA.roomName, normalizedQuery) -
-        resultPriority(codeB, venueB.roomName, normalizedQuery)
+        resultPriority(codeA, venueA.displayName ?? venueA.roomName, normalizedQuery) -
+        resultPriority(codeB, venueB.displayName ?? venueB.roomName, normalizedQuery)
       return priorityDifference || codeA.localeCompare(codeB)
     })
     .slice(0, limit)

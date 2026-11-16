@@ -42,6 +42,8 @@ export function linkVenuesToBuildings(
   const nusmodsVenueCodeByBuildingId = new Map<string, string>()
 
   for (const [code, venue] of Object.entries(venues)) {
+    if (!venue || typeof venue !== 'object') continue
+    if (venue.category) continue
     const wholeBuilding = buildings.byRoomCodePrefix.get(code.toLowerCase())
     // Only a building's first prefix is its own code; the others (LT15 under AS6) are rooms inside it.
     const isWholeBuilding = wholeBuilding?.parts.some(

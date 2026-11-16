@@ -3,9 +3,10 @@ import { describe, expect, it } from 'vitest'
 import type { Building, BuildingCatalogue } from '@nusgo/shared/venue/buildings'
 import type { TransitStop } from '@nusgo/shared/transit/types'
 import type { VenueLocationMap } from '@nusgo/shared/venue/types'
+import { mergeVenueAndEateryMaps, validateEateryLocationMap, validateVenueLocationMap } from '@nusgo/shared/venue/validation'
 import { buildBuildingIndex } from './building-index'
 import { linkVenuesToBuildings } from './building-links'
-import { searchExplore, type ExploreSearchResult } from './explore-search'
+import { searchEateries, searchExplore, type ExploreSearchResult } from './explore-search'
 
 function building(overrides: Partial<Building> & Pick<Building, 'id' | 'name'>): Building {
   return {
@@ -140,17 +141,48 @@ describe('searchExplore with bus stops', () => {
   })
 })
 
+describe('searchEateries', () => {
+  const eateries: VenueLocationMap = {
+    'yih-central-square': { roomName: 'YIH (Central Square)', displayName: 'YIH (Central Square)', category: 'canteen' },
+    'frontier-canteen': { roomName: 'Frontier', displayName: 'Frontier', category: 'canteen' },
+    'wild-skew': { roomName: 'Wild Skew', displayName: 'Wild Skew', category: 'restaurant' },
+    'starbucks-cde': { roomName: 'Starbucks (CDE)', displayName: 'Starbucks (CDE)', category: 'drinks & snacks' },
+  }
+
+  it('lists every matching destination by display name and filters by category and query', () => {
+    expect(searchEateries(eateries, 'canteen', '').map(({ code }) => code)).toEqual([
+      'frontier-canteen',
+      'yih-central-square',
+    ])
+    expect(searchEateries(eateries, 'drinks & snacks', 'CDE')).toEqual([
+      { code: 'starbucks-cde', venue: eateries['starbucks-cde'] },
+    ])
+    expect(searchEateries(eateries, 'restaurant', '').map(({ code }) => code)).toEqual(['wild-skew'])
+    expect(searchEateries(eateries, 'canteen', 'starbucks')).toEqual([])
+  })
+})
+
 describe('searchExplore with the real data', () => {
-  const realVenues = JSON.parse(readFileSync('public/data/venues.json', 'utf8')) as VenueLocationMap
+  const realVenues = mergeVenueAndEateryMaps(
+    validateVenueLocationMap(JSON.parse(readFileSync('public/data/venues.json', 'utf8'))),
+    validateEateryLocationMap(JSON.parse(readFileSync('public/data/eateries.json', 'utf8'))),
+  )
   const catalogue = JSON.parse(readFileSync('public/data/buildings.json', 'utf8')) as BuildingCatalogue
   const realBuildings = buildBuildingIndex(catalogue.buildings)
   const sources = { venues: realVenues, buildings: realBuildings, links: linkVenuesToBuildings(realVenues, realBuildings) }
 
-  it('shows Frontier once, as the two catalogue buildings, so the mislocated NUSMods room never appears', () => {
+  it('shows the Frontier buildings and the distinct Frontier canteen, not the old room record', () => {
     const results = searchExplore(sources, 'frontier')
 
-    expect(results).toHaveLength(1)
-    expect(results[0]).toMatchObject({ kind: 'building', entry: { id: 'frontier' } })
+    expect(results.map(label)).toEqual(['building:frontier', 'venue:frontier-canteen'])
+  })
+
+  it('keeps the Frontier canteen available as an eatery without linking it to a building', () => {
+    const frontier = searchEateries(realVenues, 'canteen', 'frontier')
+
+    expect(frontier).toHaveLength(1)
+    expect(frontier[0]).toMatchObject({ code: 'frontier-canteen', venue: { category: 'canteen', displayName: 'Frontier' } })
+    expect(linkVenuesToBuildings(realVenues, realBuildings).buildingByVenueCode.has('frontier-canteen')).toBe(false)
   })
 
   it('shows Cendana, Saga and Elm College once each', () => {

@@ -7,6 +7,8 @@ export type MorePanelPage =
   | 'waypoints'
   | 'waypoint-details'
   | 'placing'
+  | 'community-submission'
+  | 'community-placing'
   | 'creating'
   | 'editing-waypoint'
   | 'settings'

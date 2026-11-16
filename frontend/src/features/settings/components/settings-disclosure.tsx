@@ -5,7 +5,7 @@ import '../styles/settings-disclosures.css'
 interface SettingsDisclosureProps {
   readonly title: string
   readonly icon: ReactNode
-  readonly subtitle: string
+  readonly subtitle?: string
   readonly trailing?: ReactNode
   readonly children: ReactNode
 }
@@ -23,7 +23,7 @@ export function SettingsDisclosure({
         <span className="settings-disclosure-icon menu-icon-tile">{icon}</span>
         <span className="settings-disclosure-label">
           <span className="settings-disclosure-title">{title}</span>
-          <span className="settings-disclosure-subtitle">{subtitle}</span>
+          {subtitle && <span className="settings-disclosure-subtitle">{subtitle}</span>}
         </span>
         {trailing && <span className="settings-disclosure-trailing">{trailing}</span>}
         <ChevronRightIcon className="settings-disclosure-chevron" size={18} />

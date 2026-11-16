@@ -5,7 +5,7 @@ import { GALLERY_THEMES } from '../themes/catalog'
 import type { Theme } from '../theme'
 import { Button, IconButton, type ButtonVariant, type ControlSize, type IconButtonVariant } from '../button'
 import { Chip } from '../chip'
-import { CloseIcon, NavigationIcon, SearchIcon } from '../icons'
+import { CloseIcon, CupSodaIcon, NavigationIcon, SearchIcon } from '../icons'
 import { MenuItem } from '../menu-item'
 import { Pill } from '../pill'
 import { Select } from '../select'
@@ -153,6 +153,19 @@ export function GalleryPanel({ theme }: { readonly theme: Theme }) {
             render: (state: SampleState) => (
               <Chip
                 label="Pending"
+                size={size}
+                disabled={state === 'disabled'}
+                pressed={state === 'selected' ? true : state === 'default' ? false : undefined}
+                onClick={noop}
+              />
+            ),
+          })),
+          ...SIZES.map((size) => ({
+            label: `with icon / ${size}`,
+            render: (state: SampleState) => (
+              <Chip
+                label="Drinks"
+                leading={<CupSodaIcon size={15} />}
                 size={size}
                 disabled={state === 'disabled'}
                 pressed={state === 'selected' ? true : state === 'default' ? false : undefined}

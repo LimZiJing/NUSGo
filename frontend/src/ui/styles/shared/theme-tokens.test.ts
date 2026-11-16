@@ -1,7 +1,8 @@
-import { readdirSync, readFileSync } from 'node:fs'
+import { existsSync, readdirSync, readFileSync } from 'node:fs'
 import { dirname, resolve } from 'node:path'
 import { fileURLToPath } from 'node:url'
 import { describe, expect, it } from 'vitest'
+import { THEME_CATALOG } from '../../themes/catalog'
 
 const stylesDirectory = dirname(fileURLToPath(import.meta.url))
 const themeFileNames = readdirSync(resolve(stylesDirectory, 'themes'), { withFileTypes: true })
@@ -9,6 +10,23 @@ const themeFileNames = readdirSync(resolve(stylesDirectory, 'themes'), { withFil
   .map((entry) => entry.name)
   .sort()
 const themeNames = themeFileNames.map((fileName) => fileName.replace(/\.css$/, ''))
+
+/* Every theme in the catalog, not just the files in `themes/`. Rainroom lives in
+   `ui/themes/rainroom/` and was silently skipped by this whole file, so its
+   `--control-border` sat below 3:1 while these checks reported success. Driving the list
+   from the catalog is what keeps that from happening to the next theme: adding a theme
+   without stylesheet coverage now fails here instead of passing quietly. */
+const catalogThemes = THEME_CATALOG.map(({ id }) => {
+  const flatPath = `themes/${id}.css`
+  const directoryPath = `../../themes/${id}/index.css`
+  const path = existsSync(resolve(stylesDirectory, flatPath)) ? flatPath : directoryPath
+
+  if (!existsSync(resolve(stylesDirectory, path))) {
+    throw new Error(`Theme "${id}" is in the catalog but has no stylesheet at ${flatPath} or ${directoryPath}`)
+  }
+
+  return { id, path }
+})
 
 function readStyleFile(name: string): string {
   return readFileSync(resolve(stylesDirectory, name), 'utf8')
@@ -161,8 +179,8 @@ describe('semantic theme tokens', () => {
 })
 
 describe('control token contrast', () => {
-  it.each(themeNames)('keeps the soft tonal control colours accessible in the %s theme', (themeName) => {
-    const styles = readStyleFile(`themes/${themeName}.css`)
+  it.each(catalogThemes)('keeps the soft tonal control colours accessible in the $id theme', ({ id: themeName, path }) => {
+    const styles = readStyleFile(path)
     const ratioOf = (foreground: string, background: string) => contrastRatio(
       resolveColour(styles, foreground),
       resolveColour(styles, background),
@@ -190,12 +208,12 @@ describe('control token contrast', () => {
     }
   })
 
-  it.each(themeNames)('defines --control-border in the %s theme', (themeName) => {
-    expect(readCustomPropertyNames(readStyleFile(`themes/${themeName}.css`))).toContain('--control-border')
+  it.each(catalogThemes)('defines --control-border in the $id theme', ({ path }) => {
+    expect(readCustomPropertyNames(readStyleFile(path))).toContain('--control-border')
   })
 
-  it.each(themeNames)('keeps load-level colours readable on arrival surfaces in the %s theme', (themeName) => {
-    const styles = readStyleFile(`themes/${themeName}.css`)
+  it.each(catalogThemes)('keeps load-level colours readable on arrival surfaces in the $id theme', ({ id: themeName, path }) => {
+    const styles = readStyleFile(path)
     const loadLevelTokens = [
       '--load-level-low',
       '--load-level-medium',
@@ -213,8 +231,8 @@ describe('control token contrast', () => {
     }
   })
 
-  it.each(themeNames)('keeps favourite icons visible on every surface in the %s theme', (themeName) => {
-    const styles = readStyleFile(`themes/${themeName}.css`)
+  it.each(catalogThemes)('keeps favourite icons visible on every surface in the $id theme', ({ id: themeName, path }) => {
+    const styles = readStyleFile(path)
     // --text-favorite paints star icons only, so WCAG 1.4.11's 3:1 for non-text graphics
     // applies. --surface-card is the stops list card and --accent-soft the settings tile.
     const favouriteSurfaces = ['--surface', '--surface-raised', '--surface-card', '--accent-soft'] as const
@@ -226,8 +244,8 @@ describe('control token contrast', () => {
     }
   })
 
-  it.each(themeNames)('keeps success-strong text readable on card surfaces in the %s theme', (themeName) => {
-    const styles = readStyleFile(`themes/${themeName}.css`)
+  it.each(catalogThemes)('keeps success-strong text readable on card surfaces in the $id theme', ({ id: themeName, path }) => {
+    const styles = readStyleFile(path)
     // --status-success-strong paints the recommended journey heading on a card;
     // --text-success-strong is its text-named twin.
     const successTokens = ['--text-success-strong', '--status-success-strong'] as const
@@ -243,18 +261,18 @@ describe('control token contrast', () => {
   })
 
   describe('departure row divider', () => {
-    const dividerOnCard = (themeName: string) => {
-      const styles = readStyleFile(`themes/${themeName}.css`)
+    const dividerOnCard = (path: string) => {
+      const styles = readStyleFile(path)
 
       return contrastRatio(resolveColour(styles, '--border-divider'), resolveColour(styles, '--surface-card'))
     }
 
-    it.each(themeNames)('never weakens the divider against --border-subtle in the %s theme', (themeName) => {
-      const styles = readStyleFile(`themes/${themeName}.css`)
+    it.each(catalogThemes)('never weakens the divider against --border-subtle in the $id theme', ({ id: themeName, path }) => {
+      const styles = readStyleFile(path)
       const previous = contrastRatio(resolveColour(styles, '--border-subtle'), resolveColour(styles, '--surface-card'))
 
       // The divider may only ever be as visible as, or more visible than, the token it replaced.
-      expect(dividerOnCard(themeName), `${themeName}: --border-divider on --surface-card`)
+      expect(dividerOnCard(path), `${themeName}: --border-divider on --surface-card`)
         .toBeGreaterThanOrEqual(previous)
     })
 
@@ -288,8 +306,8 @@ describe('control token contrast', () => {
   })
 
 
-  it.each(themeNames)('defines accessible hover and selected control colours in the %s theme', (themeName) => {
-    const styles = readStyleFile('themes/' + themeName + '.css')
+  it.each(catalogThemes)('defines accessible hover and selected control colours in the $id theme', ({ path }) => {
+    const styles = readStyleFile(path)
     const tokens = readCustomPropertyNames(styles)
 
     expect(tokens).toEqual(expect.arrayContaining(['--accent-selected', '--surface-control-hover']))

@@ -126,4 +126,16 @@ describe('collapsed sheet summary', () => {
     expect(detail).toMatch(/text-overflow:\s*ellipsis/)
     expect(detail).toMatch(/overflow:\s*hidden/)
   })
+
+  it('shows only the grab pill when any More submenu is fully collapsed', () => {
+    const handle = morePanelStyles.match(
+      /\.mobile-sheet-popup\.more-panel-surface\[data-page\]\[data-detent\]\s+\.mobile-sheet-handle-row\s*{([^}]*)}/s,
+    )?.[1] ?? ''
+    const body = morePanelStyles.match(
+      /\.mobile-sheet-popup\.more-panel-surface\[data-page\]\[data-detent='collapsed'\]\s+\.more-panel-body\s*{([^}]*)}/s,
+    )?.[1] ?? ''
+
+    expect(handle).toMatch(/display:\s*flex;/)
+    expect(body).toMatch(/display:\s*none;/)
+  })
 })

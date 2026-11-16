@@ -1,6 +1,6 @@
 # Production deployment
 
-This guide runs the Express API and private Valhalla on one Linux VM and publishes the API through a Cloudflare Tunnel. The static frontend stays on GitHub Pages. See issue #236 for the acceptance criteria.
+This guide runs the Express API and private Valhalla on one Linux VM and publishes the API through a Cloudflare Tunnel. Cloudflare Pages hosts the production frontend and staging preview; GitHub Pages hosts manual development-branch feature tests. See issue #236 for the acceptance criteria.
 
 Before using it:
 
@@ -25,20 +25,21 @@ Files: [`docker-compose.prod.yml`](../docker-compose.prod.yml), [`scripts/deploy
 | Environment | Workflow | Hosts | Trigger |
 | --- | --- | --- | --- |
 | `backend-production` | `deploy-backend-production` | API on the VM | Push to `main` that touches backend inputs (see the `paths` list), or manual. Waits for approval. |
-| `frontend-development` | `deploy-frontend-development` | GitHub Pages | Push to `main` that touches frontend inputs, or manual. |
+| `frontend-staging` | `deploy-frontend-staging` | Cloudflare Pages preview at `staging.<project>.pages.dev` | Every push to `main`, including merges. |
+| `frontend-development` | `deploy-frontend-development` | GitHub Pages | Manual only; select the development branch when running the workflow. |
 | `frontend-production` | `deploy-frontend-production` | Cloudflare Pages | Manual only. Select the commit ref to promote and provide its reviewed website release ID. |
 
 After the Cloudflare Pages step succeeds, `publish-website-release` verifies that production run, then creates or reuses the matching immutable Git tag and GitHub Release. If publication fails, rerun that publisher workflow; do not redeploy just to retry release publication. See [website release notes](release-notes.md) for the release checklist and rollback rules.
 
-The development frontend calls the production API, so keep API changes backwards-compatible: add the new behaviour, deploy the backend, switch the frontend over, and remove the old behaviour in a later change. Deploy the backend before promoting a frontend that needs it.
+The staging and development frontends call the configured API origin, which should remain the production API unless a separate backend is introduced. Keep API changes backwards-compatible: add the new behaviour, deploy the backend, switch the frontend over, and remove the old behaviour in a later change. Deploy the backend before promoting a frontend that needs it.
 
 The backend image copies `frontend/public/data/` and `scripts/generate-shuttle-timing.mjs`, so changes there redeploy the backend. If the Dockerfile starts copying other paths, add them to the `paths` list in the workflow.
 
 ### Data version
 
-The frontend refuses to run unless its `VITE_DATA_VERSION` equals the API's `NUSGO_DATA_VERSION`. Both are set by [`scripts/data-version.sh`](../scripts/data-version.sh): the last commit that changed `shared/` or `frontend/public/data/`. Commits that touch only frontend or backend code leave it unchanged, so either side can deploy alone. A change to `shared/` or the data files changes it, and all three workflows trigger on those paths: deploy the backend, then the frontend. Until both are live, the frontend reports a version mismatch.
+The frontend refuses to run unless its `VITE_DATA_VERSION` equals the API's `NUSGO_DATA_VERSION`. Both are set by [`scripts/data-version.sh`](../scripts/data-version.sh): the last commit that changed `shared/` or `frontend/public/data/`. Commits that touch only frontend or backend code leave it unchanged, so either side can deploy alone. A change to `shared/` or the data files changes it; backend production and staging frontend deploy from `main`, so deploy the backend before testing the updated frontend. Until both are live, the frontend reports a version mismatch.
 
-If the version should depend on more files, add them to `scripts/data-version.sh`, and to the `paths` lists of the backend and development frontend workflows.
+If the version should depend on more files, add them to `scripts/data-version.sh` and the backend workflow's `paths` list. The staging workflow deploys on every push to `main`.
 
 ## One-time server setup
 
@@ -112,6 +113,14 @@ Assumes Ubuntu 24.04, an SSH user named `ubuntu`, and at least 2 GB of RAM.
    | `DEPLOY_KNOWN_HOSTS` | the `ssh-keyscan` output |
 
    Set the repository variable `NUSGO_API_ORIGIN` to `https://api.<your-domain>` so the Pages build points at the API.
+
+9. Use the Cloudflare Pages project set up for staging. It can be a Direct Upload project and does not need a GitHub repository connection. Note its exact project name.
+
+10. In GitHub, create an environment named `frontend-staging` (Settings → Environments) with no required reviewers, so deployments can run automatically. Add `CLOUDFLARE_API_TOKEN` and `CLOUDFLARE_ACCOUNT_ID` as environment secrets. The token needs Pages edit access for the account that owns the staging project.
+
+   Add an environment variable named `CLOUDFLARE_PAGES_PROJECT` with the staging project name. Keep the repository-level variable of the same name unchanged; production uses it. Also confirm the repository variable `NUSGO_API_ORIGIN` is set. Every push to `main` deploys to the staging project's `staging` preview branch.
+
+   For manual feature testing, select `deploy-frontend-development` and the development branch in Actions. That workflow publishes to GitHub Pages independently of staging.
 
 ## Deploying
 

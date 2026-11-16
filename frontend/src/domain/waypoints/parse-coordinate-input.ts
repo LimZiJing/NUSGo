@@ -1,5 +1,6 @@
 import { isValidLocationCoordinates } from '../location/coordinates'
-import type { WaypointCoordinate } from './waypoint'
+import { SINGAPORE_COORDINATE_BOUNDS } from '@nusgo/shared/waypoints/coordinate-bounds'
+import type { WaypointCoordinate } from '@nusgo/shared/waypoints/waypoint'
 
 export type CoordinateInputError = 'unreadable' | 'latitude-out-of-range' | 'longitude-out-of-range'
 
@@ -8,9 +9,6 @@ export type CoordinateInputResult =
   | { readonly ok: false; readonly error: CoordinateInputError; readonly message: string }
 
 const PAIR = /^([+-]?(?:\d+(?:\.\d+)?|\.\d+))\s*(?:,\s*|\s)([+-]?(?:\d+(?:\.\d+)?|\.\d+))$/
-
-// Loose bounding box around Singapore, used only to warn about likely typos.
-const SINGAPORE_BOUNDS = { south: 1.13, north: 1.48, west: 103.59, east: 104.09 }
 
 const MESSAGES: Record<CoordinateInputError, string> = {
   unreadable: 'Enter latitude, then longitude, in decimal degrees, for example 1.2966, 103.7764.',
@@ -30,7 +28,7 @@ export function parseCoordinateInput(input: string): CoordinateInputResult {
   const longitude = Number(match[2])
   if (!isValidLocationCoordinates(0, latitude)) return failure('latitude-out-of-range')
   if (!isValidLocationCoordinates(longitude, 0)) return failure('longitude-out-of-range')
-  const { south, north, west, east } = SINGAPORE_BOUNDS
+  const { south, north, west, east } = SINGAPORE_COORDINATE_BOUNDS
   return {
     ok: true,
     coordinate: { latitude, longitude },

@@ -70,10 +70,17 @@
 
     --border-default: #40535c;
     --border-subtle: #263840;
+    /* Rainroom dims the lamplight surfaces, so it follows dark in using the subtler step
+       rather than --border-default. The divider must never be weaker than the token it
+       replaced; theme-tokens.test.ts checks that for this theme too. */
+    --border-divider: var(--border-subtle);
     --border-strong: #718187;
     --border-inverse: #d6d5ca;
     --border-control: #6b808a;
-    --control-border: color-mix(in srgb, var(--text-primary) 40%, var(--surface));
+    /* 45%, not 40%: at 40% this resolves to #676e72, which is 2.86:1 against
+       --surface-card and so fails WCAG 1.4.11's 3:1 for control boundaries. 45%
+       clears it at 3.34:1 and stays above 4:1 on --surface. */
+    --control-border: color-mix(in srgb, var(--text-primary) 45%, var(--surface));
     --border-muted: #3a4e56;
     --border-faint: #2d4048;
     --border-success: #667b5a;
@@ -86,6 +93,10 @@
     --accent-hover: #f7a24d;
     --accent-contrast: #25231d;
     --accent-soft: color-mix(in srgb, var(--rainroom-lamplight) 18%, var(--surface-raised));
+    /* Kept identical to the shared formula so `theme-tokens.test.ts` can assert the same
+       string for every theme; the derived colours are still Rainroom's own tokens. */
+    --accent-selected: color-mix(in srgb, var(--accent) 26%, var(--surface-control));
+    --surface-control-hover: color-mix(in srgb, var(--text-primary) 11%, var(--surface-control));
     --focus-ring: var(--rainroom-lamplight);
     --focus-ring-soft: rgb(242 138 36 / 44%);
     --focus-ring-strong: rgb(242 138 36 / 58%);

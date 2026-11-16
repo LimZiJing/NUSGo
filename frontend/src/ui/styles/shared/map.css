@@ -137,6 +137,12 @@
   background: var(--map-marker-neutral);
 }
 
+.community-waypoint-legend-marker {
+  border-radius: var(--radius-sm);
+  background: var(--accent);
+  transform: rotate(45deg);
+}
+
 .bus-marker {
   background: var(--map-marker-neutral);
 }

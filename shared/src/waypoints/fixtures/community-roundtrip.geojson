@@ -1,0 +1,69 @@
+{
+  "type": "FeatureCollection",
+  "features": [
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [103.7734, 1.2945]
+      },
+      "properties": {
+        "id": "cw-550e8400-e29b-41d4-a716-446655440001",
+        "category": "water_cooler",
+        "source": "Checked at the site",
+        "updatedAt": "2026-11-08",
+        "building": "Central Library",
+        "floor": 1,
+        "details": "Near the main entrance"
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [103.7801, 1.2978]
+      },
+      "properties": {
+        "id": "cw-550e8400-e29b-41d4-a716-446655440002",
+        "category": "printing",
+        "source": "Confirmed in the campus facilities listing",
+        "updatedAt": "2026-11-08",
+        "building": null,
+        "floor": null,
+        "details": null
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [103.7844, 1.2933]
+      },
+      "properties": {
+        "id": "cw-550e8400-e29b-41d4-a716-446655440003",
+        "category": "toilet",
+        "source": "Verified during a campus visit",
+        "updatedAt": "2026-11-08",
+        "building": null,
+        "floor": -1,
+        "details": null
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [103.776, 1.2865]
+      },
+      "properties": {
+        "id": "cw-550e8400-e29b-41d4-a716-446655440004",
+        "category": "vending_machine",
+        "source": "Observed at the location",
+        "updatedAt": "2026-11-08",
+        "building": "Faculty Building",
+        "floor": 0,
+        "details": "Next to the service counter"
+      }
+    }
+  ]
+}

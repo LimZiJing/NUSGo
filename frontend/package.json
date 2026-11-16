@@ -6,7 +6,7 @@
   "scripts": {
     "predev": "npm --prefix .. run shuttle:timing:generate:geometry",
     "dev": "vite",
-    "prebuild": "npm --prefix .. run shuttle:timing:generate:geometry",
+    "prebuild": "npm --prefix .. run shuttle:timing:generate:geometry && npm --prefix .. run community-waypoints:validate",
     "build": "tsc -b && vite build",
     "build:local-rehearsal": "npm run prebuild && tsc -b && vite build --mode local-rehearsal",
     "lint": "eslint .",

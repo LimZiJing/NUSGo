@@ -1,13 +1,14 @@
 import type { ReactNode } from 'react'
 import { Button } from '../../ui/button'
-import { ChevronRightIcon, MapPinIcon, SettingsIcon, FileTextIcon } from '../../ui/icons'
+import { ChevronRightIcon, MapIcon, MapPinIcon, SettingsIcon, FileTextIcon } from '../../ui/icons'
 import './more-menu.css'
 
 /** Lists destinations while each destination screen stays with its owning feature. */
-export function MoreMenu({ waypointCount, onOpenWaypoints, onOpenSettings, onOpenReleaseNotes, installSection }: {
+export function MoreMenu({ waypointCount, onOpenWaypoints, onSuggestCommunityWaypoint, onOpenSettings, onOpenReleaseNotes, installSection }: {
   readonly installSection?: ReactNode
   readonly waypointCount: number | null
   readonly onOpenWaypoints: () => void
+  readonly onSuggestCommunityWaypoint: () => void
   readonly onOpenSettings: () => void
   readonly onOpenReleaseNotes: () => void
 }) {
@@ -29,6 +30,13 @@ export function MoreMenu({ waypointCount, onOpenWaypoints, onOpenSettings, onOpe
       </span>
       <ChevronRightIcon />
     </Button>
+    <Button className="more-menu-row" ariaLabel="Suggest a waypoint" onClick={onSuggestCommunityWaypoint}>
+      <span className="more-menu-row-icon menu-icon-tile"><MapIcon /></span>
+      <span className="more-menu-row-copy">
+        <span>Suggest a waypoint</span>
+      </span>
+      <ChevronRightIcon />
+    </Button>
     <Button
       className="more-menu-row"
       ariaLabel="Settings"
@@ -38,7 +46,7 @@ export function MoreMenu({ waypointCount, onOpenWaypoints, onOpenSettings, onOpe
       <span className="more-menu-row-icon menu-icon-tile"><SettingsIcon /></span>
       <span className="more-menu-row-copy">
         <span>Settings</span>
-        <span className="more-menu-row-description" id="more-settings-summary">Appearance and favourites</span>
+        <span className="more-menu-row-description" id="more-settings-summary">Appearance, favourites and waypoints</span>
       </span>
       <ChevronRightIcon />
     </Button>

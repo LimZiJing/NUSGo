@@ -63,7 +63,7 @@ describe('ExploreContent', () => {
     expect(markup).toContain('id="explore-venue-search-input"')
     expect(markup).toContain('>Find a venue</h2>')
     expect(markup).toContain('aria-labelledby="explore-content-heading"')
-    expect(markup).toContain('Search for a venue')
+    expect(markup).toContain('Search for a place or browse by category')
     expect(markup).toContain('>Bus routes</button>')
     expect(markup).not.toContain('ghost-back-button')
     expect(markup).not.toContain('Search by venue code or room name.')

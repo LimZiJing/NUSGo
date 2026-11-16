@@ -164,6 +164,25 @@ describe('ExploreContent venue details', () => {
     expect(markup).toMatch(/<img src="[^"]*nusmods-logo\.svg" alt="NUSMods"\/>/)
   })
 
+  it('shows an eatery as a named destination with navigation and no room or NUSMods details', () => {
+    const eatery: VenueLocation = {
+      roomName: 'YIH (Central Square)',
+      displayName: 'YIH (Central Square)',
+      category: 'canteen',
+      location: { x: 103.77477, y: 1.2985 },
+    }
+    const markup = renderVenueDetails({ code: 'yih-central-square', selectedVenue: eatery })
+
+    expect(markup).toContain('aria-label="YIH (Central Square), Canteen"')
+    expect(markup).toContain('location-identity-icon--eatery')
+    expect(markup).toContain('>YIH (Central Square)</h3>')
+    expect(markup).toContain('<p class="venue-detail-name">Canteen</p>')
+    expect(markup).toContain('<span>Navigate</span>')
+    expect(markup).not.toContain('venue-detail-location')
+    expect(markup).not.toContain('View in')
+    expect(markup).toContain('Nearby bus stops within 250 m')
+  })
+
   it('renders nearby buttons with internal route badges and excludes public services', () => {
     const markup = renderVenueDetails()
 

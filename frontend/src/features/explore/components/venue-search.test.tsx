@@ -3,7 +3,7 @@
 import { cleanup, fireEvent, render, screen } from '@testing-library/react'
 import { createRef } from 'react'
 import { afterEach, describe, expect, it, vi } from 'vitest'
-import type { VenueLocationMap } from '@nusgo/shared/venue/types'
+import type { EateryCategory, VenueLocationMap } from '@nusgo/shared/venue/types'
 import { createTransitIndex } from '../../../domain/transit'
 import { createValidTransitNetwork } from '../../../domain/transit/test-fixtures'
 import { EMPTY_BUILDING_INDEX } from '../../../domain/venue/building-index'
@@ -13,12 +13,33 @@ import { VenueSearch } from './venue-search'
 afterEach(cleanup)
 
 // STOP-A is named "Stop A"; the venue below is also named "Stop A" but must stay its own result.
-const venues: VenueLocationMap = { 'STOP-LAB': { roomName: 'Stop A' } }
+const venues: VenueLocationMap = {
+  'STOP-LAB': { roomName: 'Stop A' },
+  'yih-central-square': {
+    roomName: 'YIH (Central Square)',
+    displayName: 'YIH (Central Square)',
+    category: 'canteen',
+    location: { x: 103.77477, y: 1.2985 },
+  },
+  'starbucks-cde': {
+    roomName: 'Starbucks (CDE)',
+    displayName: 'Starbucks (CDE)',
+    category: 'drinks & snacks',
+    location: { x: 103.77, y: 1.29 },
+  },
+  'wild-skew': {
+    roomName: 'Wild Skew',
+    displayName: 'Wild Skew',
+    category: 'restaurant',
+    location: { x: 103.77, y: 1.29 },
+  },
+}
 const transitIndex = createTransitIndex(createValidTransitNetwork())
 
-function renderSearch(query: string) {
+function renderSearch(query: string, eateryCategory: 'all' | EateryCategory = 'all') {
   const onSelect = vi.fn()
   const onStopSelect = vi.fn()
+  const onEateryCategoryChange = vi.fn()
   render(
     <VenueSearch
       venues={venues}
@@ -26,15 +47,17 @@ function renderSearch(query: string) {
       buildingLinks={linkVenuesToBuildings(venues, EMPTY_BUILDING_INDEX)}
       transitIndex={transitIndex}
       query={query}
+      eateryCategory={eateryCategory}
       minimized={false}
       inputRef={createRef<HTMLInputElement>()}
       onQueryChange={vi.fn()}
+      onEateryCategoryChange={onEateryCategoryChange}
       onSelect={onSelect as never}
       onBuildingSelect={vi.fn()}
       onStopSelect={onStopSelect as never}
     />,
   )
-  return { onSelect, onStopSelect }
+  return { onSelect, onStopSelect, onEateryCategoryChange }
 }
 
 describe('VenueSearch stop results', () => {
@@ -69,5 +92,32 @@ describe('VenueSearch stop results', () => {
     expect(onSelect).toHaveBeenCalledOnce()
     expect((onSelect.mock.calls[0]?.[0] as { code: string }).code).toBe('STOP-LAB')
     expect(onStopSelect).not.toHaveBeenCalled()
+  })
+
+  it('browses eateries in the selected category without listing bus stops or rooms', () => {
+    renderSearch('', 'canteen')
+
+    const eatery = screen.getByRole('button', { name: 'YIH (Central Square), Canteen' })
+    expect(eatery.dataset.focusId).toBe('venue-result-yih-central-square')
+    expect(eatery.querySelector('.location-identity-icon--eatery')).not.toBeNull()
+    expect(screen.queryByRole('button', { name: /Stop A, bus stop/ })).toBeNull()
+    expect(screen.queryByRole('button', { name: 'Starbucks (CDE), Drinks & snacks' })).toBeNull()
+  })
+
+  it('browses restaurant destinations by friendly name', () => {
+    renderSearch('', 'restaurant')
+
+    expect(screen.getByRole('button', { name: 'Wild Skew, Restaurant' })).toBeTruthy()
+  })
+
+  it('searches within the selected category and passes through category changes', () => {
+    const { onEateryCategoryChange } = renderSearch('cde', 'drinks & snacks')
+
+    expect(screen.getByRole('button', { name: 'Starbucks (CDE), Drinks & snacks' })).toBeTruthy()
+    expect(screen.queryByRole('button', { name: 'YIH (Central Square), Canteen' })).toBeNull()
+
+    fireEvent.click(screen.getByRole('button', { name: 'Place category Drinks & snacks' }))
+    fireEvent.click(screen.getByRole('option', { name: 'Canteens' }))
+    expect(onEateryCategoryChange).toHaveBeenCalledWith('canteen')
   })
 })

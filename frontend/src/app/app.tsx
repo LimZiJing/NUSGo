@@ -40,6 +40,13 @@ import {
 } from '../ui/theme'
 import { ConfirmDialog } from '../ui/confirm-dialog'
 import { MobileSheetMetricsContext } from '../ui/mobile/mobile-sheet/mobile-sheet-metrics'
+import {
+  WAYPOINT_DETAILS_PARTIAL_EXTENT,
+  createMobileSheetSnapPoints,
+  getMobileSheetOccupiedHeight,
+} from '../ui/mobile/mobile-sheet/mobile-sheet-snap-points'
+import type { MapCameraSnapshot, MapViewportInsets } from './contracts/map'
+import { MAP_OVERLAY_MARGIN } from './map-camera'
 // Dev-only: import.meta.env.DEV is a build-time constant, so production builds drop this
 // dynamic import, the control module and its CSS.
 const JourneyTestTimeControl = import.meta.env.DEV
@@ -95,6 +102,10 @@ interface PersonalWaypointPanelReturnTarget {
   readonly page: MorePanelPage
   readonly detent: MobileSheetDetent
   readonly focusTarget: HTMLElement | null
+  /** Accessible name of the control that opened details, so the restored list can find it again. */
+  readonly focusLabel: string | null
+  /** The exact camera captured before details first focused the waypoint, so closing can return to it. */
+  readonly camera: MapCameraSnapshot | null
 }
 
 // Keep the selected place with the panel location that opened its details.
@@ -144,6 +155,9 @@ function App() {
   const [personalWaypointDetails, setPersonalWaypointDetails] = useState<PersonalWaypointDetailsSelection | null>(null)
   const selectedPersonalWaypointId = personalWaypointDetails?.waypointId ?? null
   const pendingWaypointReturnFocusRef = useRef<HTMLElement | null>(null)
+  // A list row unmounts with the page it opened details from, so its label re-finds the row once
+  // the list is back instead of leaving focus on whatever happens to be first.
+  const pendingWaypointReturnFocusLabelRef = useRef<string | null>(null)
   const [personalWaypointStore] = useState(createLocalPersonalWaypointStore)
   const personalWaypoints = usePersonalWaypointWorkflow(personalWaypointStore)
   const personalWaypointEdits = usePersonalWaypointEditSession(personalWaypointStore)
@@ -300,30 +314,43 @@ function App() {
     pendingWaypointReturnFocusRef.current = focusTarget === undefined
       ? returnTarget?.focusTarget ?? null
       : focusTarget
+    // The selected row is replaced by its details page, so remember what it was called and look
+    // for the same row again once the list is back.
+    const restoreLabel = returnTarget?.focusLabel ?? null
+    pendingWaypointReturnFocusLabelRef.current = focusTarget === undefined ? restoreLabel : null
     setPersonalWaypointDetails(null)
     setMorePage(returnTarget?.page ?? 'waypoints')
     setMoreSheetDetent(returnTarget?.detent ?? 'full')
-  }, [personalWaypointDetails])
+    // The snapshot was taken before details first focused the waypoint, so this is exactly the view
+    // the person left, even if they panned while details were open.
+    if (returnTarget?.camera) commands.restoreCamera(returnTarget.camera)
+  }, [commands, personalWaypointDetails])
   const openPersonalWaypointDetails = useCallback((
     waypointId: string,
     returnPage: MorePanelPage,
     returnDetent: MobileSheetDetent,
     trigger: HTMLElement,
   ): void => {
+    // Read the camera before any focus moves it, and keep it with the return target.
+    const camera = session ? commands.captureCamera() : null
     setPersonalWaypointDetails({
       waypointId,
       returnTarget: {
         page: returnPage,
         detent: returnDetent,
         focusTarget: trigger,
+        focusLabel: trigger.getAttribute('aria-label'),
+        camera,
       },
     })
-    setMoreSheetDetent('full')
+    // Details keep the map in view, so the sheet rests at its own 60% partial extent.
+    setMoreSheetDetent('partial')
     setMorePage('waypoint-details')
-  }, [])
+  }, [commands, session])
   const handlePersonalWaypointMapSelection = useCallback((waypointId: string, trigger: HTMLButtonElement): void => {
     if (morePage === 'editing-waypoint' || morePage === 'placing') return
     if (personalWaypointDetails) {
+      // Switching to another place keeps the snapshot and return page captured on first open.
       setPersonalWaypointDetails({ ...personalWaypointDetails, waypointId })
       return
     }
@@ -463,6 +490,18 @@ function App() {
     onMeasurementsApplied: appNavigation.focusStopAfterMapLayout,
     observeStopsPresentation: isCrosshairVisible && navigation.activeView === 'stops',
   })
+  // The More sheet is not one of the measured tabs, so waypoint details describe the screen they
+  // cover themselves. Details sit at 60% of the screen on mobile, tab pill included.
+  const getWaypointDetailsOcclusion = useCallback((): MapViewportInsets | undefined => {
+    if (!isMobileViewport || !mobileSheetMetrics) return undefined
+    const occupied = getMobileSheetOccupiedHeight('partial', createMobileSheetSnapPoints(
+      mobileSheetMetrics.viewportHeight,
+      mobileSheetMetrics.tabBarInset,
+      mobileSheetMetrics.collapsedHeight,
+      WAYPOINT_DETAILS_PARTIAL_EXTENT,
+    ))
+    return { top: 0, right: 0, bottom: occupied + MAP_OVERLAY_MARGIN, left: 0 }
+  }, [isMobileViewport, mobileSheetMetrics])
   useMobilePlanRefit({
     commands,
     isMobileViewport,
@@ -901,6 +940,34 @@ function App() {
   const canManageSelectedPersonalWaypoint = personalWaypoints.readResult.kind === 'ready' &&
     personalWaypoints.readResult.rejectedRecords.count === 0 &&
     selectedPersonalWaypoint !== null
+  // Focusing the waypoint is a one-time move per place: opening details centres it once and
+  // switching places centres the new one, while later pans, edits and re-renders leave the camera
+  // alone. The return snapshot stays the one captured when details first opened.
+  const focusedDetailsWaypointRef = useRef<string | null>(null)
+  useEffect(() => {
+    if (!personalWaypointDetails || morePage !== 'waypoint-details') {
+      if (!personalWaypointDetails) focusedDetailsWaypointRef.current = null
+      return
+    }
+    if (focusedDetailsWaypointRef.current === personalWaypointDetails.waypointId) return
+    // Wait for the measured mobile sheet, so the focus accounts for the details sheet it opens
+    // behind rather than the shared viewport insets.
+    if (isMobileViewport && !mobileSheetMetrics) return
+    const waypoint = selectedPersonalWaypoint?.id === personalWaypointDetails.waypointId
+      ? selectedPersonalWaypoint
+      : undefined
+    if (!waypoint) return
+    focusedDetailsWaypointRef.current = personalWaypointDetails.waypointId
+    commands.focusPersonalWaypoint(waypoint, getWaypointDetailsOcclusion())
+  }, [
+    commands,
+    getWaypointDetailsOcclusion,
+    isMobileViewport,
+    mobileSheetMetrics,
+    morePage,
+    personalWaypointDetails,
+    selectedPersonalWaypoint,
+  ])
   const canEditPersonalWaypoints = personalWaypoints.readResult.kind === 'ready' &&
     personalWaypoints.readResult.rejectedRecords.count === 0 &&
     personalWaypoints.readResult.waypoints.length > 0
@@ -927,10 +994,19 @@ function App() {
 
   useLayoutEffect(() => {
     const pendingReturnFocus = pendingWaypointReturnFocusRef.current
-    if (pendingReturnFocus) {
+    const pendingReturnLabel = pendingWaypointReturnFocusLabelRef.current
+    if (pendingReturnFocus || pendingReturnLabel) {
       pendingWaypointReturnFocusRef.current = null
-      // Removing a waypoint can detach its row; fall back to a control in the restored view.
-      if (pendingReturnFocus.isConnected) pendingReturnFocus.focus()
+      pendingWaypointReturnFocusLabelRef.current = null
+      // Removing a waypoint can detach its row; the same label finds the row in the restored list,
+      // which is otherwise rebuilt when the details page closes.
+      const reopenedRow = pendingReturnLabel === null
+        ? null
+        : Array.from(document.querySelectorAll<HTMLElement>('[aria-label]')).find((element) => (
+          element.getAttribute('aria-label') === pendingReturnLabel
+        )) ?? null
+      if (pendingReturnFocus?.isConnected) pendingReturnFocus.focus()
+      else if (reopenedRow?.isConnected) reopenedRow.focus()
       else if (isMoreOpen && morePage === 'waypoints') personalWaypointsInitialFocusRef.current?.focus()
       else if (isMoreOpen) moreInitialFocusRef.current?.focus()
       else moreEntryButtonRef.current?.focus()

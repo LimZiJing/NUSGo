@@ -1,0 +1,23 @@
+{
+  "type": "FeatureCollection",
+  "features": [
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          103.7811238487892,
+          1.290637060820501
+        ]
+      },
+      "properties": {
+        "id": "cw-17293eac-a98b-4c82-8bbb-b43974b3ca87",
+        "category": "printing",
+        "source": "public_source",
+        "updatedAt": "2026-11-13",
+        "building": "PGP MPSH / Minimart",
+        "floor": -1
+      }
+    }
+  ]
+}

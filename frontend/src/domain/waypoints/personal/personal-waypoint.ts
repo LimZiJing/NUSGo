@@ -1,5 +1,5 @@
 import { isValidLocationCoordinates } from '../../location/coordinates'
-import type { Waypoint, WaypointCoordinate } from '../waypoint'
+import type { Waypoint, WaypointCoordinate } from '@nusgo/shared/waypoints/waypoint'
 
 export const PERSONAL_WAYPOINT_NAME_MAX_LENGTH = 80
 export const PERSONAL_WAYPOINT_CATEGORY_MAX_LENGTH = 40

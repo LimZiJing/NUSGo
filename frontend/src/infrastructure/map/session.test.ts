@@ -1665,7 +1665,7 @@ describe('MapSession', () => {
       }>
     }
 
-    session.setPersonalWaypointPlacement([103.78, 1.29], true, onDrag)
+    session.setWaypointPlacement([103.78, 1.29], true, onDrag)
     const marker = map.addedMarkers.at(-1)!
     expect(marker.coordinate).toEqual([103.78, 1.29])
     expect(marker.draggable).toBe(true)
@@ -1674,11 +1674,11 @@ describe('MapSession', () => {
     marker.fire('dragend')
     expect(onDrag).toHaveBeenCalledWith([103.79, 1.3])
 
-    session.setPersonalWaypointPlacement([103.8, 1.31], false, onDrag)
+    session.setWaypointPlacement([103.8, 1.31], false, onDrag)
     expect(map.addedMarkers.at(-1)).toBe(marker)
     expect(marker.coordinate).toEqual([103.8, 1.31])
     expect(marker.draggable).toBe(false)
-    session.setPersonalWaypointPlacement(null, false, onDrag)
+    session.setWaypointPlacement(null, false, onDrag)
     expect(marker.remove).toHaveBeenCalledOnce()
     session.dispose()
     vi.unstubAllGlobals()

@@ -4,8 +4,9 @@ import type { MinuteFormat } from '../../domain/trip/minute-format'
 import { AppearanceSection } from './components/appearance-section'
 import { FavouritesSection, type FavoriteStopSummary } from './components/favourites-section'
 import { AboutSection } from './components/about-section'
+import { WaypointsSection } from './components/waypoints-section'
 import { SettingsDisclosure } from './components/settings-disclosure'
-import { FavoriteIcon, InfoIcon, PaletteIcon } from '../../ui/icons'
+import { FavoriteIcon, InfoIcon, MapPinIcon, PaletteIcon } from '../../ui/icons'
 import type { BuildingCatalogueSource } from '@nusgo/shared/venue/buildings'
 import type { TransitNetworkMetadata } from '@nusgo/shared/transit/types'
 import './styles/settings-content.css'
@@ -21,6 +22,7 @@ interface SettingsContentProps {
   readonly onClearFavorites: () => void
   readonly transitMetadata: TransitNetworkMetadata | null
   readonly buildingSource: BuildingCatalogueSource | null
+  readonly communityWaypointDownloadUrl: string
   readonly dataVersion: string
 }
 
@@ -35,6 +37,7 @@ export function SettingsContent({
   onClearFavorites,
   transitMetadata,
   buildingSource,
+  communityWaypointDownloadUrl,
   dataVersion,
 }: SettingsContentProps) {
   const appearanceSummary = themePreference === 'system'
@@ -77,6 +80,12 @@ export function SettingsContent({
           transitMetadata={transitMetadata}
           buildingSource={buildingSource}
         />
+      </SettingsDisclosure>
+      <SettingsDisclosure
+        title="Waypoints"
+        icon={<MapPinIcon />}
+      >
+        <WaypointsSection communityWaypointDownloadUrl={communityWaypointDownloadUrl} />
       </SettingsDisclosure>
     </div>
   )

@@ -218,6 +218,16 @@
   padding: 14px var(--space-4);
 }
 
+.settings-waypoints-download-row {
+  display: flex;
+  align-items: center;
+  gap: var(--space-3);
+}
+
+.settings-waypoints-download-link {
+  text-decoration: none;
+}
+
 .settings-about-row + .settings-about-row {
   border-top: 1px solid var(--border-subtle);
 }

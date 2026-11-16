@@ -140,7 +140,7 @@ describe('CommunityWaypointPanel', () => {
     await user.click(waterSwitch)
     expect(localStorage.getItem(VISIBILITY_KEY)).toBe('["water_cooler"]')
     expect(screen.queryByText(
-      'Saved category visibility could not be read. Review the categories and save to replace it.',
+      'Saved category visibility could not be read. Toggle a category to replace it.',
     )).toBeNull()
   })
 

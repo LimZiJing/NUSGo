@@ -18,6 +18,9 @@ describe('LiveBusToggle', () => {
 
     const toggle = screen.getByRole('button', { name: 'Live buses' })
     expect(toggle.getAttribute('aria-pressed')).toBe(String(enabled))
+    expect(toggle.getAttribute('title')).toBe(enabled ? 'Hide live buses' : 'Show live buses')
+    expect(toggle.getAttribute('data-size')).toBe('lg')
+    expect(toggle.getAttribute('data-variant')).toBe('secondary')
     await user.click(toggle)
     expect(onToggle).toHaveBeenCalledWith(nextEnabled)
   })

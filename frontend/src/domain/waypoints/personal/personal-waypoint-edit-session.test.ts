@@ -5,6 +5,7 @@ import {
   isSessionDirty,
   moveInSession,
   removeInSession,
+  renameInSession,
   reorderInSession,
   sessionCategories,
   sessionChangeSummary,
@@ -115,5 +116,77 @@ describe('personal waypoint edit session', () => {
     const moved = moveInSession(createPersonalWaypointEditSession(baseline), bench.id, 'Work', now)
     const both = removeInSession(moved, library.id)
     expect(sessionChangeSummary(summariseSession(both))).toBe('1 place moved and 1 place removed')
+  })
+
+  describe('category renames', () => {
+    it('renames every place in the category without writing the baseline', () => {
+      const session = renameInSession(createPersonalWaypointEditSession(baseline), 'Rest spot', 'Break spot', now)
+
+      expect(session.working.map(({ name, category }) => [name, category])).toEqual([
+        ['Bench', 'Break spot'],
+        ['Library', 'Study spot'],
+        ['Cafe', 'Break spot'],
+      ])
+      // The saved collection is untouched: a rename is staged like a move.
+      expect(session.baseline).toBe(baseline)
+      expect(isSessionDirty(session)).toBe(true)
+    })
+
+    it('never reports a rename as moving the places it renamed', () => {
+      const session = renameInSession(createPersonalWaypointEditSession(baseline), 'Rest spot', 'Break spot', now)
+      const summary = summariseSession(session)
+
+      // Two places changed category text, but nobody moved them: they stayed in one group.
+      expect(summary).toMatchObject({ movedCount: 0, renamedCount: 1, reordered: false })
+      expect(sessionChangeSummary(summary)).toBe('1 category renamed')
+    })
+
+    it('retires the old name so it does not linger as an empty group', () => {
+      const session = renameInSession(createPersonalWaypointEditSession(baseline), 'Rest spot', 'Break spot', now)
+
+      // An emptied category normally stays visible as a drop target, but a renamed one is gone.
+      expect(sessionCategories(session)).not.toContain('Rest spot')
+      expect(sessionCategories(session)).toContain('Break spot')
+    })
+
+    it('keeps the old name as a drop target when a place is moved back into it', () => {
+      const renamed = renameInSession(createPersonalWaypointEditSession(baseline), 'Rest spot', 'Break spot', now)
+      const back = moveInSession(renamed, bench.id, 'Rest spot', now)
+
+      expect(sessionCategories(back)).toContain('Rest spot')
+      expect(sessionCategories(back)).toContain('Break spot')
+    })
+
+    it('follows a rename chain to the name a place actually ends up with', () => {
+      const first = renameInSession(createPersonalWaypointEditSession(baseline), 'Rest spot', 'Break spot', now)
+      const second = renameInSession(first, 'Break spot', 'Lunch spot', now)
+
+      // The places were only ever renamed, never moved, so this is still not a move.
+      expect(summariseSession(second)).toMatchObject({ movedCount: 0, renamedCount: 2 })
+      expect(sessionChangeSummary(summariseSession(second))).toBe('2 categories renamed')
+      expect(sessionCategories(second)).toContain('Lunch spot')
+      expect(sessionCategories(second)).not.toContain('Break spot')
+    })
+
+    it('marks a rename that lands on an existing name as a merge', () => {
+      const session = renameInSession(createPersonalWaypointEditSession(baseline), 'Rest spot', 'Study spot', now)
+
+      expect(session.renames).toEqual([{ from: 'Rest spot', to: 'Study spot', merged: true }])
+      expect(session.working.map(({ category }) => category)).toEqual(['Study spot', 'Study spot', 'Study spot'])
+    })
+
+    it('ignores a rename that would do nothing', () => {
+      const session = createPersonalWaypointEditSession(baseline)
+      expect(renameInSession(session, 'Rest spot', ' Rest spot ', now)).toBe(session)
+      expect(renameInSession(session, 'Missing', 'Work', now)).toBe(session)
+      expect(renameInSession(session, 'Rest spot', '   ', now)).toBe(session)
+      expect(isSessionDirty(session)).toBe(false)
+    })
+
+    it('counts a rename and a removal separately in one sentence', () => {
+      const renamed = renameInSession(createPersonalWaypointEditSession(baseline), 'Rest spot', 'Break spot', now)
+      const both = removeInSession(renamed, library.id)
+      expect(sessionChangeSummary(summariseSession(both))).toBe('1 place removed and 1 category renamed')
+    })
   })
 })

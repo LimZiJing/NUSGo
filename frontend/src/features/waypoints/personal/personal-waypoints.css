@@ -43,8 +43,7 @@
   width: var(--control-height-lg);
   height: var(--control-height-lg);
   border-radius: var(--radius-card);
-  color: var(--accent);
-  background: var(--accent-soft);
+  /* Colour comes from the saved marker, with the row chip: see the marker chip rules below. */
 }
 
 .personal-waypoint-details-identity-copy {
@@ -207,6 +206,61 @@
   outline-offset: var(--focus-ring-offset);
 }
 
+/* A saved marker's chip carries its stored colour, the same way the map pin does, so a place looks
+   the same in the list, in details and on the map. The colour comes from the theme's marker tokens
+   through one attribute, rather than a per-colour class that then needs a rule of its own. */
+.personal-waypoint-pin,
+.personal-waypoint-details-identity-icon {
+  --personal-waypoint-chip-fill: var(--personal-waypoint-marker-blue);
+  --personal-waypoint-chip-glyph: var(--map-pin-glyph-ink);
+
+  color: var(--personal-waypoint-chip-glyph);
+  background: var(--personal-waypoint-chip-fill);
+}
+
+.personal-waypoint-pin[data-marker-color='red'],
+.personal-waypoint-details-identity-icon[data-marker-color='red'] {
+  --personal-waypoint-chip-fill: var(--personal-waypoint-marker-red);
+}
+
+.personal-waypoint-pin[data-marker-color='green'],
+.personal-waypoint-details-identity-icon[data-marker-color='green'] {
+  --personal-waypoint-chip-fill: var(--personal-waypoint-marker-green);
+}
+
+.personal-waypoint-pin[data-marker-color='orange'],
+.personal-waypoint-details-identity-icon[data-marker-color='orange'] {
+  --personal-waypoint-chip-fill: var(--personal-waypoint-marker-orange);
+}
+
+.personal-waypoint-pin[data-marker-color='yellow'],
+.personal-waypoint-details-identity-icon[data-marker-color='yellow'] {
+  --personal-waypoint-chip-fill: var(--personal-waypoint-marker-yellow);
+}
+
+.personal-waypoint-pin[data-marker-color='cyan'],
+.personal-waypoint-details-identity-icon[data-marker-color='cyan'] {
+  --personal-waypoint-chip-fill: var(--personal-waypoint-marker-cyan);
+}
+
+.personal-waypoint-pin[data-marker-color='purple'],
+.personal-waypoint-details-identity-icon[data-marker-color='purple'] {
+  --personal-waypoint-chip-fill: var(--personal-waypoint-marker-purple);
+}
+
+.personal-waypoint-pin[data-marker-color='gray'],
+.personal-waypoint-details-identity-icon[data-marker-color='gray'] {
+  --personal-waypoint-chip-fill: var(--personal-waypoint-marker-gray);
+}
+
+/* Red and purple are dark enough that the ink glyph disappears on them, exactly as on the map. */
+.personal-waypoint-pin[data-marker-color='red'],
+.personal-waypoint-details-identity-icon[data-marker-color='red'],
+.personal-waypoint-pin[data-marker-color='purple'],
+.personal-waypoint-details-identity-icon[data-marker-color='purple'] {
+  --personal-waypoint-chip-glyph: var(--map-pin-glyph-paper);
+}
+
 .personal-waypoint-pin {
   display: grid;
   width: 28px;
@@ -214,8 +268,6 @@
   flex: 0 0 28px;
   place-items: center;
   border-radius: var(--radius-control);
-  color: var(--accent);
-  background: var(--accent-soft);
 }
 
 .personal-waypoint-pin svg {

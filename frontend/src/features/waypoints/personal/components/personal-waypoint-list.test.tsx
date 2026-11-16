@@ -589,7 +589,7 @@ describe('PersonalWaypointList category renaming', () => {
     )
   })
 
-  it('says the map visibility could not be saved when the answer is unknown', async () => {
+  it('says the map visibility could not be read when the answer is unknown', async () => {
     const user = userEvent.setup()
     const onRenameCategory = vi.fn<(from: string, to: string) => readonly PersonalWaypoint[] | null>(() => waypoints)
     const onEditAnnouncement = vi.fn()
@@ -610,7 +610,7 @@ describe('PersonalWaypointList category renaming', () => {
 
     expect(onRenameCategory).toHaveBeenCalledExactlyOnceWith('Rest spot', 'Study place')
     expect(onEditAnnouncement).toHaveBeenLastCalledWith(
-      'Merged Rest spot into Study place. Its map visibility could not be saved.',
+      'Merged Rest spot into Study place. Its map visibility could not be read.',
     )
   })
 

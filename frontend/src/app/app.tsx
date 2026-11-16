@@ -841,8 +841,17 @@ function App() {
     setPersonalWaypointsEditing(true)
   }
   const confirmPersonalWaypointEdits = (): void => {
+    // Category names changed with them, so visibility preferences have to follow in the same
+    // gesture. They are the one thing the session cannot write: it owns places, not preferences.
+    const renames = personalWaypointEdits.renames
     const outcome = personalWaypointEdits.commit()
     if (outcome.kind === 'failed') return
+    personalWaypointCategoryVisibility.applyCategoryRenames(renames)
+    // The write went straight to the store, which this screen does not render from: the list shows
+    // `personalWaypoints.readResult`. Without re-reading it, the list falls back to the pre-edit
+    // snapshot and a removed place reappears while the map keeps its marker until the page is left
+    // and reopened.
+    personalWaypoints.refresh()
     setPersonalWaypointEditMessage(outcome.kind === 'saved' ? `List changes saved.` : null)
     setPersonalWaypointEditRevision((revision) => revision + 1)
     setPersonalWaypointsEditing(false)
@@ -1188,8 +1197,10 @@ function App() {
               status={personalWaypointEdits.issue
                 ?? (personalWaypoints.statusKind === 'problem' ? personalWaypoints.status : null)}
               onAdd={beginWaypointCreation}
-              onRenameCategory={personalWaypoints.renameCategory}
-              onMergeCategoryVisibility={personalWaypointCategoryVisibility.mergeCategoryVisibilityFor}
+              // A rename is staged like a move or a removal: the list only offers it in Edit list,
+              // and only Confirm writes the result.
+              onRenameCategory={personalWaypointEdits.rename}
+              onMergeCategoryVisibility={personalWaypointCategoryVisibility.predictCategoryMergeVisibility}
               onOpenDetails={(waypoint, trigger) => openPersonalWaypointDetails(
                 waypoint.id,
                 'waypoints',

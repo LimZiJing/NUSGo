@@ -50,6 +50,11 @@ export function ConfirmDialog({
     ref={dialogRef}
     className="confirm-dialog"
     aria-labelledby="confirm-dialog-title"
+    // Escape belongs to this modal while it is open. The app listens for Escape on the window at
+    // capture phase to step back a panel page, and a modal is opened on top of that page, so
+    // without this the key dismissed the dialog and navigated the panel underneath it at once. The
+    // native `cancel` event below is what actually handles the key.
+    data-owns-escape="true"
     onCancel={(event) => {
       event.preventDefault()
       onCancel()

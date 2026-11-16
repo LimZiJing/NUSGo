@@ -196,31 +196,32 @@ export function PersonalWaypointList({
     [groups],
   )
 
-  // A rename that lands on an existing category merges the two, so it asks first.
+  // A rename that lands on an existing category merges the two, so it asks first. Everything here
+  // is staged in the pending edit, so a name is only reported once it would be written.
   const requestRenameCategory = (from: string, to: string): void => {
     const taken = waypoints.some((waypoint) => waypoint.category.trim() === to)
     if (taken) {
       setMergeRequest({ from, to })
       return
     }
-    const saved = onRenameCategory?.(from, to) ?? null
-    onEditAnnouncement?.(saved ? `Renamed ${from} to ${to}.` : `Could not rename ${from}.`)
+    const staged = onRenameCategory?.(from, to) ?? null
+    onEditAnnouncement?.(staged ? `Renamed ${from} to ${to}.` : `Could not rename ${from}.`)
   }
 
   const confirmMerge = (): void => {
     const request = mergeRequest
     if (!request) return
     setMergeRequest(null)
-    const saved = onRenameCategory?.(request.from, request.to) ?? null
-    if (!saved) {
+    const staged = onRenameCategory?.(request.from, request.to) ?? null
+    if (!staged) {
       onEditAnnouncement?.(`Could not merge ${request.from} into ${request.to}.`)
       return
     }
     const visibleAfter = onMergeCategoryVisibility?.(request.from, request.to) ?? null
-    // A null answer means the visibility could not be read or saved, so name the problem instead
-    // of claiming the merged category is shown or hidden.
+    // A null answer means visibility could not be read, so name the problem instead of claiming
+    // the merged category is shown or hidden.
     onEditAnnouncement?.(visibleAfter === null
-      ? `Merged ${request.from} into ${request.to}. Its map visibility could not be saved.`
+      ? `Merged ${request.from} into ${request.to}. Its map visibility could not be read.`
       : `Merged ${request.from} into ${request.to}. ${categoryMergeConfirmation(visibleAfter)}.`)
   }
 

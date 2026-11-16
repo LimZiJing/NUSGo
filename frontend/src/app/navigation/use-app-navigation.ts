@@ -291,6 +291,9 @@ export function useAppNavigation({
     if (!isMobileViewport || activeView === 'explore') return
     const handleEscape = (event: KeyboardEvent): void => {
       if (event.key !== 'Escape' || event.defaultPrevented) return
+      // A modal dialog sits on top of the sheet and owns Escape while it is open; dismissing it
+      // must not also collapse the sheet underneath.
+      if (event.target instanceof Element && event.target.closest('dialog[open]')) return
       if (commands.dismissMapPopup()) {
         event.preventDefault()
         return

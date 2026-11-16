@@ -46,26 +46,56 @@ export function usePersonalWaypointCategoryVisibility(store: PersonalWaypointCat
       : 'Map category settings could not be saved. The change applies until this page is reloaded.')
   }, [draftHiddenCategories, store])
 
-  // A merge rewrites which category names exist, so visibility follows the same durable write.
-  // It answers whether the merged category will be shown, or null when that cannot be promised:
-  // an unreadable store has no visibility to merge, and a failed write would not survive reload.
-  const mergeCategoryVisibilityFor = useCallback((from: string, to: string): boolean | null => {
+  /**
+   * Whether a merged category would be shown on the map. Read-only on purpose: the merge itself is
+   * staged with the rest of the collection edit, so answering this must not write. It predicts from
+   * the stored preferences, which is what the write at Confirm starts from.
+   */
+  const predictCategoryMergeVisibility = useCallback((from: string, to: string): boolean | null => {
     const latest = store.read()
     if (latest.kind !== 'ready') {
       setStatus(getReadStatus(latest.kind))
       return null
     }
-    const next = mergeCategoryVisibility(latest.hiddenCategories, from, to)
-    const result = store.write(next.hiddenCategories)
-    setHiddenCategories(next.hiddenCategories)
-    setDraftHiddenCategories((current) => mergeCategoryVisibility(current, from, to).hiddenCategories)
+    return mergeCategoryVisibility(latest.hiddenCategories, from, to).visibleAfter
+  }, [store])
+
+  /**
+   * Folds a category rename into the stored preferences in one write, at the moment the collection
+   * edit is confirmed. Until then a rename is only staged, so writing here would hide or show a
+   * name the collection does not have yet, and would keep doing so if the person then cancelled.
+   *
+   * Renames are applied in order because a later one can touch a name an earlier one produced.
+   */
+  const applyCategoryRenames = useCallback((
+    renames: readonly { readonly from: string; readonly to: string }[],
+  ): boolean => {
+    if (renames.length === 0) return true
+    const latest = store.read()
+    if (latest.kind !== 'ready') {
+      setStatus(getReadStatus(latest.kind))
+      return false
+    }
+    let nextHidden = latest.hiddenCategories
+    for (const { from, to } of renames) {
+      nextHidden = mergeCategoryVisibility(nextHidden, from, to).hiddenCategories
+    }
+
+    setHiddenCategories(nextHidden)
+    setDraftHiddenCategories((current) => {
+      let next = current
+      for (const { from, to } of renames) next = mergeCategoryVisibility(next, from, to).hiddenCategories
+      return next
+    })
+    const result = store.write(nextHidden)
     if (result.kind !== 'saved') {
       setStatus('Map category settings could not be saved. The change applies until this page is reloaded.')
-      return null
+      return false
     }
     setStatus(null)
-    return next.visibleAfter
+    return true
   }, [store])
+
 
   const togglePicker = useCallback(() => setPickerOpen((open) => !open), [])
   const openPicker = useCallback(() => setPickerOpen(true), [])
@@ -79,7 +109,8 @@ export function usePersonalWaypointCategoryVisibility(store: PersonalWaypointCat
     cancelCategoryVisibilityChanges,
     saveCategoryVisibilityChanges,
     togglePicker,
-    mergeCategoryVisibilityFor,
+    predictCategoryMergeVisibility,
+    applyCategoryRenames,
     openPicker,
     status,
   }

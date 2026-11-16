@@ -5,7 +5,6 @@ import { NavigateButton } from '../../../../ui/navigate-button'
 import { MenuItem } from '../../../../ui/menu-item'
 import { OverflowMenu } from '../../../../ui/overflow-menu'
 import { PersonalWaypointMarkerGlyph } from './personal-waypoint-marker-glyph'
-import { personalWaypointMarkerColorClass } from './personal-waypoint-marker-color'
 
 export function PersonalWaypointDetails({ waypoint, canManage, onDirections, onEdit, onDelete }: {
   readonly waypoint: PersonalWaypoint | null
@@ -23,7 +22,7 @@ export function PersonalWaypointDetails({ waypoint, canManage, onDirections, onE
   return <section className="personal-waypoint-details" aria-labelledby="personal-waypoint-details-heading">
     <header className="personal-waypoint-details-identity">
       <span
-        className={`personal-waypoint-details-identity-icon ${personalWaypointMarkerColorClass(waypoint.markerColor)}`}
+        className="personal-waypoint-details-identity-icon"
         data-marker-color={waypoint.markerColor}
         data-marker-icon={waypoint.markerIcon}
         aria-hidden="true"

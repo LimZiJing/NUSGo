@@ -13,6 +13,7 @@ import {
   isSessionDirty,
   moveInSession,
   removeInSession,
+  renameInSession,
   reorderInSession,
   sessionCategories,
   sessionChangeSummary,
@@ -65,9 +66,10 @@ function failureMessage(outcome: PersonalWaypointStoreMutationResult): string {
  *
  * Editing reads the stored collection once, so the session is always based on a revision this hook
  * knows the identity of. Everything the person does while editing — moving a place between
- * categories, reordering, removing — changes only working state. Nothing is written until `commit`,
- * which issues a single versioned write, and `cancel` therefore needs no undo because the store was
- * never touched. A list whose places are edited together is written together or not at all.
+ * categories, reordering, removing, renaming a category — changes only working state. Nothing is
+ * written until `commit`, which issues a single versioned write, and `cancel` therefore needs no
+ * undo because the store was never touched. A list whose places are edited together is written
+ * together or not at all.
  */
 export function usePersonalWaypointEditSession(store: PersonalWaypointStore) {
   const [state, setState] = useState<PersonalWaypointEditSessionState | null>(null)
@@ -111,6 +113,22 @@ export function usePersonalWaypointEditSession(store: PersonalWaypointStore) {
       session: removeInSession(current.session, waypointId),
     })
   }, [])
+
+  /**
+   * Stages a category rename, returning the pending collection afterwards or null when the session
+   * refused it (nothing to rename, or a record that fails validation). Nothing is written here: the
+   * same contract as `renameCategory`, so the caller can report either outcome the same way.
+   *
+   * This reads `state` instead of using an updater because the answer has to be known before the
+   * caller runs. A rename is a discrete command, not something that can queue behind another edit.
+   */
+  const rename = useCallback((from: string, to: string): readonly PersonalWaypoint[] | null => {
+    if (!state) return null
+    const session = renameInSession(state.session, from, to, () => new Date().toISOString())
+    if (session === state.session) return null
+    setState({ ...state, session })
+    return session.working
+  }, [state])
 
   const commit = useCallback((): EditCommitResult => {
     if (!state) return { kind: 'unchanged' }
@@ -159,12 +177,15 @@ export function usePersonalWaypointEditSession(store: PersonalWaypointStore) {
     () => state ? sessionCategories(state.session) : [],
     [state],
   )
+  const renames = state?.session.renames ?? []
 
   return {
     /** Non-null while an edit is in progress; the list renders from `working`. */
     editing: state !== null,
     working,
     categories,
+    /** Category renames staged so far, so a caller can apply dependent changes on confirm. */
+    renames,
     dirty: state ? isSessionDirty(state.session) : false,
     changeSummary,
     issue: state?.issue?.message ?? null,
@@ -173,6 +194,7 @@ export function usePersonalWaypointEditSession(store: PersonalWaypointStore) {
     move,
     reorder,
     remove,
+    rename,
     commit,
   }
 }

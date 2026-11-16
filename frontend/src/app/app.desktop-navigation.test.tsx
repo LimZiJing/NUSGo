@@ -1524,6 +1524,161 @@ describe('More surface', () => {
     vi.unstubAllGlobals()
   })
 
+  it('shows the saved list after Confirm instead of the pre-edit snapshot', async () => {
+    // The edit session writes straight to the store, while this screen renders from the workflow's
+    // own read result. Without a re-read after Confirm, the list falls back to what it read before
+    // editing began, so a removed place reappears and the map keeps its marker until the page is
+    // left and reopened. Confirmed in a browser; this is the same path.
+    mockDesktopViewport()
+    localStorage.setItem('navus:personal-waypoints:v1', JSON.stringify({
+      version: 1,
+      waypoints: [
+        {
+          id: '00000000-0000-4000-8000-000000000001',
+          name: 'Quiet bench',
+          category: 'Rest spot',
+          coordinate: { longitude: 103.78, latitude: 1.29 },
+          markerColor: 'blue',
+          markerIcon: 'dot',
+          createdAt: '2026-10-26T00:00:00.000Z',
+          updatedAt: '2026-10-26T00:00:00.000Z',
+        },
+        {
+          id: '00000000-0000-4000-8000-000000000002',
+          name: 'Library seat',
+          category: 'Rest spot',
+          coordinate: { longitude: 103.79, latitude: 1.29 },
+          markerColor: 'blue',
+          markerIcon: 'dot',
+          createdAt: '2026-10-26T00:00:00.000Z',
+          updatedAt: '2026-10-26T00:00:00.000Z',
+        },
+      ],
+    }))
+    const user = userEvent.setup()
+    render(<App />)
+
+    await user.click(screen.getByRole('button', { name: 'More' }))
+    await user.click(screen.getByRole('button', { name: 'My waypoints' }))
+    await chooseWaypointListCommand(user, 'Edit list')
+    // Edit mode expands every group, so the rows are reachable without opening anything.
+    await user.click(screen.getByRole('button', { name: 'Remove Library seat' }))
+    await user.click(screen.getByRole('button', { name: 'Confirm' }))
+
+    // Storage lost the place, so the screen must have lost it too, without a reload. Groups are
+    // collapsed again now, so read the document rather than the (hidden) row list.
+    const stored = JSON.parse(localStorage.getItem('navus:personal-waypoints:v1') ?? '{}')
+    expect(stored.waypoints.map(({ name }: { name: string }) => name)).toEqual(['Quiet bench'])
+    expect(document.body.textContent).not.toContain('Library seat')
+    // And the heading counts what is left, rather than the pre-edit total.
+    expect(screen.getByRole('button', { name: /^Expand Rest spot/ }).textContent).toContain('1 place')
+  })
+
+  it('keeps the collection page open when Escape dismisses a confirmation dialog', async () => {
+    // The app steps the More panel back one page on Escape, listening on the window at capture
+    // phase. A modal is opened on top of that page, so dismissing it used to navigate the page
+    // behind it at the same time: Escape closed the dialog and left the person somewhere else.
+    mockDesktopViewport()
+    localStorage.setItem('navus:personal-waypoints:v1', JSON.stringify({
+      version: 1,
+      waypoints: [{
+        id: '00000000-0000-4000-8000-000000000001',
+        name: 'Quiet bench',
+        category: 'Rest spot',
+        coordinate: { longitude: 103.78, latitude: 1.29 },
+        markerColor: 'blue',
+        markerIcon: 'dot',
+        createdAt: '2026-10-26T00:00:00.000Z',
+        updatedAt: '2026-10-26T00:00:00.000Z',
+      }],
+    }))
+    const user = userEvent.setup()
+    render(<App />)
+
+    await user.click(screen.getByRole('button', { name: 'More' }))
+    await user.click(screen.getByRole('button', { name: 'My waypoints' }))
+    await chooseWaypointListCommand(user, 'Edit list')
+    // Cancel asks first, because the edit is dirty; removing a place makes it dirty.
+    // jsdom implements `dialog.open` but not the modal methods, so give the ConfirmDialog the
+    // behaviour a browser provides for the duration of this test.
+    Object.defineProperty(window.HTMLDialogElement.prototype, 'showModal', {
+      configurable: true,
+      value(this: HTMLDialogElement) { this.open = true },
+    })
+    Object.defineProperty(window.HTMLDialogElement.prototype, 'close', {
+      configurable: true,
+      value(this: HTMLDialogElement) { this.open = false },
+    })
+    await user.click(screen.getByRole('button', { name: 'Remove Quiet bench' }))
+    await user.click(screen.getByRole('button', { name: 'Cancel' }))
+
+    const sheet = document.querySelector('.more-panel-surface')
+    expect(sheet?.getAttribute('data-page')).toBe('waypoints')
+    const dialog = await screen.findByRole('dialog')
+    expect(dialog.getAttribute('data-owns-escape')).toBe('true')
+
+    // Escape reaches the panel's window listener at capture phase before anything else. Without
+    // the dialog declaring that it owns the key, that listener steps the page back from
+    // `waypoints` to `menu` while the dialog is still on screen.
+    act(() => {
+      dialog.dispatchEvent(new KeyboardEvent('keydown', {
+        key: 'Escape',
+        bubbles: true,
+        cancelable: true,
+      }))
+    })
+    expect(sheet?.getAttribute('data-page')).toBe('waypoints')
+    expect(screen.getByRole('button', { name: 'Confirm' })).toBeTruthy()
+  })
+
+  it('stages a category rename until Confirm, then writes it', async () => {
+    // A rename used to write straight to the store while the screen still rendered the session's
+    // copy, so storage held the new name, the list showed the old one, and the next Confirm failed
+    // on the revision it had already moved. A rename is a list change like any other.
+    mockDesktopViewport()
+    localStorage.setItem('navus:personal-waypoints:v1', JSON.stringify({
+      version: 1,
+      waypoints: [{
+        id: '00000000-0000-4000-8000-000000000001',
+        name: 'Quiet bench',
+        category: 'Rest spot',
+        coordinate: { longitude: 103.78, latitude: 1.29 },
+        markerColor: 'blue',
+        markerIcon: 'dot',
+        createdAt: '2026-10-26T00:00:00.000Z',
+        updatedAt: '2026-10-26T00:00:00.000Z',
+      }],
+    }))
+    const user = userEvent.setup()
+    render(<App />)
+
+    await user.click(screen.getByRole('button', { name: 'More' }))
+    await user.click(screen.getByRole('button', { name: 'My waypoints' }))
+    await chooseWaypointListCommand(user, 'Edit list')
+
+    await user.click(screen.getByRole('button', { name: 'Rename Rest spot category' }))
+    const field = screen.getByRole('textbox', { name: 'Rename Rest spot category' })
+    await user.clear(field)
+    await user.type(field, 'Break spot{Enter}')
+
+    // The pending list shows the new name, and nothing has been written yet.
+    expect(screen.getByRole('button', { name: /^Collapse Break spot/ })).toBeTruthy()
+    const storedBeforeConfirm = JSON.parse(localStorage.getItem('navus:personal-waypoints:v1') ?? '{}')
+    expect(storedBeforeConfirm.waypoints.map(({ category }: { category: string }) => category))
+      .toEqual(['Rest spot'])
+
+    await user.click(screen.getByRole('button', { name: 'Confirm' }))
+
+    // Confirm writes it, and the screen shows the written state rather than the pre-edit one.
+    const storedAfterConfirm = JSON.parse(localStorage.getItem('navus:personal-waypoints:v1') ?? '{}')
+    expect(storedAfterConfirm.waypoints.map(({ category }: { category: string }) => category))
+      .toEqual(['Break spot'])
+    expect(screen.getByRole('button', { name: /^Expand Break spot/ })).toBeTruthy()
+    expect(screen.getByText('List changes saved.')).toBeTruthy()
+    // Still on the collection page: the Confirm was accepted, not refused as a conflict.
+    expect(document.querySelector('.more-panel-surface')?.getAttribute('data-page')).toBe('waypoints')
+  })
+
   it('keeps cancelled and invalid waypoint drafts out of storage', async () => {
     const user = userEvent.setup()
     render(<App />)

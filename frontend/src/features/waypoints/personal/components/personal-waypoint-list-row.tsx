@@ -7,7 +7,6 @@ import { IconButton } from '../../../../ui/button'
 import { SavedListRow } from '../../../../ui/saved-list-row'
 import { CloseIcon, GripVerticalIcon } from '../../../../ui/icons'
 import { PersonalWaypointMarkerGlyph } from './personal-waypoint-marker-glyph'
-import { personalWaypointMarkerColorClass } from './personal-waypoint-marker-color'
 
 interface PersonalWaypointListRowProps {
   readonly waypoint: PersonalWaypoint
@@ -89,7 +88,7 @@ export function PersonalWaypointListRow({
           disabled={handleDisabled}
           ref={setHandleRef}
         />}
-        <span className={`personal-waypoint-pin ${personalWaypointMarkerColorClass(waypoint.markerColor)}`} data-marker-icon={waypoint.markerIcon} aria-hidden="true">
+        <span className="personal-waypoint-pin" data-marker-color={waypoint.markerColor} data-marker-icon={waypoint.markerIcon} aria-hidden="true">
           <PersonalWaypointMarkerGlyph markerIcon={waypoint.markerIcon} size={15} />
         </span>
       </>}

@@ -115,6 +115,70 @@ describe('usePersonalWaypointEditSession', () => {
     expect(store.replaceAll).not.toHaveBeenCalled()
   })
 
+  it('stages a category rename instead of writing it', () => {
+    const { store, getWaypoints } = createMutableStore()
+    const { result } = renderHook(() => usePersonalWaypointEditSession(store))
+
+    act(() => { result.current.begin() })
+    let staged: readonly PersonalWaypoint[] | null = null
+    act(() => { staged = result.current.rename('Rest spot', 'Break spot') })
+
+    // The screen shows the new name, and the store still holds the old one.
+    expect(staged).not.toBeNull()
+    expect(result.current.working?.map(({ category }) => category)).toEqual(['Break spot', 'Study spot'])
+    expect(store.replaceAll).not.toHaveBeenCalled()
+    expect(getWaypoints().map(({ category }) => category)).toEqual(['Rest spot', 'Study spot'])
+    expect(result.current.changeSummary).toBe('1 category renamed')
+  })
+
+  it('writes the staged rename once, on commit', () => {
+    const { store, getWaypoints } = createMutableStore()
+    const { result } = renderHook(() => usePersonalWaypointEditSession(store))
+
+    act(() => { result.current.begin() })
+    act(() => { result.current.rename('Rest spot', 'Break spot') })
+    let outcome: unknown
+    act(() => { outcome = result.current.commit() })
+
+    expect(outcome).toMatchObject({ kind: 'saved' })
+    expect(store.replaceAll).toHaveBeenCalledTimes(1)
+    expect(getWaypoints().map(({ category }) => category)).toEqual(['Break spot', 'Study spot'])
+  })
+
+  it('drops a staged rename on cancel, like every other pending change', () => {
+    const { store, getWaypoints } = createMutableStore()
+    const { result } = renderHook(() => usePersonalWaypointEditSession(store))
+
+    act(() => { result.current.begin() })
+    act(() => { result.current.rename('Rest spot', 'Break spot') })
+    act(() => { result.current.cancel() })
+
+    expect(store.replaceAll).not.toHaveBeenCalled()
+    expect(getWaypoints().map(({ category }) => category)).toEqual(['Rest spot', 'Study spot'])
+  })
+
+  it('answers null when a rename would do nothing, so the caller can say so', () => {
+    const { store } = createMutableStore()
+    const { result } = renderHook(() => usePersonalWaypointEditSession(store))
+
+    act(() => { result.current.begin() })
+    let staged: readonly PersonalWaypoint[] | null = null
+    act(() => { staged = result.current.rename('Missing', 'Break spot') })
+
+    expect(staged).toBeNull()
+    expect(result.current.changeSummary).toBeNull()
+  })
+
+  it('exposes the staged renames so the caller can apply dependent changes', () => {
+    const { store } = createMutableStore()
+    const { result } = renderHook(() => usePersonalWaypointEditSession(store))
+
+    act(() => { result.current.begin() })
+    act(() => { result.current.rename('Rest spot', 'Break spot') })
+
+    expect(result.current.renames).toEqual([{ from: 'Rest spot', to: 'Break spot', merged: false }])
+  })
+
   it('refuses to write and keeps the pending work when another tab changed the list', () => {
     const { store, getWaypoints, writeElsewhere } = createMutableStore()
     const { result } = renderHook(() => usePersonalWaypointEditSession(store))

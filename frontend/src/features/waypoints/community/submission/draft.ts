@@ -2,6 +2,7 @@ import {
   COMMUNITY_WAYPOINT_SUBMISSION_TEXT_LIMIT,
   COMMUNITY_WAYPOINT_TEXT_LIMITS,
   SINGAPORE_COORDINATE_BOUNDS,
+  type ActiveCommunityWaypointCategory,
   type CommunityWaypoint,
   type CommunityWaypointDetailsSuggestion,
   type CommunityWaypointPrintingService,

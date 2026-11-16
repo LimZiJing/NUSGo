@@ -172,6 +172,63 @@ describe('private submission issue creation', () => {
     assert.deepEqual(categoryCorrectionIssue.labels, ['kind:correction', 'review:new'])
   })
 
+  it('uses distinct availability and price labels in printing summaries', () => {
+    const submission = parseCommunityWaypointSubmission({
+      ...validNewPlace,
+      category: 'printing',
+      suggestedDetails: {
+        category: 'printing',
+        services: ['print'],
+        colour: true,
+        grayscalePriceCentsPerPage: 10,
+        colourPriceCentsPerPage: 20,
+      },
+    })
+    const issue = createPrivateSubmissionIssueDraft(submission)
+    assert.ok(issue.body.includes(
+      '| More details | Services: Print; Colour available: Yes; Grayscale price per page: S$0.10; Colour price per page: S$0.20 |',
+    ))
+    assert.match(issue.body, /\*\*Colour available:\*\* Yes/)
+    assert.match(issue.body, /\*\*Grayscale price per page:\*\* S\$0\.10/)
+    assert.match(issue.body, /\*\*Colour price per page:\*\* S\$0\.20/)
+  })
+
+  for (const [category, field, label] of [
+    ['printing', 'services', 'Services'],
+    ['vending_machine', 'items', 'Items'],
+    ['vending_machine', 'prep', 'Prep'],
+  ] as const) {
+    it('distinguishes cleared ' + field + ' from absent or null review values', () => {
+      const submission = parseCommunityWaypointSubmission({
+        kind: 'correction',
+        waypointId: 'cw-123e4567-e89b-42d3-a456-426614174000',
+        requestedChange: 'Remove the previously listed option.',
+        category,
+        suggestedDetails: category === 'printing'
+          ? { category, services: [], colour: null, grayscalePriceCentsPerPage: null, colourPriceCentsPerPage: null }
+          : { category, items: [], prep: [] },
+      })
+      assert.ok(submission.kind === 'correction' && submission.suggestedDetails)
+      const cleared = createPrivateSubmissionIssueDraft(submission)
+      assert.ok(cleared.body.split('## Submitted details')[0].includes(label + ': None \\(cleared\\)'))
+      assert.ok(cleared.body.includes('**' + label + ':** None \\(cleared\\)'))
+      if (category === 'printing') {
+        assert.ok(cleared.body.includes('Grayscale price per page: Not provided'))
+      }
+
+      // Formatting also handles incomplete historical review data without treating it as a removal.
+      Reflect.deleteProperty(submission.suggestedDetails, field)
+      const absent = createPrivateSubmissionIssueDraft(submission)
+      assert.ok(absent.body.split('## Submitted details')[0].includes(label + ': Not provided'))
+      assert.ok(absent.body.includes('**' + label + ':** Not provided'))
+
+      Reflect.set(submission.suggestedDetails, field, null)
+      const unspecified = createPrivateSubmissionIssueDraft(submission)
+      assert.ok(unspecified.body.split('## Submitted details')[0].includes(label + ': Not provided'))
+      assert.ok(unspecified.body.includes('**' + label + ':** Not provided'))
+    })
+  }
+
   it('sends the server credential only to the fixed private repository endpoint', async () => {
     let requestUrl = ''
     let requestHeaders = new Headers()

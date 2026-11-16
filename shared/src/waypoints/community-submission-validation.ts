@@ -137,12 +137,14 @@ function readStringArray<T extends string>(
 
 function readOptionalBoolean(input: Record<string, unknown>, field: string): boolean | null {
   const value = input[field]
+  if (value === undefined) return null
   if (value !== null && typeof value !== 'boolean') invalid(field + ' must be true, false, or null')
   return value
 }
 
 function readOptionalPrice(input: Record<string, unknown>, field: string): number | null {
   const value = input[field]
+  if (value === undefined) return null
   if (value !== null && (typeof value !== 'number' || !Number.isSafeInteger(value) || value < 0)) {
     invalid(field + ' must be a non-negative integer number of cents, or null')
   }
@@ -151,11 +153,12 @@ function readOptionalPrice(input: Record<string, unknown>, field: string): numbe
 
 function readSuggestedDetails(
   input: unknown,
-  expectedCategory?: ActiveCommunityWaypointCategory,
+  expectedCategory: ActiveCommunityWaypointCategory | undefined,
 ): CommunityWaypointDetailsSuggestion {
+  if (expectedCategory === undefined) invalid('suggestedDetails requires a proposed category')
   if (!isRecord(input)) invalid('suggestedDetails must be an object')
   const category = requiredCategory(input)
-  if (expectedCategory !== undefined && category !== expectedCategory) {
+  if (category !== expectedCategory) {
     invalid('suggestedDetails category must match the proposed category')
   }
 

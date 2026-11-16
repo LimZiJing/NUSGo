@@ -46,9 +46,11 @@ function getCategoryLabel(category: string): string {
 }
 
 function getOptionLabels<T extends string>(
-  values: readonly T[],
+  values: readonly T[] | null | undefined,
   options: readonly { readonly value: T; readonly label: string }[],
 ): string {
+  if (values === undefined || values === null) return 'Not provided'
+  if (values.length === 0) return 'None (cleared)'
   return values.map((value) => options.find((option) => option.value === value)?.label ?? value).join(', ')
 }
 
@@ -59,15 +61,15 @@ function formatPriceCents(value: number | null): string {
 function getSuggestedDetailsSummary(details: CommunityWaypointDetailsSuggestion): string {
   if (details.category === 'printing') {
     return [
-      'Services: ' + (getOptionLabels(details.services, COMMUNITY_WAYPOINT_PRINTING_SERVICES) || 'Not provided'),
-      'Colour: ' + (details.colour === null ? 'Not provided' : details.colour ? 'Yes' : 'No'),
-      'Grayscale: ' + formatPriceCents(details.grayscalePriceCentsPerPage),
-      'Colour: ' + formatPriceCents(details.colourPriceCentsPerPage),
+      'Services: ' + getOptionLabels(details.services, COMMUNITY_WAYPOINT_PRINTING_SERVICES),
+      'Colour available: ' + (details.colour === null ? 'Not provided' : details.colour ? 'Yes' : 'No'),
+      'Grayscale price per page: ' + formatPriceCents(details.grayscalePriceCentsPerPage),
+      'Colour price per page: ' + formatPriceCents(details.colourPriceCentsPerPage),
     ].join('; ')
   }
   return [
-    'Items: ' + (getOptionLabels(details.items, COMMUNITY_WAYPOINT_VENDING_ITEMS) || 'Not provided'),
-    'Prep: ' + (getOptionLabels(details.prep, COMMUNITY_WAYPOINT_VENDING_PREP_OPTIONS) || 'Not provided'),
+    'Items: ' + getOptionLabels(details.items, COMMUNITY_WAYPOINT_VENDING_ITEMS),
+    'Prep: ' + getOptionLabels(details.prep, COMMUNITY_WAYPOINT_VENDING_PREP_OPTIONS),
   ].join('; ')
 }
 
@@ -75,16 +77,16 @@ function getSuggestedDetailsLines(details: CommunityWaypointDetailsSuggestion): 
   if (details.category === 'printing') {
     return [
       formatIssueField('Category', getCategoryLabel(details.category)),
-      formatIssueField('Services', getOptionLabels(details.services, COMMUNITY_WAYPOINT_PRINTING_SERVICES) || 'Not provided'),
-      formatIssueField('Colour', details.colour === null ? 'Not provided' : details.colour ? 'Yes' : 'No'),
+      formatIssueField('Services', getOptionLabels(details.services, COMMUNITY_WAYPOINT_PRINTING_SERVICES)),
+      formatIssueField('Colour available', details.colour === null ? 'Not provided' : details.colour ? 'Yes' : 'No'),
       formatIssueField('Grayscale price per page', formatPriceCents(details.grayscalePriceCentsPerPage)),
       formatIssueField('Colour price per page', formatPriceCents(details.colourPriceCentsPerPage)),
     ]
   }
   return [
     formatIssueField('Category', getCategoryLabel(details.category)),
-    formatIssueField('Items', getOptionLabels(details.items, COMMUNITY_WAYPOINT_VENDING_ITEMS) || 'Not provided'),
-    formatIssueField('Prep', getOptionLabels(details.prep, COMMUNITY_WAYPOINT_VENDING_PREP_OPTIONS) || 'Not provided'),
+    formatIssueField('Items', getOptionLabels(details.items, COMMUNITY_WAYPOINT_VENDING_ITEMS)),
+    formatIssueField('Prep', getOptionLabels(details.prep, COMMUNITY_WAYPOINT_VENDING_PREP_OPTIONS)),
   ]
 }
 

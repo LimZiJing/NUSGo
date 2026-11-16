@@ -254,10 +254,18 @@ export function createShuttleArrivalClient(
     stops: readonly ShuttleArrivalStopRequest[],
     signal: AbortSignal,
   ): Promise<void> => {
-    if (inFlight) {
-      await inFlight
+    while (inFlight) {
+      const pendingRequest = inFlight
+      try {
+        await pendingRequest
+      } catch {
+        // Retry for this active caller if the shared request fails.
+        signal.throwIfAborted()
+      }
+      signal.throwIfAborted()
       if (cached && cached.cacheExpiresAt > now() && hasStops(cached.snapshot, stops)) return
     }
+    signal.throwIfAborted()
 
     const requestedStopIds = stops.map(({ stopId }) => stopId)
     const request = fetcher(

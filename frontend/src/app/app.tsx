@@ -866,6 +866,14 @@ function App() {
       ? 'Back to bus routes'
       : 'Back to Find venue'
   const dispatchAppNavigation = appNavigation.dispatch
+  const selectRouteFromStops = appNavigation.selectRouteFromStops
+  const handleRouteSelectionFromStops = useCallback(
+    (routeId: string, stopId: string): void => {
+      setCommunityExploreActive(false)
+      selectRouteFromStops(routeId, stopId)
+    },
+    [selectRouteFromStops],
+  )
   const handleStopsDetentChange = useCallback((detent: MobileSheetDetent): void => {
     if (detent !== 'collapsed' && isFocusInsideLocationControl(locationControlRef.current)) {
       focusTripControlAfterOverlayRef.current = true
@@ -902,7 +910,7 @@ function App() {
       backLabel={stopBackLabel}
       onBackToStops={appNavigation.backFromStopDetails}
       onSelectOppositeStop={appNavigation.handleStopSelected}
-      onSelectRoute={appNavigation.selectRouteFromStops}
+      onSelectRoute={handleRouteSelectionFromStops}
       onNavigateToStop={appNavigation.navigateToStop}
     />
   )

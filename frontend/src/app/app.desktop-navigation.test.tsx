@@ -20,6 +20,8 @@ const appHarness = vi.hoisted(() => {
     locateUser: vi.fn(),
     enableLocationTracking: vi.fn(),
     suspendMobileRoutes: vi.fn(),
+    enterMobileRoutes: vi.fn(),
+    selectMobileRoute: vi.fn(),
     setPersonalWaypoints: vi.fn(),
     setWaypointPlacement: vi.fn(),
     setCommunityWaypoints: vi.fn(),
@@ -249,6 +251,8 @@ afterEach(() => {
   appHarness.commands.locateUser.mockReset()
   appHarness.commands.enableLocationTracking.mockReset()
   appHarness.commands.suspendMobileRoutes.mockReset()
+  appHarness.commands.enterMobileRoutes.mockReset()
+  appHarness.commands.selectMobileRoute.mockReset()
   appHarness.commands.setPersonalWaypoints.mockReset()
   appHarness.commands.setWaypointPlacement.mockReset()
   appHarness.commands.setCommunityWaypoints.mockReset()
@@ -488,6 +492,48 @@ describe('desktop shared navigation shell', () => {
     await user.click(screen.getByRole('switch', { name: 'Show Water cooler on map' }))
     await waitFor(() => expect(appHarness.commands.setCommunityWaypoints)
       .toHaveBeenLastCalledWith([], expect.any(Function)))
+  })
+
+  it('opens the selected route from stop timings after leaving Community mode', async () => {
+    const user = userEvent.setup()
+    appHarness.arrivalsClient.getArrivals.mockResolvedValue({
+      observedAt: new Date().toISOString(),
+      expiresAt: new Date(Date.now() + 60_000).toISOString(),
+      stops: {
+        'STOP-A': {
+          A1: {
+            nextArrivalSeconds: 300,
+            upcomingArrivalSeconds: [300, 600],
+            headwaySeconds: { min: 300, median: 300, max: 300 },
+          },
+        },
+      },
+    })
+    appHarness.commands.enterMobileRoutes.mockImplementation(() => {
+      const current = appHarness.state as ReturnType<typeof createInitialNavigationSessionState>
+      appHarness.state = {
+        ...current,
+        exploreState: { ...current.exploreState, mode: 'bus-routes' },
+      }
+    })
+    appHarness.commands.selectMobileRoute.mockImplementation((routeId: string) => {
+      const current = appHarness.state as ReturnType<typeof createInitialNavigationSessionState>
+      appHarness.state = { ...current, selectedRouteId: routeId }
+    })
+
+    render(<App />)
+
+    await user.click(screen.getByRole('button', { name: 'Explore' }))
+    await user.click(screen.getByRole('button', { name: 'Community' }))
+    expect(screen.getByRole('group', { name: 'Categories' })).toBeTruthy()
+
+    await user.click(screen.getByRole('button', { name: 'Stops' }))
+    act(() => expect(appHarness.onStopSelected?.('STOP-A')).toBe(true))
+    await user.click(await screen.findByRole('button', { name: 'View A1 route details' }))
+
+    expect(await screen.findByRole('button', { name: 'Bus routes', pressed: true })).toBeTruthy()
+    expect(screen.getByRole('button', { name: 'Route A1', pressed: true })).toBeTruthy()
+    expect(screen.queryByRole('group', { name: 'Categories' })).toBeNull()
   })
 
   it('has no Fit routes button for a retained Journey in Plan', async () => {

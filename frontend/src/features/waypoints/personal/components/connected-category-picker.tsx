@@ -1,4 +1,4 @@
-import { useId, useState } from 'react'
+import { useEffect, useId, useRef, useState } from 'react'
 import { Autocomplete } from '@base-ui/react/autocomplete'
 import { ChevronDownIcon } from '../../../../ui/icons'
 import './connected-category-picker.css'
@@ -43,6 +43,10 @@ export function ConnectedCategoryPicker({
   const [open, setOpen] = useState(false)
   const [filtering, setFiltering] = useState(false)
   const inputId = useId()
+  const labelRef = useRef<HTMLLabelElement>(null)
+  // Set when a press that is dismissing the list lands on our own label. That press must end as a
+  // dismissal, so the focus the label forwards into the field is not allowed to reopen the list.
+  const labelPressDismisses = useRef(false)
 
   const trimmedQuery = query.trim()
   const createLabel = trimmedQuery ? `Create “${trimmedQuery}”` : ''
@@ -53,8 +57,27 @@ export function ConnectedCategoryPicker({
     && trimmedQuery.length > 0
     && !options.some((option) => option.toLocaleLowerCase() === trimmedQuery.toLocaleLowerCase())
 
+  // The label is outside the field group, so pressing it counts as an outside press and closes the
+  // list — but the label is bound to the field, so the same press then forwards focus into the
+  // input, where opening on focus reopened the list. One press therefore collapsed and immediately
+  // restored it. Base UI dismisses from a document-level listener and React's handlers run after
+  // that, so the press is recorded at the window in the capture phase, which is the only moment the
+  // list is still open and the press can be attributed. The listener exists only while it can mean
+  // something, so a press that arrives when the list is already closed is never misread.
+  useEffect(() => {
+    if (!open) return
+    const onPointerDown = (event: PointerEvent): void => {
+      // Recomputing rather than only setting means a press anywhere else clears a flag left behind
+      // by a label press that never went on to move focus.
+      labelPressDismisses.current = labelRef.current?.contains(event.target as Node) === true
+    }
+    window.addEventListener('pointerdown', onPointerDown, true)
+    return () => window.removeEventListener('pointerdown', onPointerDown, true)
+  }, [open])
+
   const changeOpen = (next: boolean): void => {
     setOpen(next)
+    if (next) labelPressDismisses.current = false
     // Closing always abandons a half-typed query, so the field falls back to showing the chosen
     // category. Only an explicit choice ever changes the value.
     if (!next) {
@@ -89,7 +112,11 @@ export function ConnectedCategoryPicker({
       changeOpen(false)
     }}
   >
-    <label className="connected-category-picker-label" htmlFor={inputId}>{label}</label>
+    <label
+      className="connected-category-picker-label"
+      htmlFor={inputId}
+      ref={labelRef}
+    >{label}</label>
     <Autocomplete.Root
       items={matches}
       value={displayValue}
@@ -110,7 +137,15 @@ export function ConnectedCategoryPicker({
           aria-label={label}
           maxLength={maxLength}
           placeholder={placeholder}
-          onFocus={() => changeOpen(true)}
+          onFocus={() => {
+            // A press on our own label closed the list and then forwarded focus here. Reopening
+            // would undo the dismissal the person just made, so this one focus is left alone.
+            if (labelPressDismisses.current) {
+              labelPressDismisses.current = false
+              return
+            }
+            changeOpen(true)
+          }}
         />
         <Autocomplete.Trigger className="connected-category-picker-trigger" aria-label={`Show ${label.toLowerCase()} options`} disabled={disabled}>
           <ChevronDownIcon size={16} />

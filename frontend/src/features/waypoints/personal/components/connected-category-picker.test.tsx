@@ -58,6 +58,72 @@ describe('ConnectedCategoryPicker', () => {
     expect(document.querySelector('.connected-category-picker-popup')).toBeNull()
   })
 
+  it('stays closed when the person clicks outside it', async () => {
+    const user = userEvent.setup()
+    render(<div>
+      <StatefulPicker />
+      <label htmlFor="note">Note</label>
+      <input id="note" />
+      <button type="button" data-test="elsewhere">Elsewhere</button>
+      <div data-test="surface">Panel background</div>
+    </div>)
+
+    const field = screen.getByRole('combobox', { name: 'Category' }) as HTMLInputElement
+    const elsewhere = document.querySelector('[data-test="elsewhere"]') as HTMLButtonElement
+    const surface = document.querySelector('[data-test="surface"]') as HTMLDivElement
+    const isOpen = () => document.querySelector('.connected-category-picker-popup') !== null
+
+    // A focusable target: focus genuinely leaves the field, as it does on a real outside tap.
+    await user.click(field)
+    expect(isOpen()).toBe(true)
+    await user.click(elsewhere)
+    expect(isOpen()).toBe(false)
+    expect(field.value).toBe('Commute')
+
+    // A non-focusable surface, which is most of the More panel.
+    await user.click(field)
+    expect(isOpen()).toBe(true)
+    await user.click(surface)
+    expect(isOpen()).toBe(false)
+    expect(field.value).toBe('Commute')
+  })
+
+  it('stays closed when the person dismisses it by clicking its own label', async () => {
+    const user = userEvent.setup()
+    render(<StatefulPicker />)
+
+    const field = screen.getByRole('combobox', { name: 'Category' }) as HTMLInputElement
+    const isOpen = () => document.querySelector('.connected-category-picker-popup') !== null
+
+    await user.click(field)
+    expect(isOpen()).toBe(true)
+
+    // The label sits outside the field's own box, so clicking it dismisses the list like any other
+    // outside press. It is also bound to the field, so it forwards focus back into the input — and
+    // opening on focus then reopened the list. That flip-flop is what this test pins down.
+    await user.click(screen.getByText('Category'))
+    expect(isOpen()).toBe(false)
+    expect(field.value).toBe('Commute')
+  })
+
+  it('opens when the field is reached by keyboard', async () => {
+    const user = userEvent.setup()
+    render(<>
+      <button type="button">Before</button>
+      <StatefulPicker />
+    </>)
+
+    const field = screen.getByRole('combobox', { name: 'Category' }) as HTMLInputElement
+    ;(screen.getByRole('button', { name: 'Before' }) as HTMLButtonElement).focus()
+    await user.tab()
+
+    // Focusing the field must still open the list: that is what empties the field for searching,
+    // so typing into it never appends to the saved category.
+    expect(document.activeElement).toBe(field)
+    expect(document.querySelector('.connected-category-picker-popup')).not.toBeNull()
+    expect(field.value).toBe('')
+  })
+
   it('commits a chosen category and closes the list', async () => {
     const user = userEvent.setup()
     const onSelect = vi.fn()

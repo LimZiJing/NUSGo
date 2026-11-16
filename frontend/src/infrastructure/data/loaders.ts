@@ -1,7 +1,13 @@
 import { createTransitNetworkIndex } from '../../domain/transit'
 import type { LoadedTransitData, LoadedVenueData } from '../../app/contracts/data'
 import { validateTransitMapData } from '@nusgo/shared/transit/map-data'
-import { validateBuildingCatalogue, validateVenueLocationMap, getVenueCount } from '@nusgo/shared/venue/validation'
+import {
+  validateBuildingCatalogue,
+  validateVenueLocationMap,
+  validateEateryLocationMap,
+  mergeVenueAndEateryMaps,
+  getVenueCount,
+} from '@nusgo/shared/venue/validation'
 import { validateShuttleTimingData } from '@nusgo/shared/transit/timing'
 import type { ShuttleTimingData } from '@nusgo/shared/transit/timing'
 import type { BuildingCatalogue } from '@nusgo/shared/venue/buildings'
@@ -19,8 +25,13 @@ export async function loadVenueData(
   signal: AbortSignal,
   fetcher: JsonFetcher = fetchJson,
 ): Promise<LoadedVenueData> {
-  const venues = validateVenueLocationMap(
-    await fetcher('data/venues.json', signal, 'Venue data'),
+  const [venueInput, eateryInput] = await Promise.all([
+    fetcher('data/venues.json', signal, 'Venue data'),
+    fetcher('data/eateries.json', signal, 'Eatery data'),
+  ])
+  const venues = mergeVenueAndEateryMaps(
+    validateVenueLocationMap(venueInput),
+    validateEateryLocationMap(eateryInput),
   )
   return {
     venues,

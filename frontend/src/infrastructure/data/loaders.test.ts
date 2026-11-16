@@ -19,6 +19,7 @@ function readJson(path: string): unknown {
 const network = readJson('../../../public/data/shuttle-network.json')
 const geometry = readJson('../../../public/data/shuttle-routes.geojson')
 const venues = readJson('../../../public/data/venues.json')
+const eateries = readJson('../../../public/data/eateries.json')
 const buildings = readJson('../../../public/data/buildings.json')
 const validatedNetwork = validateTransitNetwork(network)
 const validatedGeometry = validateBusRouteGeometry(validatedNetwork, geometry)
@@ -53,10 +54,26 @@ describe('data loaders', () => {
   it('validates venue JSON before exposing it to consumers', async () => {
     const result = await loadVenueData(
       new AbortController().signal,
-      createFetcher({ 'data/venues.json': venues }),
+      createFetcher({ 'data/venues.json': venues, 'data/eateries.json': eateries }),
     )
 
     expect(result.venueCount).toBeGreaterThan(0)
+    expect(result.venues['yih-central-square']).toMatchObject({
+      displayName: 'YIH (Central Square)',
+      category: 'canteen',
+      location: { x: 103.77477, y: 1.2985 },
+    })
+    expect(result.venues.Frontier).toMatchObject({
+      roomName: 'Frontier',
+      floor: 4,
+      location: { x: 103.77651999858904, y: 1.2921935771660125 },
+    })
+    expect(result.venues.Frontier?.category).toBeUndefined()
+    expect(result.venues['frontier-canteen']).toMatchObject({
+      displayName: 'Frontier',
+      category: 'canteen',
+      location: { x: 103.78067, y: 1.29647 },
+    })
     expect(result.venues['COM1-0210']?.roomName).toBe('Seminar Room 10 (Active Learning Room)')
     expect(result.venues['Y-DanceStu']?.floor).toBe(0)
     expect(result.venues['Y-Studio3']?.floor).toBe(0)
@@ -68,7 +85,11 @@ describe('data loaders', () => {
   it('loads the building catalogue with the venues and indexes it for search', async () => {
     const result = await loadVenueData(
       new AbortController().signal,
-      createFetcher({ 'data/venues.json': venues, 'data/buildings.json': buildings }),
+      createFetcher({
+        'data/venues.json': venues,
+        'data/eateries.json': eateries,
+        'data/buildings.json': buildings,
+      }),
     )
 
     expect(result.buildings?.byId.get('com3')?.name).toBe('COM3')
@@ -77,10 +98,11 @@ describe('data loaders', () => {
 
   it('still loads venues when the building catalogue is unavailable or invalid', async () => {
     const errors = vi.spyOn(console, 'error').mockImplementation(() => undefined)
-    const unavailable = await loadVenueData(new AbortController().signal, createFetcher({ 'data/venues.json': venues }))
+    const venueInputs = { 'data/venues.json': venues, 'data/eateries.json': eateries }
+    const unavailable = await loadVenueData(new AbortController().signal, createFetcher(venueInputs))
     const invalid = await loadVenueData(
       new AbortController().signal,
-      createFetcher({ 'data/venues.json': venues, 'data/buildings.json': { version: 1 } }),
+      createFetcher({ ...venueInputs, 'data/buildings.json': { version: 1 } }),
     )
     errors.mockRestore()
 
@@ -93,6 +115,7 @@ describe('data loaders', () => {
     const controller = new AbortController()
     const fetcher: JsonFetcher = async (path) => {
       if (path === 'data/venues.json') return venues
+      if (path === 'data/eateries.json') return eateries
       controller.abort()
       throw new DOMException('Aborted', 'AbortError')
     }
@@ -186,7 +209,20 @@ describe('data loaders', () => {
 
     await expect(loadVenueData(
       new AbortController().signal,
-      createFetcher({ 'data/venues.json': malformedVenues }),
+      createFetcher({
+        'data/venues.json': malformedVenues,
+        'data/eateries.json': eateries,
+      }),
+    )).rejects.toBeInstanceOf(VenueValidationError)
+
+    await expect(loadVenueData(
+      new AbortController().signal,
+      createFetcher({
+        'data/venues.json': venues,
+        'data/eateries.json': {
+          broken: { name: 'Broken', category: 'cafe', location: { x: 103, y: 1 } },
+        },
+      }),
     )).rejects.toBeInstanceOf(VenueValidationError)
 
     await expect(loadTransitMapData(

@@ -952,21 +952,28 @@ describe('More surface', () => {
 
     // Map visibility is a checkbox per category now: it is a membership question, and the ✕ the
     // row used before already means "delete" elsewhere on this screen. Its state is only a draft
-    // while the picker is open, so it shows as the category moving into the "All categories"
-    // group rather than being saved.
+    // while the picker is open, so nothing is written until Done.
     const visibilityPicker = () => within(screen.getByRole('group', { name: 'Category places and map visibility' }))
-    const visibilityGroupName = (category: string): string | null => visibilityPicker()
-      .getByRole('checkbox', { name: `Show ${category} on the map` })
-      .closest('.personal-waypoint-visibility-group')
-      ?.querySelector('h3')?.textContent ?? null
+    const categoryRowNames = (): (string | null)[] => [...document.querySelectorAll(
+      '.personal-waypoint-category-options .personal-waypoint-category-name',
+    )].map((element) => element.textContent)
+    const categoryCheckbox = (category: string): HTMLInputElement => screen.getByRole(
+      'checkbox',
+      { name: `Show ${category} on the map` },
+    ) as HTMLInputElement
+
     await user.click(screen.getByRole('button', { name: /Categories/ }))
-    expect(visibilityGroupName('Food & drink')).toBe('Selected')
     // Category rows are a checkbox plus a name; there is no category screen to open and no
     // per-row action button.
     expect(visibilityPicker().queryByRole('button', { name: /^Open / })).toBeNull()
     expect(visibilityPicker().queryAllByRole('button')).toHaveLength(0)
-    await user.click(screen.getByRole('checkbox', { name: 'Show Food & drink on the map' }))
-    expect(visibilityGroupName('Food & drink')).toBe('All categories')
+    expect(categoryCheckbox('Food & drink').checked).toBe(true)
+    const orderBefore = categoryRowNames()
+    await user.click(categoryCheckbox('Food & drink'))
+    expect(categoryCheckbox('Food & drink').checked).toBe(false)
+    // Ticking a box must not move its row: the list keeps one alphabetical order regardless of
+    // which categories are shown, so the thing just clicked stays where it was clicked.
+    expect(categoryRowNames()).toEqual(orderBefore)
     expect(localStorage.getItem(categoryVisibilityKey)).toBeNull()
 
     // The list is one grouped collection: both categories are reachable, and expanding a group
@@ -989,15 +996,13 @@ describe('More surface', () => {
 
     // The draft survived the round trip through details, and cancelling discards it.
     await user.click(screen.getByRole('button', { name: /Categories/ }))
-    expect(visibilityGroupName('Food & drink')).toBe('All categories')
+    expect(categoryCheckbox('Food & drink').checked).toBe(false)
     await user.click(screen.getByRole('button', { name: 'Cancel' }))
     expect(localStorage.getItem(categoryVisibilityKey)).toBeNull()
 
     await user.click(screen.getByRole('button', { name: /Categories/ }))
-    expect(visibilityGroupName('Food & drink')).toBe('Selected')
-    // The checkbox exposes its state directly: checked means shown on the map.
-    expect((screen.getByRole('checkbox', { name: 'Show Food & drink on the map' }) as HTMLInputElement).checked)
-      .toBe(true)
+    // Cancel discarded the draft, so the checkbox is back to what is actually saved.
+    expect(categoryCheckbox('Food & drink').checked).toBe(true)
   })
 
   it('opens waypoint details, edits the record, and confirms deletion', async () => {

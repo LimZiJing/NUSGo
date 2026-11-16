@@ -181,10 +181,19 @@ export function PersonalWaypointList({
   const editMode = canEdit && editing && waypoints.length > 0
   const canReorder = editMode && waypoints.length > 1 && !hasSearchFilter
 
-  // A category the pending edits have emptied keeps its place in the list, so it remains a drop
-  // target. It is appended rather than merged into the group order because it has no places left.
-  const emptyEditingCategories = (editingCategories ?? []).filter(
-    (category) => !groups.some((group) => group.category === category),
+  // A category the pending edits have emptied keeps its position in the list, so it remains a drop
+  // target in the place the person expects. Appending it would move every group below it the moment
+  // the last place was dragged out, which is exactly when the list is hardest to follow.
+  const editingGroupOrder = useMemo(() => {
+    const names = new Set([
+      ...groups.map(({ category }) => category),
+      ...(editingCategories ?? []),
+    ])
+    return [...names].sort((first, second) => first.localeCompare(second))
+  }, [editingCategories, groups])
+  const waypointsByCategory = useMemo(
+    () => new Map(groups.map(({ category, waypoints: grouped }) => [category, grouped])),
+    [groups],
   )
 
   // A rename that lands on an existing category merges the two, so it asks first.
@@ -242,23 +251,22 @@ export function PersonalWaypointList({
   }
 
   const expandAll = (): void => {
-    const names = [...new Set([...groupPersonalWaypointsByCategory(waypoints).map(({ category }) => category), ...emptyEditingCategories])]
+    const names = [...editingGroupOrder]
     setCollapsedEditCategories([])
     setExpandedCategories(names)
     writeExpandedCategories(names)
   }
 
   const collapseAll = (): void => {
-    if (editMode) setCollapsedEditCategories([...groups.map(({ category }) => category), ...emptyEditingCategories])
+    if (editMode) setCollapsedEditCategories([...editingGroupOrder])
     setExpandedCategories([])
     writeExpandedCategories([])
   }
 
   // One control rather than a pair: with every group open, "Collapse all" is the only thing left to
   // do, and with every group closed so is "Expand all". Two buttons meant one was always inert.
-  const everyGroupExpanded = groups.length + emptyEditingCategories.length > 0
-    && groups.every(({ category }) => isCategoryExpanded(category))
-    && emptyEditingCategories.every((category) => isCategoryExpanded(category))
+  const everyGroupExpanded = editingGroupOrder.length > 0
+    && editingGroupOrder.every((category) => isCategoryExpanded(category))
   const toggleAllGroups = (): void => {
     if (everyGroupExpanded) collapseAll()
     else expandAll()
@@ -506,11 +514,10 @@ export function PersonalWaypointList({
     </p>
     : null
 
-  const noGroupsAtAll = groups.length === 0 && emptyEditingCategories.length === 0
+  const noGroupsAtAll = editingGroupOrder.length === 0
   // With one group there is nothing to expand "all" of, and while searching the groups are already
   // revealed, so the control would have no effect.
-  const showExpandAllToggle = !noGroupsAtAll && !hasSearchFilter
-    && groups.length + emptyEditingCategories.length > 1
+  const showExpandAllToggle = !noGroupsAtAll && !hasSearchFilter && editingGroupOrder.length > 1
 
   return <section className="personal-waypoint-list" aria-label="Saved places">
     <div className="personal-waypoint-list-controls">
@@ -548,13 +555,11 @@ export function PersonalWaypointList({
         {reorderInstructions}
         {canReorder ? (
           <DragDropProvider sensors={[PointerSensor]} onDragStart={handleDragStart} onDragOver={handleDragOver} onDragEnd={handleDragEnd}>
-            {groups.map(({ category, waypoints: grouped }) => renderGroup(category, grouped))}
-            {emptyEditingCategories.map((category) => renderGroup(category, []))}
+            {editingGroupOrder.map((category) => renderGroup(category, waypointsByCategory.get(category) ?? []))}
           </DragDropProvider>
         ) : (
           <div className="personal-waypoint-groups">
-            {groups.map(({ category, waypoints: grouped }) => renderGroup(category, grouped))}
-            {editMode && emptyEditingCategories.map((category) => renderGroup(category, []))}
+            {editingGroupOrder.map((category) => renderGroup(category, waypointsByCategory.get(category) ?? []))}
           </div>
         )}
       </>

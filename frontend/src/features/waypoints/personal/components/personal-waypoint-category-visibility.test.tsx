@@ -32,8 +32,13 @@ describe('PersonalWaypointCategoryVisibility', () => {
       />,
     )
 
-    expect(screen.getByRole('heading', { name: 'Selected' })).toBeTruthy()
-    expect(screen.getByRole('heading', { name: 'All categories' })).toBeTruthy()
+    // One alphabetical list, with no "Selected" / "All categories" split: a checkbox must not
+    // move the row it belongs to when it is ticked.
+    expect(screen.queryByRole('heading', { name: 'Selected' })).toBeNull()
+    expect(screen.queryByRole('heading', { name: 'All categories' })).toBeNull()
+    const rowOrder = [...document.querySelectorAll('.personal-waypoint-category-name')]
+      .map((element) => element.textContent)
+    expect(rowOrder).toEqual(['Food & drink', 'Rest spot', 'Study'])
     // The row is text, not a control: there is no category screen left to open.
     expect(screen.getByText('Food & drink')).toBeTruthy()
     expect(screen.getByText('2 places')).toBeTruthy()

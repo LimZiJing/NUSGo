@@ -666,6 +666,47 @@ describe('PersonalWaypointList cross-category movement', () => {
     expect(screen.getByRole('button', { name: 'Expand Misc' })).toBeTruthy()
   })
 
+  it('keeps an emptied category in alphabetical position instead of moving it to the end', async () => {
+    // Dragging a category's last place out used to append that group after every other, so the
+    // whole list jumped at the exact moment the person was following it with the pointer. The
+    // group has to keep its place in the order while it stays droppable.
+    const { rerender } = render(
+      <PersonalWaypointList
+        {...baseProps}
+        waypoints={[
+          createWaypoint(1, 'Alpha place', 'Alpha'),
+          createWaypoint(2, 'Mike place', 'Mike'),
+          createWaypoint(3, 'Zulu place', 'Zulu'),
+        ]}
+        editing
+        editingCategories={['Alpha', 'Mike', 'Zulu']}
+      />,
+    )
+
+    const groupOrder = (): (string | null)[] => [...document.querySelectorAll(
+      '.personal-waypoint-category-group .disclosure-header-label',
+    )].map((element) => element.textContent)
+    expect(groupOrder()).toEqual(['Alpha', 'Mike', 'Zulu'])
+
+    // The pending edit moves Mike's only place into Alpha, emptying Mike.
+    rerender(
+      <PersonalWaypointList
+        {...baseProps}
+        waypoints={[
+          createWaypoint(1, 'Alpha place', 'Alpha'),
+          createWaypoint(2, 'Mike place', 'Alpha'),
+          createWaypoint(3, 'Zulu place', 'Zulu'),
+        ]}
+        editing
+        editingCategories={['Alpha', 'Mike', 'Zulu']}
+      />,
+    )
+
+    // Mike is still between Alpha and Zulu, not appended after Zulu.
+    expect(groupOrder()).toEqual(['Alpha', 'Mike', 'Zulu'])
+    expect(screen.getByText(/Drop one here to move it into this category/)).toBeTruthy()
+  })
+
   it('marks a category card as a drop target so the pointer has something to aim at', () => {
     render(<PersonalWaypointList {...baseProps} editing />)
 

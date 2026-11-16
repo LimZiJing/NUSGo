@@ -34,11 +34,12 @@ export function PersonalWaypointCategoryVisibility({
   const selectedCategories = categories.filter(({ category }) => !draftHidden.has(category))
   const unselectedCategories = categories.filter(({ category }) => draftHidden.has(category))
   const query = searchQuery.trim().toLocaleLowerCase()
-  const filterCategories = (options: readonly PersonalWaypointCategoryOption[]) => options.filter(
+  // One alphabetical list, in the same order whether or not a category is shown. Splitting it into
+  // "Selected" and "All categories" made ticking a box move that row out from under the pointer,
+  // which is the one thing a checkbox should never do.
+  const visibleCategories = categories.filter(
     ({ category }) => category.toLocaleLowerCase().includes(query),
   )
-  const visibleSelectedCategories = filterCategories(selectedCategories)
-  const visibleUnselectedCategories = filterCategories(unselectedCategories)
   const hasPendingChanges = categories.some(({ category }) => draftHidden.has(category) !== committedHidden.has(category))
   // How many categories this draft would change, which is what the person is about to apply.
   const pendingChangeCount = categories.filter(
@@ -101,15 +102,8 @@ export function PersonalWaypointCategoryVisibility({
         />
       </div>
       <div className="personal-waypoint-category-options" role="group" aria-label="Category places and map visibility">
-        {visibleSelectedCategories.length > 0 && <section className="personal-waypoint-visibility-group" aria-labelledby="personal-waypoint-selected-categories-heading">
-          <h3 id="personal-waypoint-selected-categories-heading">Selected</h3>
-          {visibleSelectedCategories.map(renderCategory)}
-        </section>}
-        {visibleUnselectedCategories.length > 0 && <section className="personal-waypoint-visibility-group" aria-labelledby="personal-waypoint-all-categories-heading">
-          <h3 id="personal-waypoint-all-categories-heading">All categories</h3>
-          {visibleUnselectedCategories.map(renderCategory)}
-        </section>}
-        {visibleSelectedCategories.length === 0 && visibleUnselectedCategories.length === 0 && (
+        {visibleCategories.map(renderCategory)}
+        {visibleCategories.length === 0 && (
           <p className="personal-waypoint-category-empty" role="status">No categories match your search.</p>
         )}
       </div>

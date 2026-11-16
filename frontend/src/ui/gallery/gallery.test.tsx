@@ -41,7 +41,8 @@ describe('controls gallery', () => {
     expect(within(screen.getByRole('region', { name: 'IconButton' })).getAllByRole('button', { name: 'Search' }))
       .toHaveLength(4 * 2 * 6)
     expect(within(screen.getByRole('region', { name: 'MenuItem' })).getAllByRole('button')).toHaveLength(6)
-    expect(within(screen.getByRole('region', { name: 'Chip' })).getAllByRole('button')).toHaveLength(4 * 6)
+    /* Three Chip families (accent, with icon, route colour) times two sizes times six states. */
+    expect(within(screen.getByRole('region', { name: 'Chip' })).getAllByRole('button')).toHaveLength(3 * 2 * 6)
     const pills = screen.getByRole('region', { name: 'Pill' })
     expect(within(pills).getByText('Neutral').getAttribute('data-tone')).toBe('neutral')
     expect(within(pills).getByText('Success').getAttribute('data-tone')).toBe('success')

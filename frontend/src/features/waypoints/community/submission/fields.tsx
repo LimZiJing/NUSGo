@@ -1,10 +1,6 @@
-import { useMemo, type ComponentType } from 'react'
+import { useLayoutEffect, useMemo, useRef, type ComponentType } from 'react'
 import { Autocomplete } from '@base-ui/react/autocomplete'
-import { Checkbox } from '@base-ui/react/checkbox'
-import { CheckboxGroup } from '@base-ui/react/checkbox-group'
 import { Input } from '@base-ui/react/input'
-import { Radio } from '@base-ui/react/radio'
-import { RadioGroup } from '@base-ui/react/radio-group'
 import {
   COMMUNITY_WAYPOINT_CATEGORIES,
   COMMUNITY_WAYPOINT_PRINTING_SERVICES,
@@ -20,20 +16,33 @@ import type { WaypointCoordinate } from '@nusgo/shared/waypoints/waypoint'
 import type { BuildingIndex } from '../../../../domain/venue/building-index'
 import { describeBuildingEntry, searchBuildings } from '../../../../domain/venue/building-index'
 import { Button } from '../../../../ui/button'
+import { Chip } from '../../../../ui/chip'
 import {
   AlertCircleIcon,
   BuildingIcon,
-  CheckIcon,
   SearchIcon,
   type IconProps,
 } from '../../../../ui/icons'
 import { CommunityWaypointCategoryIcon } from '../community-waypoint-category-icon'
+import { COMMUNITY_WAYPOINT_PRINTING_SERVICE_ICONS } from '../community-waypoint-printing-service-icons'
 import { COMMUNITY_WAYPOINT_VENDING_ITEM_ICONS } from '../community-waypoint-vending-item-icons'
+import { COMMUNITY_WAYPOINT_VENDING_PREP_ICONS } from '../community-waypoint-vending-prep-icons'
 import { OTHER_FLOOR, type SubmissionDraft, type SubmissionErrors } from './draft'
 import { SubmissionField as FormField } from './field'
 import { FloorPicker } from './floor-picker'
 
 type SubmissionFieldValue = SubmissionDraft[keyof SubmissionDraft]
+
+/* Draft values for the colour question. '' is unanswered, which is where a new suggestion and
+   an unedited correction both start; 'unsure' is the deliberate "I don't know" answer. They
+   mean the same thing to the server (null) but must not look the same on screen. */
+type ColourAnswer = 'yes' | 'no' | 'unsure' | ''
+
+const COLOUR_ANSWERS = [
+  { value: 'yes', label: 'Yes' },
+  { value: 'no', label: 'No' },
+  { value: 'unsure', label: 'Not sure' },
+] as const satisfies readonly { readonly value: ColourAnswer; readonly label: string }[]
 
 function coordinateValue(value: number, positiveDirection: string, negativeDirection: string): string {
   return `${Math.abs(value).toFixed(6)}° ${value < 0 ? negativeDirection : positiveDirection}`
@@ -287,54 +296,44 @@ function TextField({
   )
 }
 
-function CheckboxOptions<T extends string>({
-  name,
+function PillChoices<T extends string>({
   legend,
   options,
   icons,
   selected,
-  onChange,
+  onToggle,
 }: {
-  readonly name: string
   readonly legend: string
   readonly options: readonly { readonly value: T; readonly label: string }[]
   readonly icons?: Readonly<Record<string, ComponentType<IconProps> | undefined>>
   readonly selected: readonly T[]
-  readonly onChange: (selected: readonly T[]) => void
+  readonly onToggle: (value: T) => void
 }) {
-  const labelId = `community-submission-${name}-details-label`
-
   return (
-    <div className="community-waypoint-details-row community-waypoint-details-row--options">
-      <span id={labelId} className="community-waypoint-details-row-label">{legend}</span>
-      <CheckboxGroup
-        aria-labelledby={labelId}
-        value={[...selected]}
-        className="community-waypoint-details-control-group community-waypoint-details-option-list"
-        onValueChange={(values) => onChange(
-          options.filter(({ value }) => values.includes(value)).map(({ value }) => value),
-        )}
-      >
+    <fieldset className="community-waypoint-details-group">
+      <legend className="community-waypoint-details-legend">{legend}</legend>
+      <div className="community-waypoint-details-chips">
         {options.map(({ value, label }) => {
           const Icon = icons?.[value]
           return (
-            <label
+            <Chip
               key={value}
-              className={`community-waypoint-details-option${Icon ? ' community-waypoint-details-option--with-icon' : ''}`}
-            >
-              <Checkbox.Root name={name} value={value} className="community-waypoint-details-checkbox">
-                <Checkbox.Indicator className="community-waypoint-details-checkbox-indicator">
-                  <CheckIcon size={12} />
-                </Checkbox.Indicator>
-              </Checkbox.Root>
-              {Icon && <Icon className="community-waypoint-details-option-icon" size={16} />}
-              <span>{label}</span>
-            </label>
+              label={label}
+              leading={Icon ? <Icon size={15} /> : undefined}
+              /* Announces state through aria-pressed. Multi-select toggles each pill
+                 independently, which is what a checkbox group does. */
+              pressed={selected.includes(value)}
+              onClick={() => onToggle(value)}
+            />
           )
         })}
-      </CheckboxGroup>
-    </div>
+      </div>
+    </fieldset>
   )
+}
+
+function toggleValue<T>(values: readonly T[], value: T): readonly T[] {
+  return values.includes(value) ? values.filter((entry) => entry !== value) : [...values, value]
 }
 
 function PriceInput({
@@ -343,7 +342,6 @@ function PriceInput({
   label,
   value,
   error,
-  disabled = false,
   onChange,
 }: {
   readonly id: string
@@ -351,7 +349,6 @@ function PriceInput({
   readonly label: string
   readonly value: string
   readonly error: string | undefined
-  readonly disabled?: boolean
   readonly onChange: (value: string) => void
 }) {
   return (
@@ -359,16 +356,17 @@ function PriceInput({
       <label htmlFor={id}>{label}</label>
       <div className="community-waypoint-details-price-input-group">
         <span className="community-waypoint-details-currency" aria-hidden="true">S$</span>
+        {/* A text input with a decimal keypad, not type="number": the spinners eat the
+            editable width in this narrow column, and the number type lets a scroll wheel
+            change a submitted price by accident. Validation stays in the draft errors. */}
         <Input
           id={id}
           name={name}
           className="community-waypoint-details-input"
-          type="number"
-          min="0"
-          step="0.01"
+          type="text"
           inputMode="decimal"
+          autoComplete="off"
           value={value}
-          disabled={disabled}
           aria-label={`${label} price per page in Singapore dollars`}
           aria-invalid={Boolean(error)}
           aria-describedby={error ? `${id}-error` : undefined}
@@ -396,102 +394,77 @@ function CategoryDetailsFields({
 }) {
   if (category === 'printing') {
     return (
-      <div className="community-waypoint-details-fields community-waypoint-details-fields--printing">
-        <CheckboxOptions<CommunityWaypointPrintingService>
-          name="services"
+      <div className="community-waypoint-submission-details community-waypoint-submission-details--printing">
+        <PillChoices<CommunityWaypointPrintingService>
           legend="Services"
           options={COMMUNITY_WAYPOINT_PRINTING_SERVICES}
+          icons={COMMUNITY_WAYPOINT_PRINTING_SERVICE_ICONS}
           selected={draft.services}
-          onChange={(value) => onFieldChange('services', value)}
+
+          onToggle={(value) => onFieldChange('services', toggleValue(draft.services, value))}
         />
-        <div className="community-waypoint-details-row">
-          <span id="community-submission-colour-label" className="community-waypoint-details-row-label">
-            Colour
-          </span>
-          <RadioGroup
-            name="colour"
-            value={draft.colour}
-            onValueChange={(value) => {
-              if (value !== 'yes' && value !== 'no') return
-              onFieldChange('colour', value)
-              if (value !== 'yes') onFieldChange('colourPricePerPage', '')
-            }}
-            className="community-waypoint-details-control-group"
-            aria-labelledby="community-submission-colour-label"
-          >
-            <div className="community-waypoint-details-option-list">
-              {(['yes', 'no'] as const).map((value) => (
-                <label key={value} className="community-waypoint-details-option">
-                  <Radio.Root value={value} className="community-waypoint-details-radio">
-                    <Radio.Indicator className="community-waypoint-details-radio-indicator" />
-                  </Radio.Root>
-                  <span>{value === 'yes' ? 'Yes' : 'No'}</span>
-                </label>
-              ))}
-              {draft.colour !== '' && (
-                <button
-                  type="button"
-                  className="community-waypoint-details-clear"
-                  aria-label="Clear Colour"
-                  onClick={() => {
-                    onFieldChange('colour', '')
-                    onFieldChange('colourPricePerPage', '')
-                  }}
-                >
-                  Clear
-                </button>
-              )}
-            </div>
-          </RadioGroup>
-        </div>
-        <div className="community-waypoint-details-row community-waypoint-details-row--price">
-          <span id="community-submission-price-label" className="community-waypoint-details-row-label">
-            Price per page
-          </span>
-          <fieldset
-            className="community-waypoint-details-price-fields"
-            aria-labelledby="community-submission-price-label"
-          >
-            <legend className="visually-hidden">Price per page</legend>
+        <PillChoices<ColourAnswer>
+          legend="Colour printing"
+          options={COLOUR_ANSWERS}
+          /* Nothing is pressed until the user answers. 'unsure' is a real answer, so it
+             presses; only the untouched state leaves the group blank. */
+          selected={draft.colour === '' ? [] : [draft.colour]}
+          onToggle={(value) => {
+            /* The answer is recorded as given. Both '' and 'unsure' reach the server as
+               null, but the form must not claim an answer the user never chose, nor lose
+               the one they did. An explicit option is required here because a chosen radio
+               cannot be deselected with the keyboard, and pressing a pill again to clear is
+               a gesture nothing on screen advertises. */
+            onFieldChange('colour', value)
+            if (value !== 'yes') onFieldChange('colourPricePerPage', '')
+          }}
+        />
+        <fieldset className="community-waypoint-details-group">
+          <legend className="community-waypoint-details-legend">Price per page</legend>
+          <div className={draft.colour === 'yes'
+            ? 'community-waypoint-details-price-fields'
+            : 'community-waypoint-details-price-fields community-waypoint-details-price-fields--single'}>
             <PriceInput
               id="community-submission-grayscale-price"
               name="grayscalePricePerPage"
-              label="Grayscale"
+              label="Black and white"
               value={draft.grayscalePricePerPage}
               error={errors.grayscalePricePerPage}
               onChange={(value) => onFieldChange('grayscalePricePerPage', value)}
             />
-            <PriceInput
+            {/* Mounted only when colour printing exists: a disabled field would repeat the
+                word "Colour" a third time and give no reason for being unusable. */}
+            {draft.colour === 'yes' && <PriceInput
               id="community-submission-colour-price"
               name="colourPricePerPage"
               label="Colour"
               value={draft.colourPricePerPage}
               error={errors.colourPricePerPage}
-              disabled={draft.colour !== 'yes'}
               onChange={(value) => onFieldChange('colourPricePerPage', value)}
-            />
-          </fieldset>
-        </div>
+            />}
+          </div>
+        </fieldset>
       </div>
     )
   }
 
   return (
-    <div className="community-waypoint-details-fields community-waypoint-details-fields--vending">
-      <CheckboxOptions<CommunityWaypointVendingItem>
-        name="items"
+    <div className="community-waypoint-submission-details community-waypoint-submission-details--vending">
+      <PillChoices<CommunityWaypointVendingItem>
         legend="Items"
         options={COMMUNITY_WAYPOINT_VENDING_ITEMS}
         icons={COMMUNITY_WAYPOINT_VENDING_ITEM_ICONS}
         selected={draft.items}
-        onChange={(value) => onFieldChange('items', value)}
+
+        onToggle={(value) => onFieldChange('items', toggleValue(draft.items, value))}
       />
-      <CheckboxOptions<CommunityWaypointVendingPrep>
-        name="prep"
+      <PillChoices<CommunityWaypointVendingPrep>
         legend="Prep"
         options={COMMUNITY_WAYPOINT_VENDING_PREP_OPTIONS}
+        icons={COMMUNITY_WAYPOINT_VENDING_PREP_ICONS}
         selected={draft.prep}
-        onChange={(value) => onFieldChange('prep', value)}
+
+        onToggle={(value) => onFieldChange('prep', toggleValue(draft.prep, value))}
       />
     </div>
   )
@@ -501,13 +474,30 @@ function MoreDetailsField({
   draft,
   errors,
   waypoint,
+  validationAttempt,
   onFieldChange,
 }: {
   readonly draft: SubmissionDraft
   readonly errors: SubmissionErrors
   readonly waypoint: CommunityWaypoint | null
+  readonly validationAttempt: number
   readonly onFieldChange: (field: keyof SubmissionDraft, value: SubmissionFieldValue) => void
 }) {
+  const detailsRef = useRef<HTMLDetailsElement>(null)
+  const hasDetailsErrors = Boolean(
+    errors.services || errors.colour || errors.grayscalePricePerPage ||
+    errors.colourPricePerPage || errors.items || errors.prep,
+  )
+
+  /* Opens when a submit attempt reports details errors, so the field is visible before the
+     form tries to focus it. Keyed on the attempt count, not on `errors`: watching the object
+     made an unrelated field's error re-open a section the user had just closed, while a
+     repeat submit of the same error never re-opened it. */
+  useLayoutEffect(() => {
+    if (hasDetailsErrors && detailsRef.current) detailsRef.current.open = true
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- hasDetailsErrors is read, not the trigger
+  }, [validationAttempt])
+
   const category = draft.category || waypoint?.category
   if (category !== 'printing' && category !== 'vending_machine') return null
   const hasVerifiedDetails = waypoint !== null && (
@@ -515,10 +505,22 @@ function MoreDetailsField({
     waypoint.grayscalePriceCentsPerPage !== undefined || waypoint.colourPriceCentsPerPage !== undefined ||
     (waypoint.items?.length ?? 0) > 0 || (waypoint.prep?.length ?? 0) > 0
   )
+  /* Counts the answers currently filled in, so a collapsed section still says it holds
+     something. The disclosure's open state lives in the DOM, so this is not conditional
+     on it: the count is also useful while the section is open with many options.
+     "Not sure" is an answer, but it carries no fact to review, so it is not counted. */
+  const filledCount = category === 'printing'
+    ? draft.services.length + (draft.colour === 'yes' || draft.colour === 'no' ? 1 : 0) +
+      (draft.grayscalePricePerPage.trim() === '' ? 0 : 1) +
+      (draft.colour === 'yes' && draft.colourPricePerPage.trim() !== '' ? 1 : 0)
+    : draft.items.length + draft.prep.length
 
   return (
-    <details className="community-waypoint-more-details" open={hasVerifiedDetails}>
-      <summary><span>More details</span><span>(optional)</span></summary>
+    <details ref={detailsRef} className="community-waypoint-more-details" open={hasVerifiedDetails}>
+      <summary>
+        <span>More details</span>
+        <span>{filledCount > 0 ? `· ${filledCount} added` : '(optional)'}</span>
+      </summary>
       <CategoryDetailsFields
         category={category}
         draft={draft}
@@ -538,6 +540,7 @@ export function CommunityWaypointSubmissionFields({
   locationAccuracy,
   buildingIndex,
   observedFloors,
+  validationAttempt,
   onFieldChange,
   onAdjustLocation,
 }: {
@@ -549,6 +552,7 @@ export function CommunityWaypointSubmissionFields({
   readonly locationAccuracy: number | null
   readonly buildingIndex: BuildingIndex | null
   readonly observedFloors: readonly number[] | undefined
+  readonly validationAttempt: number
   readonly onFieldChange: (field: keyof SubmissionDraft, value: SubmissionFieldValue) => void
   readonly onAdjustLocation: (trigger: HTMLButtonElement) => void
 }) {
@@ -610,6 +614,7 @@ export function CommunityWaypointSubmissionFields({
         draft={draft}
         errors={errors}
         waypoint={waypoint}
+        validationAttempt={validationAttempt}
         onFieldChange={onFieldChange}
       />
 

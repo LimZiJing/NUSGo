@@ -21,7 +21,9 @@ export interface SubmissionDraft {
   readonly explanation: string
   readonly requestedChange: string
   readonly services: readonly CommunityWaypointPrintingService[]
-  readonly colour: '' | 'yes' | 'no'
+  /* '' = not answered, 'unsure' = answered "I don't know", otherwise a real answer.
+     Keeping these apart stops an untouched form from looking like a deliberate answer. */
+  readonly colour: '' | 'yes' | 'no' | 'unsure'
   readonly grayscalePricePerPage: string
   readonly colourPricePerPage: string
   readonly items: readonly CommunityWaypointVendingItem[]
@@ -111,14 +113,23 @@ export function createSubmission(
     ...(optionalText(draft.building) ? { building: draft.building.trim() } : {}),
     ...(floorValue.trim() ? { floor: Number(floorValue) } : {}),
   }
-  const suggestedDetails = createSuggestedDetails(draft, waypoint)
+  const details = createSuggestedDetails(draft, waypoint)
+  /* A new place sends details only when there is something to report. A correction sends
+     them whenever they differ from the published record: an empty list is then a deliberate
+     removal and must reach the reviewer as "None (cleared)", not vanish as noise. */
+  const suggestedDetails = details !== undefined &&
+    (waypoint === null ? hasSubmittedDetails(details) : !detailsMatchWaypoint(details, waypoint))
+    ? details
+    : undefined
 
   if (waypoint) {
     return {
       kind: 'correction',
       waypointId: waypoint.id,
       requestedChange: draft.requestedChange.trim(),
-      ...(draft.category ? { category: draft.category as ActiveCommunityWaypointCategory } : {}),
+      ...(draft.category || suggestedDetails !== undefined
+        ? { category: (draft.category || waypoint.category) as ActiveCommunityWaypointCategory }
+        : {}),
       longitude: coordinate.longitude,
       latitude: coordinate.latitude,
       ...optionalFields,
@@ -132,9 +143,7 @@ export function createSubmission(
     longitude: coordinate.longitude,
     latitude: coordinate.latitude,
     ...optionalFields,
-    ...(suggestedDetails === undefined || !hasSubmittedDetails(suggestedDetails)
-      ? {}
-      : { suggestedDetails }),
+    ...(suggestedDetails === undefined ? {} : { suggestedDetails }),
     ...(optionalText(draft.explanation) ? { explanation: draft.explanation.trim() } : {}),
   }
 }
@@ -212,4 +221,25 @@ function hasSubmittedDetails(details: CommunityWaypointDetailsSuggestion): boole
       details.grayscalePriceCentsPerPage !== null || details.colourPriceCentsPerPage !== null
   }
   return details.items.length > 0 || details.prep.length > 0
+}
+
+/* True when the proposed facts already match the published record, so sending them would
+   only add reviewer noise. List order is not meaningful, and an absent value equals null. */
+function detailsMatchWaypoint(
+  details: CommunityWaypointDetailsSuggestion,
+  waypoint: CommunityWaypoint,
+): boolean {
+  const sameList = (left: readonly string[] | undefined, right: readonly string[]): boolean => {
+    const stored = [...left ?? []].sort()
+    const proposed = [...right].sort()
+    return stored.length === proposed.length && stored.every((value, index) => value === proposed[index])
+  }
+
+  if (details.category === 'printing') {
+    return sameList(waypoint.services, details.services) &&
+      (waypoint.colour ?? null) === details.colour &&
+      (waypoint.grayscalePriceCentsPerPage ?? null) === details.grayscalePriceCentsPerPage &&
+      (waypoint.colourPriceCentsPerPage ?? null) === details.colourPriceCentsPerPage
+  }
+  return sameList(waypoint.items, details.items) && sameList(waypoint.prep, details.prep)
 }

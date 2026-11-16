@@ -16,6 +16,8 @@ import {
   CloudOff,
   Compass,
   Coffee,
+  Copy,
+  CookingPot,
   CircleDot,
   CupSoda,
   DoorOpen,
@@ -24,6 +26,7 @@ import {
   EllipsisVertical,
   ExternalLink,
   FileText,
+  Flame,
   Footprints,
   GripVertical,
   Info,
@@ -32,6 +35,7 @@ import {
   MapPin,
   MapPinPlus,
   LocateFixed,
+  Microwave,
   Monitor,
   MoreHorizontal,
   Navigation,
@@ -40,10 +44,12 @@ import {
   Plus,
   Popcorn,
   Moon,
+  Refrigerator,
   RotateCw,
   Route,
   Search,
   Settings,
+  ShoppingBag,
   Star,
   Sun,
   Toilet,
@@ -139,6 +145,11 @@ export function PackageIcon(props: IconProps) {
   return renderDecorativeIcon(Package, props)
 }
 
+/** A shopping bag: goods being carried away, distinct from a delivered parcel. */
+export function ShoppingBagIcon(props: IconProps) {
+  return renderDecorativeIcon(ShoppingBag, props)
+}
+
 export function PopcornIcon(props: IconProps) {
   return renderDecorativeIcon(Popcorn, props)
 }
@@ -229,6 +240,30 @@ export function ToiletIcon(props: IconProps) {
 
 export function UtensilsIcon(props: IconProps) {
   return renderDecorativeIcon(Utensils, props)
+}
+
+/** Two overlapping sheets: photocopying, as distinct from printing a fresh document. */
+export function CopyIcon(props: IconProps) {
+  return renderDecorativeIcon(Copy, props)
+}
+
+/** A pot over heat: food cooked to order. */
+export function CookingPotIcon(props: IconProps) {
+  return renderDecorativeIcon(CookingPot, props)
+}
+
+/** An open flame: food served hot rather than pre-packaged. */
+export function FlameIcon(props: IconProps) {
+  return renderDecorativeIcon(Flame, props)
+}
+
+export function MicrowaveIcon(props: IconProps) {
+  return renderDecorativeIcon(Microwave, props)
+}
+
+/** A fridge: chilled or pre-packaged stock. */
+export function RefrigeratorIcon(props: IconProps) {
+  return renderDecorativeIcon(Refrigerator, props)
 }
 
 export function TreePineIcon(props: IconProps) {

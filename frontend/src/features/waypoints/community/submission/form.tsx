@@ -53,10 +53,14 @@ export function CommunityWaypointSubmissionForm({
   const [draft, setDraft] = useState(() => initialSubmissionDraft(waypoint, initialCategory))
   const [status, setStatus] = useState<FormStatus>('editing')
   const [errors, setErrors] = useState<SubmissionErrors>({})
+  /* Counts submit attempts, so a child can react to "this submit failed validation"
+     without watching the errors object, which changes identity for unrelated fields too. */
+  const [validationAttempt, setValidationAttempt] = useState(0)
   const [submissionError, setSubmissionError] = useState<string | null>(null)
   const [previousLocationStatus, setPreviousLocationStatus] = useState(locationStatus)
   const [locationAnnouncement, setLocationAnnouncement] = useState('')
   const formRef = useRef<HTMLFormElement>(null)
+  const pendingInvalidFieldRef = useRef<SubmissionField | null>(null)
   const receiptHeadingRef = useRef<HTMLHeadingElement>(null)
   const submissionControllerRef = useRef<AbortController | null>(null)
   const autoFilledBuildingRef = useRef<string | null>(null)
@@ -108,7 +112,9 @@ export function CommunityWaypointSubmissionForm({
   ): void => {
     setDraft((current) => {
       if (field === 'category' && typeof value === 'string' && current.category !== value) {
+        const previousCategory = current.category || waypoint?.category
         const selectedCategory = value || waypoint?.category
+        if (previousCategory === selectedCategory) return { ...current, category: value }
         const preserveExisting = waypoint?.category === selectedCategory
         return {
           ...current,
@@ -140,9 +146,17 @@ export function CommunityWaypointSubmissionForm({
     })
     setErrors((current) => {
       const errorField = field === 'otherFloor' ? 'floor' : field
-      if (!current[errorField]) return current
+      if (field !== 'category' && !current[errorField]) return current
       const next = { ...current }
       delete next[errorField]
+      if (field === 'category') {
+        delete next.services
+        delete next.colour
+        delete next.grayscalePricePerPage
+        delete next.colourPricePerPage
+        delete next.items
+        delete next.prep
+      }
       return next
     })
     setSubmissionError(null)
@@ -154,8 +168,9 @@ export function CommunityWaypointSubmissionForm({
 
     const validationErrors = validateSubmissionDraft(draft, waypoint, coordinate, locationStatus === 'ready')
     if (Object.keys(validationErrors).length > 0) {
+      pendingInvalidFieldRef.current = Object.keys(validationErrors)[0] as SubmissionField
       setErrors(validationErrors)
-      focusFirstInvalidField(Object.keys(validationErrors)[0] as SubmissionField)
+      setValidationAttempt((attempt) => attempt + 1)
       return
     }
 
@@ -178,7 +193,10 @@ export function CommunityWaypointSubmissionForm({
     }
   }
 
-  const focusFirstInvalidField = (field: SubmissionField): void => {
+  useEffect(() => {
+    const field = pendingInvalidFieldRef.current
+    pendingInvalidFieldRef.current = null
+    if (field === null) return
     const target = field === 'coordinate'
       ? formRef.current?.querySelector<HTMLElement>('.community-waypoint-submission-coordinate button')
       : field === 'floor'
@@ -186,7 +204,7 @@ export function CommunityWaypointSubmissionForm({
           ?? formRef.current?.querySelector<HTMLElement>('#community-submission-floor [role="radio"][aria-checked="true"]')
         : formRef.current?.querySelector<HTMLElement>(`[name="${field}"]`)
     target?.focus()
-  }
+  }, [errors])
 
   return (
     <div className="community-waypoint-submission">
@@ -221,6 +239,7 @@ export function CommunityWaypointSubmissionForm({
             locationAccuracy={locationAccuracy}
             buildingIndex={buildingIndex}
             observedFloors={observedFloors}
+            validationAttempt={validationAttempt}
             onFieldChange={updateField}
             onAdjustLocation={onAdjustLocation}
           />

@@ -4,6 +4,7 @@ import { act, cleanup, fireEvent, render, screen, waitFor } from '@testing-libra
 import userEvent from '@testing-library/user-event'
 import { afterEach, describe, expect, it, vi } from 'vitest'
 import type { CommunityWaypoint } from '@nusgo/shared/waypoints/community'
+import type { CommunityWaypointSubmission } from '@nusgo/shared/waypoints/community-submission'
 import { buildBuildingIndex } from '../../../../domain/venue/building-index'
 import { CommunityWaypointSubmissionError } from '../../../../domain/waypoints/community-waypoint-submission'
 import { CommunityWaypointSubmissionForm } from './form'
@@ -24,7 +25,20 @@ const waypoint: CommunityWaypoint = {
   details: 'Beside the east stairwell.',
 }
 
+const printingWaypoint: CommunityWaypoint = {
+  ...waypoint,
+  id: 'cw-printing-001',
+  displayLabel: 'Printing / photocopying at UTown',
+  category: 'printing',
+  grayscalePriceCentsPerPage: 10,
+}
+
 function renderForm(overrides: Partial<Parameters<typeof CommunityWaypointSubmissionForm>[0]> = {}) {
+  /* onSubmit is returned separately as a typed mock: reading it back off `props`
+     widens it to the plain callback type, which hides `.mock` from the compiler. */
+  const onSubmit = vi.fn<
+    (submission: CommunityWaypointSubmission, signal: AbortSignal) => Promise<void>
+  >(async () => undefined)
   const props = {
     waypoint: null,
     coordinate,
@@ -33,12 +47,12 @@ function renderForm(overrides: Partial<Parameters<typeof CommunityWaypointSubmis
     buildingIndex: null,
     venues: null,
     onAdjustLocation: vi.fn(),
-    onSubmit: vi.fn(async () => undefined),
+    onSubmit,
     onBack: vi.fn(),
     ...overrides,
   }
   const view = render(<CommunityWaypointSubmissionForm {...props} />)
-  return { props, ...view }
+  return { props, onSubmit, ...view }
 }
 
 describe('CommunityWaypointSubmissionForm', () => {
@@ -192,6 +206,255 @@ describe('CommunityWaypointSubmissionForm', () => {
     }, expect.any(AbortSignal))
   })
 
+  it('keeps edited details when selecting the Community Waypoint own category', async () => {
+    const user = userEvent.setup()
+    const { props } = renderForm({ waypoint: printingWaypoint })
+    const price = screen.getByLabelText('Black and white price per page in Singapore dollars') as HTMLInputElement
+
+    fireEvent.change(price, { target: { value: '0.99' } })
+    await user.selectOptions(screen.getByRole('combobox', { name: 'Category' }), 'printing')
+    expect(price.value).toBe('0.99')
+    await user.selectOptions(screen.getByRole('combobox', { name: 'Category' }), '')
+    expect(price.value).toBe('0.99')
+
+    await user.type(screen.getByLabelText('What needs correcting?'), 'The price has changed.')
+    await user.click(screen.getByRole('button', { name: 'Send suggestion' }))
+
+    expect(props.onSubmit).toHaveBeenCalledWith(expect.objectContaining({
+      category: 'printing',
+      suggestedDetails: expect.objectContaining({ grayscalePriceCentsPerPage: 99 }),
+    }), expect.any(AbortSignal))
+  })
+
+  it('clears the previous category details when switching from printing to vending', async () => {
+    const user = userEvent.setup()
+    const { props, onSubmit } = renderForm({ waypoint: printingWaypoint })
+
+    fireEvent.change(screen.getByLabelText('Black and white price per page in Singapore dollars'), {
+      target: { value: '0.99' },
+    })
+    await user.click(screen.getByRole('button', { name: 'Print' }))
+    await user.selectOptions(screen.getByRole('combobox', { name: 'Category' }), 'vending_machine')
+
+    expect(screen.queryByLabelText('Black and white price per page in Singapore dollars')).toBeNull()
+    expect(screen.queryAllByRole('button', { pressed: true })).toHaveLength(0)
+    await user.type(screen.getByLabelText('What needs correcting?'), 'This is a vending machine.')
+    await user.click(screen.getByRole('button', { name: 'Send suggestion' }))
+
+    expect(props.onSubmit).toHaveBeenCalledWith(expect.objectContaining({
+      category: 'vending_machine',
+    }), expect.any(AbortSignal))
+    expect(onSubmit.mock.calls[0]?.[0]).not.toHaveProperty('suggestedDetails')
+  })
+
+  it('includes the effective category when a correction submits details without a category selection', async () => {
+    const user = userEvent.setup()
+    const { props } = renderForm({ waypoint: printingWaypoint })
+
+    fireEvent.change(screen.getByLabelText('Black and white price per page in Singapore dollars'), {
+      target: { value: '0.25' },
+    })
+    await user.type(screen.getByLabelText('What needs correcting?'), 'The price has changed.')
+    await user.click(screen.getByRole('button', { name: 'Send suggestion' }))
+
+    expect(props.onSubmit).toHaveBeenCalledWith(expect.objectContaining({
+      kind: 'correction',
+      category: 'printing',
+      suggestedDetails: expect.objectContaining({
+        category: 'printing',
+        grayscalePriceCentsPerPage: 25,
+      }),
+    }), expect.any(AbortSignal))
+  })
+
+  it('omits empty touched details and an unproposed category from a correction', async () => {
+    const user = userEvent.setup()
+    const { onSubmit } = renderForm({
+      waypoint: { ...printingWaypoint, grayscalePriceCentsPerPage: undefined },
+    })
+
+    await user.click(screen.getByText('More details'))
+    await user.click(screen.getByRole('button', { name: 'Print' }))
+    await user.click(screen.getByRole('button', { name: 'Print' }))
+    await user.type(screen.getByLabelText('What needs correcting?'), 'The printer has moved.')
+    await user.click(screen.getByRole('button', { name: 'Send suggestion' }))
+
+    expect(onSubmit).toHaveBeenCalledOnce()
+    expect(onSubmit.mock.calls[0]?.[0]).not.toHaveProperty('suggestedDetails')
+    expect(onSubmit.mock.calls[0]?.[0]).not.toHaveProperty('category')
+  })
+
+  it('keeps a deliberate complete clear so the reviewer sees every field as cleared', async () => {
+    const user = userEvent.setup()
+    const { onSubmit } = renderForm({
+      waypoint: {
+        ...printingWaypoint,
+        services: ['print'],
+        colour: true,
+        grayscalePriceCentsPerPage: 10,
+        colourPriceCentsPerPage: 50,
+      },
+    })
+
+    // Remove every published fact: untick Print, answer Not sure, blank the price.
+    await user.click(screen.getByRole('button', { name: 'Print' }))
+    await user.click(screen.getByRole('button', { name: 'Not sure' }))
+    fireEvent.change(screen.getByLabelText('Black and white price per page in Singapore dollars'), {
+      target: { value: '' },
+    })
+    await user.type(screen.getByLabelText('What needs correcting?'), 'This printer was removed.')
+    await user.click(screen.getByRole('button', { name: 'Send suggestion' }))
+
+    // It must not vanish as noise: an all-empty correction is the removal case.
+    expect(onSubmit).toHaveBeenCalledWith(expect.objectContaining({
+      suggestedDetails: expect.objectContaining({
+        category: 'printing',
+        services: [],
+        colour: null,
+      }),
+    }), expect.any(AbortSignal))
+  })
+
+  it('keeps a closed More details section closed when an unrelated error clears', async () => {
+    const user = userEvent.setup()
+    renderForm({ waypoint: printingWaypoint })
+
+    // A details error plus an empty required field: one submit produces both errors.
+    fireEvent.change(screen.getByLabelText('Black and white price per page in Singapore dollars'), {
+      target: { value: '0.999' },
+    })
+    await user.click(screen.getByRole('button', { name: 'Send suggestion' }))
+
+    const disclosure = screen.getByText('More details').closest('details')
+    expect(disclosure?.open).toBe(true)
+
+    // The user reads the error, then closes the section.
+    await user.click(screen.getByText('More details'))
+    expect(disclosure?.open).toBe(false)
+
+    // Typing in the unrelated correction field clears only that error. The section
+    // must not spring back open.
+    await user.type(screen.getByLabelText('What needs correcting?'), 'x')
+    expect(disclosure?.open).toBe(false)
+  })
+
+  it('clears stale details errors from the live region when changing category', async () => {
+    const user = userEvent.setup()
+    const { props } = renderForm({ waypoint: printingWaypoint })
+
+    fireEvent.change(screen.getByLabelText('Black and white price per page in Singapore dollars'), {
+      target: { value: '0.999' },
+    })
+    await user.click(screen.getByRole('button', { name: 'Send suggestion' }))
+    expect(screen.getByRole('alert').textContent).toContain('Enter a price with up to 2 decimal places.')
+
+    await user.selectOptions(screen.getByRole('combobox', { name: 'Category' }), 'water_cooler')
+
+    expect(screen.getByRole('alert').textContent).not.toContain('Enter a price')
+    expect(screen.getByRole('alert').textContent).toContain('Explain what needs correcting.')
+    expect(props.onSubmit).not.toHaveBeenCalled()
+  })
+
+  it.each([true, false])('opens collapsed details and focuses an invalid price (verified details: %s)', async (verified) => {
+    const user = userEvent.setup()
+    const { props } = renderForm({
+      waypoint: verified ? printingWaypoint : { ...printingWaypoint, grayscalePriceCentsPerPage: undefined },
+    })
+    const disclosure = screen.getByText('More details').closest('details') as HTMLDetailsElement
+    if (!disclosure.open) await user.click(screen.getByText('More details'))
+    const price = screen.getByLabelText('Black and white price per page in Singapore dollars')
+    fireEvent.change(price, { target: { value: '0.999' } })
+    await user.type(screen.getByLabelText('What needs correcting?'), 'The price has changed.')
+    await user.click(screen.getByText('More details'))
+    expect(disclosure.open).toBe(false)
+
+    await user.click(screen.getByRole('button', { name: 'Send suggestion' }))
+
+    await waitFor(() => {
+      expect(disclosure.open).toBe(true)
+      expect(document.activeElement).toBe(price)
+    })
+    expect(price.getAttribute('aria-invalid')).toBe('true')
+    expect(screen.getByText('Enter a price with up to 2 decimal places.', { selector: 'span' })).toBeTruthy()
+    expect(props.onSubmit).not.toHaveBeenCalled()
+
+    // Another failed submit must also reopen the disclosure if the user closes it again.
+    await user.click(screen.getByText('More details'))
+    expect(disclosure.open).toBe(false)
+    await user.click(screen.getByRole('button', { name: 'Send suggestion' }))
+    expect(disclosure.open).toBe(true)
+    expect(document.activeElement).toBe(price)
+
+    fireEvent.change(price, { target: { value: '0.25' } })
+    await user.click(screen.getByText('More details'))
+    expect(disclosure.open).toBe(false)
+    await user.type(screen.getByLabelText('What needs correcting?'), ' Updated.')
+    expect(disclosure.open).toBe(false)
+    await user.click(screen.getByText('More details'))
+    expect(disclosure.open).toBe(true)
+  })
+
+  it('leaves the colour question unanswered until the user answers it', async () => {
+    const user = userEvent.setup()
+    renderForm({ waypoint: printingWaypoint })
+
+    /* A suggestion nobody has answered must not look answered. Pressing "Not sure" by
+       default would put a fact on screen that the submitter never chose. */
+    for (const name of ['Yes', 'No', 'Not sure']) {
+      expect(screen.getByRole('button', { name }).getAttribute('aria-pressed'), name).toBe('false')
+    }
+
+    await user.click(screen.getByRole('button', { name: 'Not sure' }))
+    expect(screen.getByRole('button', { name: 'Not sure' }).getAttribute('aria-pressed')).toBe('true')
+  })
+
+  it('renders the colour price only once colour printing is answered Yes', async () => {
+    const user = userEvent.setup()
+    renderForm({ waypoint: printingWaypoint })
+
+    // Started from a record with no colour answer, so the price does not exist yet.
+    expect(screen.queryByLabelText('Colour price per page in Singapore dollars')).toBeNull()
+
+    await user.click(screen.getByRole('button', { name: 'Yes' }))
+    expect(screen.getByLabelText('Colour price per page in Singapore dollars')).toBeTruthy()
+
+    await user.click(screen.getByRole('button', { name: 'No' }))
+    expect(screen.queryByLabelText('Colour price per page in Singapore dollars')).toBeNull()
+  })
+
+  it('treats Not sure as no colour answer, even when a published answer exists', async () => {
+    const user = userEvent.setup()
+    const { onSubmit } = renderForm({ waypoint: { ...printingWaypoint, colour: true } })
+
+    // The correction pre-fills the published answer, so Yes starts pressed.
+    expect(screen.getByRole('button', { name: 'Yes' }).getAttribute('aria-pressed')).toBe('true')
+
+    await user.click(screen.getByRole('button', { name: 'Not sure' }))
+    await user.type(screen.getByLabelText('What needs correcting?'), 'I could not tell.')
+    await user.click(screen.getByRole('button', { name: 'Send suggestion' }))
+
+    /* null means "no answer proposed", which is different from false ("no colour printing").
+       A keyboard user must be able to reach this state: a chosen radio cannot be deselected. */
+    expect(onSubmit).toHaveBeenCalledWith(expect.objectContaining({
+      suggestedDetails: expect.objectContaining({ category: 'printing', colour: null }),
+    }), expect.any(AbortSignal))
+  })
+
+  it('counts filled answers in the collapsed disclosure summary', async () => {
+    const user = userEvent.setup()
+    renderForm({ waypoint: printingWaypoint })
+
+    const summary = screen.getByText('More details').closest('summary')
+    // One published price already counts, so the section says it holds something.
+    expect(summary?.textContent).toContain('1 added')
+
+    await user.click(screen.getByRole('button', { name: 'Photocopy' }))
+    expect(summary?.textContent).toContain('2 added')
+
+    await user.click(screen.getByRole('button', { name: 'Photocopy' }))
+    expect(summary?.textContent).toContain('1 added')
+  })
+
   it('recovers from a retryable submission failure and keeps the draft available', async () => {
     const user = userEvent.setup()
     const onPendingChange = vi.fn()
@@ -247,8 +510,7 @@ describe('CommunityWaypointSubmissionForm', () => {
     expect(await screen.findByRole('heading', { name: 'Suggestion received' })).toBeTruthy()
   })
 
-  it('aborts a pending request when the form unmounts', async () => {
-    const user = userEvent.setup()
+  it('aborts a pending request when the form unmounts', async () => {    const user = userEvent.setup()
     const submittedSignals: AbortSignal[] = []
     const onSubmit = vi.fn<Parameters<typeof CommunityWaypointSubmissionForm>[0]['onSubmit']>(
       async (_submission, signal) => {

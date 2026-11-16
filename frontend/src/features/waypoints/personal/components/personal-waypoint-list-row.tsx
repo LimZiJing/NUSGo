@@ -70,6 +70,11 @@ export function PersonalWaypointListRow({
           ariaDescribedBy={handleDescriptionId}
           ariaKeyShortcuts="Space Enter ArrowUp ArrowDown Escape"
           dataKeyboardReordering={keyboardReordering}
+          // The panel this list sits in is a swipe-dismissable sheet, and on touch it claims the
+          // gesture even when it starts on a button. Without this, dragging the grip slid the whole
+          // sheet instead of moving the place — and the sheet is what a place has to be dragged
+          // across to change its category. This is Base UI's own opt-out for exactly this case.
+          dataBaseUiSwipeIgnore
           disabled={handleDisabled}
           ref={setHandleRef}
         />}

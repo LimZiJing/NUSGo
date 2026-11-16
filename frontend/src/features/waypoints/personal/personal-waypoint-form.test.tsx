@@ -33,7 +33,6 @@ function StatefulPersonalWaypointForm({ onChange }: { readonly onChange: (change
       setCurrentDraft((current) => ({ ...current, ...changes }))
     }}
     onAdjustLocation={() => undefined}
-    onCancel={() => undefined}
     onSave={() => undefined}
   />
 }

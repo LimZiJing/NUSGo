@@ -1159,17 +1159,8 @@ function App() {
               editConflict={morePage === 'editing-waypoint' ? personalWaypoints.editConflict : null}
               onChange={personalWaypoints.updateDraft}
               initialFocusRef={personalWaypointNameRef}
-              submitLabel={morePage === 'editing-waypoint' ? 'Save changes' : 'Save waypoint'}
+              submitLabel={morePage === 'editing-waypoint' ? 'Save changes' : 'Save'}
               onAdjustLocation={beginWaypointLocationAdjustment}
-              onCancel={() => {
-                if (personalWaypoints.isDraftDirty) { setPendingDraftLeave('cancel'); return }
-                if (morePage === 'editing-waypoint') {
-                  cancelPersonalWaypointEdit()
-                  setMorePage(personalWaypointEditReturnPage)
-                } else {
-                  setMorePage('waypoints')
-                }
-              }}
               onSave={() => {
                 if (personalWaypoints.save()) {
                   if (morePage === 'editing-waypoint') setMorePage(personalWaypointEditReturnPage)

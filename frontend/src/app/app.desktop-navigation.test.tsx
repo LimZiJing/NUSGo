@@ -1269,7 +1269,7 @@ describe('More surface', () => {
     expect(screen.queryByRole('region', { name: 'Adjust waypoint location' })).toBeNull()
   })
 
-  it('creates a Personal Waypoint only after Save waypoint', async () => {
+  it('creates a Personal Waypoint only after Save', async () => {
     const user = userEvent.setup()
     vi.stubGlobal('crypto', { randomUUID: () => '4a85589b-4941-4a85-8d47-7c46f5d47400' })
     render(<App />)
@@ -1287,7 +1287,7 @@ describe('More surface', () => {
     await user.click(screen.getByRole('button', { name: 'Create “Study spot”' }))
     await user.type(screen.getByLabelText('Note (optional)'), ' Near the trees ')
     expect(localStorage.getItem('navus:personal-waypoints:v1')).toBeNull()
-    await user.click(screen.getByRole('button', { name: 'Save waypoint' }))
+    await user.click(screen.getByRole('button', { name: /^Save$/ }))
 
     const stored = JSON.parse(localStorage.getItem('navus:personal-waypoints:v1') ?? '{}')
     expect(stored.version).toBe(1)
@@ -1332,7 +1332,7 @@ describe('More surface', () => {
     await user.type(screen.getByLabelText('Name'), 'Coffee stop')
     await user.type(screen.getByLabelText('Category'), 'Food')
     await user.click(screen.getByRole('button', { name: 'Create “Food”' }))
-    await user.click(screen.getByRole('button', { name: 'Save waypoint' }))
+    await user.click(screen.getByRole('button', { name: /^Save$/ }))
 
     // Groups start collapsed, so a freshly created place's group must be expanded before its list
     // is reachable.
@@ -1359,14 +1359,15 @@ describe('More surface', () => {
     await user.click(screen.getByRole('button', { name: 'More' }))
     await user.click(screen.getByRole('button', { name: 'My waypoints' }))
     await user.click(screen.getByRole('button', { name: 'Add waypoint' }))
-    await user.click(screen.getByRole('button', { name: 'Cancel' }))
+    // The form has no Cancel of its own: the panel's Back leaves it.
+    await user.click(screen.getByRole('button', { name: 'Back to previous view' }))
     expect(localStorage.getItem('navus:personal-waypoints:v1')).toBeNull()
 
     await user.click(screen.getByRole('button', { name: 'Add waypoint' }))
-    await user.click(screen.getByRole('button', { name: 'Save waypoint' }))
+    await user.click(screen.getByRole('button', { name: /^Save$/ }))
     expect(screen.getAllByText('Must not be empty.')).toHaveLength(2)
     expect(localStorage.getItem('navus:personal-waypoints:v1')).toBeNull()
-    await user.click(screen.getByRole('button', { name: 'Cancel' }))
+    await user.click(screen.getByRole('button', { name: 'Back to previous view' }))
     expect(localStorage.getItem('navus:personal-waypoints:v1')).toBeNull()
   })
 

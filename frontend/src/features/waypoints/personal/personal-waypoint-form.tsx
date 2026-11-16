@@ -25,9 +25,8 @@ export function PersonalWaypointForm({
   onChange,
   initialFocusRef,
   onAdjustLocation,
-  onCancel,
   onSave,
-  submitLabel = 'Save waypoint',
+  submitLabel = 'Save',
   categoryOptions = [],
 }: {
   readonly draft: PersonalWaypointDraft
@@ -37,7 +36,6 @@ export function PersonalWaypointForm({
   readonly onChange: (changes: Partial<PersonalWaypointDraft>) => void
   readonly initialFocusRef?: Ref<HTMLInputElement>
   readonly onAdjustLocation: () => void
-  readonly onCancel: () => void
   readonly onSave: () => void
   readonly submitLabel?: string
   readonly categoryOptions?: readonly PersonalWaypointCategoryOption[]
@@ -118,7 +116,8 @@ export function PersonalWaypointForm({
 
     <div className="personal-waypoint-actions">
       <p className="personal-waypoint-save-note">This waypoint will be saved in this browser.</p>
-      <Button label="Cancel" variant="ghost" onClick={onCancel} />
+      {/* No Cancel button: the panel's own Back leaves the form, and offering a second way out
+          beside Save reads as a competing choice rather than a dismissal. */}
       {/* A submit button inside the form: the form's onSubmit is the single save path. Giving it an
           onClick as well would call save once per handler and save the waypoint twice. */}
       <Button

@@ -390,7 +390,8 @@ describe('mobile Stops tab state', () => {
     expect(screen.getByRole('textbox', { name: 'Name' })).toBeTruthy()
 
     window.dispatchEvent(new Event('resize'))
-    await user.click(screen.getByRole('button', { name: 'Cancel' }))
+    // The form has no Cancel of its own: the panel's Back leaves it.
+    await user.click(screen.getByRole('button', { name: 'Back to previous view' }))
     await user.click(screen.getByRole('button', { name: 'Back to previous view' }))
     await user.click(screen.getByRole('button', { name: 'Close More' }))
 

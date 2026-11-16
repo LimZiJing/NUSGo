@@ -53,6 +53,11 @@ interface IconButtonProps {
   readonly ariaDescribedBy?: string
   readonly ariaKeyShortcuts?: string
   readonly dataKeyboardReordering?: boolean
+  /**
+   * Marks the control as excluded from an enclosing swipe-dismissable sheet's gesture, for a
+   * control that starts its own drag. Base UI reads this attribute by name.
+   */
+  readonly dataBaseUiSwipeIgnore?: boolean
   /** Layout only, such as alignment or flex sizing; the look comes from the props and tokens. */
   readonly className?: string
   readonly ref?: Ref<HTMLButtonElement>
@@ -122,6 +127,7 @@ export function IconButton({
   ariaDescribedBy,
   ariaKeyShortcuts,
   dataKeyboardReordering,
+  dataBaseUiSwipeIgnore,
   className,
   ref,
 }: IconButtonProps) {
@@ -143,6 +149,7 @@ export function IconButton({
       aria-describedby={ariaDescribedBy}
       aria-keyshortcuts={ariaKeyShortcuts}
       data-keyboard-reordering={dataKeyboardReordering ? 'true' : undefined}
+      data-base-ui-swipe-ignore={dataBaseUiSwipeIgnore ? '' : undefined}
       onClick={onClick}
       onKeyDown={onKeyDown}
     >

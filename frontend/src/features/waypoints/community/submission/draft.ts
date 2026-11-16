@@ -1,4 +1,5 @@
 import {
+  COMMUNITY_WAYPOINT_SUBMISSION_TEXT_LIMIT,
   COMMUNITY_WAYPOINT_TEXT_LIMITS,
   SINGAPORE_COORDINATE_BOUNDS,
   type ActiveCommunityWaypointCategory,
@@ -40,10 +41,9 @@ export const FLOOR_UNSET = 'unset'
 
 export function initialSubmissionDraft(
   waypoint: CommunityWaypoint | null,
-  initialCategory: ActiveCommunityWaypointCategory | null = null,
 ): SubmissionDraft {
   return {
-    category: waypoint ? '' : initialCategory ?? '',
+    category: '',
     building: waypoint?.building ?? '',
     floor: waypoint?.floor === undefined ? '' : String(waypoint.floor),
     otherFloor: '',
@@ -67,11 +67,17 @@ export function validateSubmissionDraft(
 ): SubmissionErrors {
   const errors: SubmissionErrors = {}
   if (!waypoint && !draft.category) errors.category = 'Choose a category.'
-  if (textExceedsLimit(draft.building, COMMUNITY_WAYPOINT_TEXT_LIMITS.building)) {
-    errors.building = 'Keep the building within 80 characters.'
+  const buildingTextLimit = COMMUNITY_WAYPOINT_TEXT_LIMITS.building
+  if (textExceedsLimit(draft.building, buildingTextLimit)) {
+    errors.building = `Keep the building within ${buildingTextLimit.toLocaleString('en')} characters.`
   }
-  if (textExceedsLimit(draft.explanation, 1_000)) errors.explanation = 'Keep the note within 1,000 characters.'
-  if (textExceedsLimit(draft.requestedChange, 1_000)) errors.requestedChange = 'Keep the reason within 1,000 characters.'
+  const submissionTextLimit = COMMUNITY_WAYPOINT_SUBMISSION_TEXT_LIMIT
+  if (textExceedsLimit(draft.explanation, submissionTextLimit)) {
+    errors.explanation = `Keep the note within ${submissionTextLimit.toLocaleString('en')} characters.`
+  }
+  if (textExceedsLimit(draft.requestedChange, submissionTextLimit)) {
+    errors.requestedChange = `Keep the reason within ${submissionTextLimit.toLocaleString('en')} characters.`
+  }
   if (waypoint && !draft.requestedChange.trim()) errors.requestedChange = 'Explain what needs correcting.'
 
   if (draft.detailsTouched && getDetailsCategory(draft, waypoint) === 'printing') {

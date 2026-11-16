@@ -132,7 +132,7 @@ describe('CommunityWaypointPanel', () => {
     render(<DiscoveryHarness load={async () => waypoints} />)
 
     expect(await screen.findByText(
-      'Saved category visibility could not be read. Review the categories and save to replace it.',
+      'Saved category visibility could not be read. Toggle a category to replace it.',
     )).toBeTruthy()
     expect(screen.queryByRole('button', { name: 'Save Community Waypoint categories' })).toBeNull()
 
@@ -140,7 +140,7 @@ describe('CommunityWaypointPanel', () => {
     await user.click(waterSwitch)
     expect(localStorage.getItem(VISIBILITY_KEY)).toBe('["water_cooler"]')
     expect(screen.queryByText(
-      'Saved category visibility could not be read. Review the categories and save to replace it.',
+      'Saved category visibility could not be read. Toggle a category to replace it.',
     )).toBeNull()
   })
 

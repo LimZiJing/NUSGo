@@ -1,6 +1,6 @@
 import type { Express } from 'express'
 import {
-  COMMUNITY_WAYPOINT_CATEGORIES,
+  getCommunityWaypointCategoryLabel as getCategoryLabel,
   COMMUNITY_WAYPOINT_PRINTING_SERVICES,
   COMMUNITY_WAYPOINT_VENDING_ITEMS,
   COMMUNITY_WAYPOINT_VENDING_PREP_OPTIONS,
@@ -39,10 +39,6 @@ function cleanMarkdownText(value: string): string {
 
 function formatIssueField(label: string, value: string | number): string {
   return '- **' + label + ':** ' + cleanMarkdownText(String(value))
-}
-
-function getCategoryLabel(category: string): string {
-  return COMMUNITY_WAYPOINT_CATEGORIES.find(({ value }) => value === category)?.label ?? category
 }
 
 function getOptionLabels<T extends string>(

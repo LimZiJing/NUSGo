@@ -39,6 +39,8 @@ export const COMMUNITY_WAYPOINT_TEXT_LIMITS = {
   details: 500,
 } as const
 
+export const COMMUNITY_WAYPOINT_SUBMISSION_TEXT_LIMIT = 1_000
+
 export type ActiveCommunityWaypointCategory = typeof COMMUNITY_WAYPOINT_CATEGORIES[number]['value']
 export type CommunityWaypointCategory = typeof COMMUNITY_WAYPOINT_READABLE_CATEGORIES[number]['value']
 export type CommunityWaypointId = `cw-${string}`

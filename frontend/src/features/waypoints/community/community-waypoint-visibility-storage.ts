@@ -4,7 +4,7 @@ import {
 } from '@nusgo/shared/waypoints/community'
 
 const VISIBLE_CATEGORIES_KEY = 'navus:community-waypoint-visible-categories:v1'
-const READ_ERROR = 'Saved category visibility could not be read. Review the categories and save to replace it.'
+const READ_ERROR = 'Saved category visibility could not be read. Toggle a category to replace it.'
 
 export interface CommunityWaypointVisibilityPreferences {
   readonly categories: readonly CommunityWaypointCategory[]

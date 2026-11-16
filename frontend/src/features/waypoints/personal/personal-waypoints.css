@@ -253,6 +253,16 @@
 
 .personal-waypoint-grip:active { cursor: grabbing; }
 
+/* A touch drag needs a 250ms hold inside 5px. The grip sets `touch-action: none` so the gesture is
+   not taken by the sheet, and that also stops the browser marking it `:active` — so without this a
+   phone shows nothing at all between touching the handle and the drag beginning, and the handle
+   reads as broken. The row reports the press itself for that reason. */
+.personal-waypoint-grip[data-pressed-down='true'] {
+  border-radius: var(--radius-sm);
+  background: var(--accent-soft);
+  color: var(--accent);
+}
+
 .personal-waypoint-grip svg {
   width: 15px;
   height: 15px;

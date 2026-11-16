@@ -1,4 +1,4 @@
-import type { KeyboardEventHandler, ReactNode, Ref } from 'react'
+import type { KeyboardEventHandler, PointerEventHandler, ReactNode, Ref } from 'react'
 import { joinClassNames } from './class-names'
 
 export type ControlSize = 'sm' | 'lg'
@@ -50,6 +50,10 @@ interface IconButtonProps {
   /** Announces that the action is in progress. */
   readonly busy?: boolean
   readonly onKeyDown?: KeyboardEventHandler<HTMLButtonElement>
+  /** Press lifecycle for gestures the browser cannot report through `:active`. */
+  readonly onPointerDown?: PointerEventHandler<HTMLButtonElement>
+  readonly onPointerUp?: PointerEventHandler<HTMLButtonElement>
+  readonly onPointerCancel?: PointerEventHandler<HTMLButtonElement>
   readonly ariaDescribedBy?: string
   readonly ariaKeyShortcuts?: string
   readonly dataKeyboardReordering?: boolean
@@ -58,6 +62,8 @@ interface IconButtonProps {
    * control that starts its own drag. Base UI reads this attribute by name.
    */
   readonly dataBaseUiSwipeIgnore?: boolean
+  /** Raised while the control is held down, for gestures the browser's own `:active` cannot see. */
+  readonly pressedDown?: boolean
   /** Layout only, such as alignment or flex sizing; the look comes from the props and tokens. */
   readonly className?: string
   readonly ref?: Ref<HTMLButtonElement>
@@ -128,6 +134,10 @@ export function IconButton({
   ariaKeyShortcuts,
   dataKeyboardReordering,
   dataBaseUiSwipeIgnore,
+  pressedDown,
+  onPointerDown,
+  onPointerUp,
+  onPointerCancel,
   className,
   ref,
 }: IconButtonProps) {
@@ -150,6 +160,10 @@ export function IconButton({
       aria-keyshortcuts={ariaKeyShortcuts}
       data-keyboard-reordering={dataKeyboardReordering ? 'true' : undefined}
       data-base-ui-swipe-ignore={dataBaseUiSwipeIgnore ? '' : undefined}
+      data-pressed-down={pressedDown ? 'true' : undefined}
+      onPointerDown={onPointerDown}
+      onPointerUp={onPointerUp}
+      onPointerCancel={onPointerCancel}
       onClick={onClick}
       onKeyDown={onKeyDown}
     >

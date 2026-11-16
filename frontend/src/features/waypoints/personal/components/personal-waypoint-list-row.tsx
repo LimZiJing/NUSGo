@@ -1,4 +1,4 @@
-import { useCallback } from 'react'
+import { useCallback, useState } from 'react'
 import type { KeyboardEvent, MouseEvent, Ref } from 'react'
 import type { PersonalWaypoint } from '../../../../domain/waypoints/personal/personal-waypoint'
 import { useSortable } from '@dnd-kit/react/sortable'
@@ -45,6 +45,11 @@ export function PersonalWaypointListRow({
   handleDescriptionId,
 }: PersonalWaypointListRowProps) {
   const label = waypoint.name
+  // A touch drag only starts after a 250ms hold, and `:active` cannot show that hold happening:
+  // the grip sets `touch-action: none`, which stops the browser marking it active. So the press is
+  // tracked here, which is the one thing that can tell a phone user the control has noticed them.
+  const [pressed, setPressed] = useState(false)
+  const releasePress = useCallback(() => setPressed(false), [])
   const setHandleRef = useCallback((element: HTMLButtonElement | null): void => {
     handleRef?.(element)
     onHandleRef?.(waypoint.id, element)
@@ -75,6 +80,12 @@ export function PersonalWaypointListRow({
           // sheet instead of moving the place — and the sheet is what a place has to be dragged
           // across to change its category. This is Base UI's own opt-out for exactly this case.
           dataBaseUiSwipeIgnore
+          // A drag can begin without a pointerup ever reaching the grip, and the dragged row is
+          // dimmed anyway, so the held state simply stops counting once the drag is running.
+          pressedDown={pressed && !isDragging}
+          onPointerDown={() => setPressed(true)}
+          onPointerUp={releasePress}
+          onPointerCancel={releasePress}
           disabled={handleDisabled}
           ref={setHandleRef}
         />}

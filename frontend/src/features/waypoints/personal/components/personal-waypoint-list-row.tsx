@@ -2,6 +2,7 @@ import { useCallback } from 'react'
 import type { KeyboardEvent, MouseEvent, Ref } from 'react'
 import type { PersonalWaypoint } from '../../../../domain/waypoints/personal/personal-waypoint'
 import { useSortable } from '@dnd-kit/react/sortable'
+import { SortableKeyboardPlugin } from '@dnd-kit/dom/sortable'
 import { IconButton } from '../../../../ui/button'
 import { SavedListRow } from '../../../../ui/saved-list-row'
 import { CloseIcon, GripVerticalIcon } from '../../../../ui/icons'
@@ -96,14 +97,28 @@ export function PersonalWaypointListRow({
 export function PersonalWaypointSortableListRow({
   waypoint,
   index,
+  group,
   ...props
-}: PersonalWaypointListRowProps & { readonly index: number }) {
-  // The row carries its own category, so a drop on it reports the destination directly. dnd-kit
-  // resolves the innermost droppable, which is the row rather than the card around it, so without
-  // this the drag would know a row was under the pointer but not which category it belongs to.
+}: PersonalWaypointListRowProps & {
+  /** Position within this category, not within the whole collection. */
+  readonly index: number
+  /** The category these rows are grouped under; each category is its own sortable list. */
+  readonly group: string
+}) {
+  // A sortable is scoped to one list: `index` is its position within the group and `group` names
+  // that list. Passing the flat collection index instead described every category as a slice of one
+  // long list, so a row dropped into another category was simultaneously at two positions.
+  //
+  // The optimistic-sorting plugin is left out. It reorders by moving the live DOM element into the
+  // destination list as the pointer passes over it, and here the destination is a different `<ul>`
+  // owned by a different React element. React then also renders the row in its new category, and the
+  // moved node it no longer owns is what later makes removal fail and leaves a duplicate row behind.
+  // Rendering is already driven by our own state, so the row is left where React put it.
   const { ref, handleRef, isDragging } = useSortable({
     id: waypoint.id,
     index,
+    group,
+    plugins: [SortableKeyboardPlugin],
     data: { category: waypoint.category.trim() },
   })
 

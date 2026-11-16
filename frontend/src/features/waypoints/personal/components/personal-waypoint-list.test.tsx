@@ -636,4 +636,60 @@ describe('PersonalWaypointList cross-category movement', () => {
       expect(card.getAttribute('data-drop-target')).toBe('false')
     }
   })
+
+  it('keeps exactly one row per place when the same place changes category repeatedly', async () => {
+    // Moving a place between categories re-renders it under a different group. A duplicate or an
+    // orphaned node left in the list is what made the next drag throw "The node to be removed is not
+    // a child of this node", so the invariant is: one row per place, every one of them React-owned.
+    // The pointer gesture cannot be driven in jsdom, so this exercises the state it produces.
+    const moved = vi.fn()
+    const { rerender } = render(
+      <PersonalWaypointList
+        {...baseProps}
+        waypoints={[
+          createWaypoint(1, 'Water cooler', 'Misc'),
+          createWaypoint(2, 'Quiet bench', 'Work'),
+        ]}
+        editing
+        editingCategories={['Misc', 'Work']}
+        onMove={moved}
+      />,
+    )
+
+    const assertOneRowPerPlace = (): void => {
+      const rows = Array.from(document.querySelectorAll('.personal-waypoint-row'))
+      expect(rows.length).toBe(2)
+      // React owns every rendered row; an orphaned clone would carry no React fiber.
+      for (const row of rows) {
+        expect(Object.keys(row).some((key) => key.startsWith('__reactFiber$'))).toBe(true)
+      }
+      expect(screen.getAllByRole('button', { name: /^Open Water cooler/ }).length).toBe(1)
+    }
+
+    assertOneRowPerPlace()
+
+    // The same place, moved out and back — the sequence that used to leave a stray row behind.
+    for (const category of ['Work', 'Misc', 'Work']) {
+      rerender(
+        <PersonalWaypointList
+          {...baseProps}
+          waypoints={[
+            createWaypoint(1, 'Water cooler', category),
+            createWaypoint(2, 'Quiet bench', 'Work'),
+          ]}
+          editing
+          editingCategories={['Misc', 'Work']}
+          onMove={moved}
+        />,
+      )
+      assertOneRowPerPlace()
+    }
+
+    // The row now lives under its new category rather than being duplicated across both.
+    const groups = Array.from(document.querySelectorAll('.personal-waypoint-category-group'))
+    const work = groups.find((group) => group.textContent?.includes('Work'))
+    expect(work?.querySelectorAll('.personal-waypoint-row').length).toBe(2)
+    // A category the pending edits emptied stays on screen as a drop target.
+    expect(screen.getByRole('button', { name: /Misc/ })).toBeTruthy()
+  })
 })

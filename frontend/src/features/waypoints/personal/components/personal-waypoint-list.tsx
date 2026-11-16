@@ -81,8 +81,8 @@ interface PersonalWaypointListProps {
  * focus restore happen inside event handlers instead of during the parent's render.
  */
 function PersonalWaypointRowList({
+  category,
   categoryWaypoints,
-  waypoints,
   editMode,
   canReorder,
   keyboardReorder,
@@ -93,8 +93,8 @@ function PersonalWaypointRowList({
   onOpenDetails,
   registerHandleRef,
 }: {
+  readonly category: string
   readonly categoryWaypoints: readonly PersonalWaypoint[]
-  readonly waypoints: readonly PersonalWaypoint[]
   readonly editMode: boolean
   readonly canReorder: boolean
   readonly keyboardReorder: KeyboardReorderState | null
@@ -118,8 +118,7 @@ function PersonalWaypointRowList({
       data-editing={editMode ? 'true' : 'false'}
       aria-label="Saved places"
     >
-      {categoryWaypoints.map((waypoint) => {
-        const index = waypoints.findIndex(({ id }) => id === waypoint.id)
+      {categoryWaypoints.map((waypoint, index) => {
         const rowProps = {
           waypoint,
           editing: editMode,
@@ -137,7 +136,7 @@ function PersonalWaypointRowList({
         }
 
         return canReorder ? (
-          <PersonalWaypointSortableListRow key={waypoint.id} {...rowProps} />
+          <PersonalWaypointSortableListRow key={waypoint.id} group={category} {...rowProps} />
         ) : (
           <PersonalWaypointListRow key={waypoint.id} {...rowProps} />
         )
@@ -457,10 +456,10 @@ export function PersonalWaypointList({
     pendingFocusRef.current = { waypointId, action: 'remove' }
   }, [])
 
-  const renderRows = (categoryWaypoints: readonly PersonalWaypoint[]) => (
+  const renderRows = (category: string, categoryWaypoints: readonly PersonalWaypoint[]) => (
     <PersonalWaypointRowList
+      category={category}
       categoryWaypoints={categoryWaypoints}
-      waypoints={waypoints}
       editMode={editMode}
       canReorder={canReorder}
       keyboardReorder={keyboardReorder}
@@ -486,7 +485,7 @@ export function PersonalWaypointList({
       onToggle={() => setCategoryExpanded(category, !isCategoryExpanded(category))}
       onRename={onRenameCategory && editMode ? (next) => requestRenameCategory(category, next) : undefined}
     >
-      {renderRows(categoryWaypoints)}
+      {renderRows(category, categoryWaypoints)}
     </PersonalWaypointCategoryGroup>
   )
 

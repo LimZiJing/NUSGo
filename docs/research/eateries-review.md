@@ -9,9 +9,9 @@ Updated 16 November 2026. The [eateries data](../../frontend/public/data/eaterie
 - **Bueno Bueno** — NUS groups it with Waa Cow; OSM has a separate point for Waa Cow only.
 - **Wonderful Cafe (CDE)** — NUS lists the location, but no exact OSM point matched.
 - **Tomoro Coffee (NUS College)** — NUS lists the location, but no exact OSM point matched.
-- **Fine Food, Hwang's Korean Restaurant, Jollibee (UTown), and Makan Malah!** — share the UTown building point at (103.77398, 1.3039); exact venue locations need confirmation.
+- **Fine Food, Hwang's Korean Restaurant, Jollibee (UTown), Makan Malah!, and The Royals Bistro** — share the UTown building point at (103.77398, 1.3039); exact venue locations need confirmation.
 - **Flavours @ UTown, Bismillah Biryani, and Sapore** — share the UTown building point at (103.77252, 1.30462); exact venue locations need confirmation.
-- **South & East and Poonsti Cafe** — share the Prince George's Park building point at (103.7736, 1.29325); exact venue locations need confirmation.
+- **South & East and Poonsti Café** — share the Shaw Foundation Alumni House (SFAH) building point at (103.7736, 1.29325); exact venue locations need confirmation.
 
 ## Map matches not added
 

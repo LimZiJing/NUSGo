@@ -64,7 +64,8 @@ function getStops(source: ExploreSearchSources['stops']): readonly TransitStop[]
  * Find-a-venue search over bus stops, buildings, rooms and named eateries, returned as one ranked list.
  * Results rank by match quality first (exact, then prefix, then partial), then stops before
  * buildings before rooms and eateries, then by key. A venue that is itself a whole building appears once,
- * as that building. Venues without coordinates are still returned.
+ * as that building; a categorised venue also keeps its own eatery result. Venues without coordinates
+ * are still returned.
  */
 export function searchExplore(
   { venues, buildings, links, stops }: ExploreSearchSources,

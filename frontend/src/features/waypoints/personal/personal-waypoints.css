@@ -350,10 +350,15 @@
 }
 
 /* Expand all / Collapse all are secondary utilities, not competing calls to action. */
-.personal-waypoint-groups-actions {
-  display: flex;
-  justify-content: flex-end;
-  gap: var(--space-1);
+/* The expand/collapse-all toggle sits in the filter row, so it needs no row of its own. It is
+   narrower than a full control so it costs the search field as little width as possible. */
+.personal-waypoint-expand-all {
+  flex: 0 0 auto;
+  align-self: stretch;
+  width: var(--control-height-sm);
+  min-width: var(--control-height-sm);
+  padding: 0;
+  color: var(--text-secondary);
 }
 
 .personal-waypoint-fields {

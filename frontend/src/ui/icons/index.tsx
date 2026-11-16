@@ -10,6 +10,8 @@ import {
   Check,
   ChevronDown,
   ChevronRight,
+  ChevronsDownUp,
+  ChevronsUpDown,
   CloudOff,
   Compass,
   Coffee,
@@ -174,6 +176,16 @@ export function PaletteIcon(props: IconProps) {
 
 export function PlusIcon(props: IconProps) {
   return renderDecorativeIcon(Plus, props)
+}
+
+/** Collapse every group: the chevrons point inwards, the way the groups will. */
+export function CollapseAllIcon(props: IconProps) {
+  return renderDecorativeIcon(ChevronsDownUp, props)
+}
+
+/** Expand every group: the mirror of {@link CollapseAllIcon}. */
+export function ExpandAllIcon(props: IconProps) {
+  return renderDecorativeIcon(ChevronsUpDown, props)
 }
 
 export function RouteIcon(props: IconProps) {

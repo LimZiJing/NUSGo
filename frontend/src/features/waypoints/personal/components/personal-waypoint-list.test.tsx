@@ -116,12 +116,35 @@ beforeEach(() => {
 })
 
 describe('PersonalWaypointList', () => {
+  it('offers one expand-all toggle that flips instead of two buttons', async () => {
+    const user = userEvent.setup()
+    render(<PersonalWaypointList {...baseProps} />)
+
+    // Groups start collapsed, so the control offers to open them and says so.
+    const expand = screen.getByRole('button', { name: 'Expand all categories' })
+    // A pair of always-present buttons meant one was permanently inert; only one exists now.
+    expect(screen.queryByRole('button', { name: 'Collapse all categories' })).toBeNull()
+
+    await user.click(expand)
+    expect(screen.getByRole('button', { name: 'Collapse all categories' })).toBeTruthy()
+    expect(screen.queryByRole('button', { name: 'Expand all categories' })).toBeNull()
+
+    await user.click(screen.getByRole('button', { name: 'Collapse all categories' }))
+    expect(screen.getByRole('button', { name: 'Expand all categories' })).toBeTruthy()
+  })
+
+  it('hides the expand-all toggle when it could not change anything', () => {
+    // One group: there is no "all" to act on.
+    render(<PersonalWaypointList {...baseProps} waypoints={[createWaypoint(1, 'Solo', 'Work')]} />)
+    expect(screen.queryByRole('button', { name: /all categories/ })).toBeNull()
+  })
+
   it('opens a place details from its single row button', async () => {
     const user = userEvent.setup()
     const onOpenDetails = vi.fn()
     render(<PersonalWaypointList {...baseProps} onOpenDetails={onOpenDetails} />)
 
-    await user.click(screen.getByRole('button', { name: 'Expand all' }))
+    await user.click(screen.getByRole('button', { name: 'Expand all categories' }))
 
     const rowButton = screen.getByRole('button', { name: 'Open Quiet bench details' })
     await user.click(rowButton)
@@ -133,7 +156,7 @@ describe('PersonalWaypointList', () => {
     const user = userEvent.setup()
     render(<PersonalWaypointList {...baseProps} />)
 
-    await user.click(screen.getByRole('button', { name: 'Expand all' }))
+    await user.click(screen.getByRole('button', { name: 'Expand all categories' }))
 
     for (const { name } of waypoints) {
       const row = screen.getAllByRole('listitem')
@@ -156,8 +179,9 @@ describe('PersonalWaypointList', () => {
     render(<PersonalWaypointList {...baseProps} editing />)
 
     // Edit list renders groups from a different branch; a missing id there left aria-controls
-    // dangling, which assistive technology cannot follow.
-    const headings = screen.getAllByRole('button', { name: /^(Expand|Collapse) / })
+    // dangling, which assistive technology cannot follow. The expand-all toggle is also named
+    // "Expand…", so it is excluded: it controls no single region.
+    const headings = screen.getAllByRole('button', { name: /^(Expand|Collapse) (?!all categories)/ })
     expect(headings.length).toBeGreaterThan(0)
     for (const heading of headings) {
       const controls = heading.getAttribute('aria-controls')
@@ -362,7 +386,7 @@ describe('PersonalWaypointList', () => {
     const user = userEvent.setup()
     render(<PersonalWaypointList {...baseProps} />)
 
-    await user.click(screen.getByRole('button', { name: 'Expand all' }))
+    await user.click(screen.getByRole('button', { name: 'Expand all categories' }))
 
     expect(screen.queryByRole('button', { name: 'Edit Quiet bench' })).toBeNull()
     expect(screen.queryByRole('button', { name: 'Remove Quiet bench' })).toBeNull()
@@ -423,7 +447,7 @@ describe('PersonalWaypointList category renaming', () => {
     const user = userEvent.setup()
     render(<PersonalWaypointList {...renameProps} />)
 
-    await user.click(screen.getByRole('button', { name: 'Expand all' }))
+    await user.click(screen.getByRole('button', { name: 'Expand all categories' }))
 
     expect(screen.queryByRole('button', { name: /^Rename .* category$/ })).toBeNull()
     expect(screen.queryByRole('textbox', { name: /^Rename .* category$/ })).toBeNull()

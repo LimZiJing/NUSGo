@@ -4,8 +4,9 @@ import type { KeyboardEvent } from 'react'
 import { DragDropProvider, PointerSensor } from '@dnd-kit/react'
 import type { DragEndEvent, DragOverEvent } from '@dnd-kit/react'
 import type { PersonalWaypoint } from '../../../../domain/waypoints/personal/personal-waypoint'
-import { Button } from '../../../../ui/button'
+import { Button, IconButton } from '../../../../ui/button'
 import { ConfirmDialog } from '../../../../ui/confirm-dialog'
+import { CollapseAllIcon, ExpandAllIcon } from '../../../../ui/icons'
 import { SearchField } from '../../../../ui/search-field'
 import { categoryMergeConfirmation } from '../../../../domain/waypoints/personal/personal-waypoint-category-rename'
 import { filterPersonalWaypoints } from '../data/filter-personal-waypoints'
@@ -253,6 +254,16 @@ export function PersonalWaypointList({
     writeExpandedCategories([])
   }
 
+  // One control rather than a pair: with every group open, "Collapse all" is the only thing left to
+  // do, and with every group closed so is "Expand all". Two buttons meant one was always inert.
+  const everyGroupExpanded = groups.length + emptyEditingCategories.length > 0
+    && groups.every(({ category }) => isCategoryExpanded(category))
+    && emptyEditingCategories.every((category) => isCategoryExpanded(category))
+  const toggleAllGroups = (): void => {
+    if (everyGroupExpanded) collapseAll()
+    else expandAll()
+  }
+
   useEffect(() => {
     if (previousEditing.current === editing) return
     previousEditing.current = editing
@@ -496,16 +507,33 @@ export function PersonalWaypointList({
     : null
 
   const noGroupsAtAll = groups.length === 0 && emptyEditingCategories.length === 0
+  // With one group there is nothing to expand "all" of, and while searching the groups are already
+  // revealed, so the control would have no effect.
+  const showExpandAllToggle = !noGroupsAtAll && !hasSearchFilter
+    && groups.length + emptyEditingCategories.length > 1
 
   return <section className="personal-waypoint-list" aria-label="Saved places">
     <div className="personal-waypoint-list-controls">
       <SearchField
         aria-label="Search saved places"
-        placeholder="Search saved places"
+        // Short enough to fit beside the two filter controls at 360px instead of truncating
+        // mid-word; the accessible name still says what is searched.
+        placeholder="Filter places"
         inputRef={searchInputRef}
         value={searchQuery}
         onChange={(event) => changeSearchQuery(event.target.value)}
       />
+      {/* One icon beside the filters rather than a row of its own: opening or closing every group
+          is a view preference, not part of the list. Search reveals groups on its own, so the
+          control only appears when it would mean something. */}
+      {showExpandAllToggle && <IconButton
+        className="personal-waypoint-expand-all"
+        label={everyGroupExpanded ? 'Collapse all categories' : 'Expand all categories'}
+        icon={everyGroupExpanded ? <CollapseAllIcon size={16} /> : <ExpandAllIcon size={16} />}
+        variant="ghost"
+        size="sm"
+        onClick={toggleAllGroups}
+      />}
       {categoryPicker}
     </div>
 
@@ -524,16 +552,10 @@ export function PersonalWaypointList({
             {emptyEditingCategories.map((category) => renderGroup(category, []))}
           </DragDropProvider>
         ) : (
-          <>
-            {!hasSearchFilter && <div className="personal-waypoint-groups-actions">
-              <Button label="Expand all" variant="ghost" onClick={expandAll} />
-              <Button label="Collapse all" variant="ghost" onClick={collapseAll} />
-            </div>}
-            <div className="personal-waypoint-groups">
-              {groups.map(({ category, waypoints: grouped }) => renderGroup(category, grouped))}
-              {editMode && emptyEditingCategories.map((category) => renderGroup(category, []))}
-            </div>
-          </>
+          <div className="personal-waypoint-groups">
+            {groups.map(({ category, waypoints: grouped }) => renderGroup(category, grouped))}
+            {editMode && emptyEditingCategories.map((category) => renderGroup(category, []))}
+          </div>
         )}
       </>
     ) : (

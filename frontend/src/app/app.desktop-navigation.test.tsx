@@ -1498,8 +1498,9 @@ describe('More surface', () => {
     await user.click(screen.getByRole('button', { name: /^Save$/ }))
 
     // Groups start collapsed, so a freshly created place's group must be expanded before its list
-    // is reachable.
-    await user.click(screen.getByRole('button', { name: 'Expand all' }))
+    // is reachable. There is only one category here, so the expand-all toggle is correctly absent
+    // and the heading itself does the work.
+    await user.click(screen.getByRole('button', { name: 'Expand Food' }))
     const createdWaypointsList = screen.getByRole('list', { name: 'Saved places' })
     expect(createdWaypointsList.getAttribute('data-editing')).toBe('false')
 

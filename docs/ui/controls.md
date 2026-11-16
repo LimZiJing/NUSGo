@@ -119,12 +119,12 @@ Allowed: `.button`, `button.primary`, `.panel button.primary`, `button[type='sub
 
 ## Migration checklist
 
-The feature control migration is complete: Explore, Plan, Stops, More, Waypoints and Live buses use the shared Button family for their action controls. The global native-button defaults remain documented above; compact map, route and status controls keep their existing semantic wrappers.
+The feature control migration is complete: Explore, Plan, Stops, More, Waypoints and Live buses use the shared Button family for their action controls. The More, Location and Live buses map overlay buttons use the Astryx-backed `MapOverlayIconButton` adapter; other compact map, route and status controls keep their existing semantic wrappers. The global native-button defaults remain documented above.
 
 - [x] Stops (shared back navigation and feature action rows use the Button family)
 - [x] Explore (uses the shared `BackButton`, `NavigateButton`, `RouteChip` and `InfoPill` wrappers)
 - [x] Plan
-- [x] Map controls (the theme, locate and fit-routes buttons keep their Base UI Button and overlay styling; only a dead `.location-control-popover button` rule was removed)
+- [x] Map controls (More, Location and Live buses use the Astryx-backed `MapOverlayIconButton` adapter; other map controls keep their existing wrappers; a dead `.location-control-popover button` rule was removed)
 - [x] Sheet (the mobile tab bar items keep a bespoke pill style on the `navigation-tab` class, and the sheet handle keeps its own drag-handle styling and 24px row, because neither is a standard button; only the generic `.main-navigation button` selectors were replaced)
 - [x] Popovers (the endpoint locate button is a plain `IconButton`; search result rows keep their own classes because they are rich multi-line rows)
 - [x] Menus (the Plan trip-actions `Clear all` row is a `MenuItem` and its ellipsis trigger is a plain `IconButton`)

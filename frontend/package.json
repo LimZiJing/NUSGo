@@ -16,10 +16,12 @@
     "benchmark:pathfinding": "node scripts/benchmark-pathfinding.mjs"
   },
   "dependencies": {
+    "@astryxdesign/core": "0.7.16",
     "@base-ui/react": "^1.8.0",
     "@dnd-kit/helpers": "0.5.3",
     "@dnd-kit/react": "0.5.3",
     "@nusgo/shared": "0.0.0",
+    "@stylexjs/stylex": "0.19.0",
     "lucide-react": "^1.52.0",
     "maplibre-gl": "^6.8.0",
     "react": "^19.2.8",

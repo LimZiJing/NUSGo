@@ -38,7 +38,10 @@ describe('LocationControl', () => {
     const button = screen.getByRole('button', { name: 'Recenter map while finding your location' })
     expect(button.hasAttribute('disabled')).toBe(false)
     expect(button.getAttribute('title')).toBe('Recenter map while finding your location')
-    expect(screen.getByRole('status').textContent).toBe('Finding your location')
+    expect(button.getAttribute('data-size')).toBe('lg')
+    expect(button.getAttribute('data-variant')).toBe('secondary')
+    expect(document.querySelectorAll('.location-control > [role="status"]')).toHaveLength(1)
+    expect(document.querySelector('.location-control > [role="status"]')?.textContent).toBe('Finding your location')
     expect(button.querySelector('.location-control-spinner')).toBeTruthy()
   })
 

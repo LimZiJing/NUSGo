@@ -334,13 +334,12 @@ describe('control token contrast', () => {
     }
   })
 
-  it('keeps selected map overlay controls above their base icon-button styles', () => {
+  it('keeps selected Astryx map overlay controls on NUSGo theme tokens', () => {
     const styles = readStyleFile('map.css')
 
-    expect(styles).toContain(".button.icon-button.map-overlay-button[aria-pressed='true']")
-    expect(styles).toContain(".button.icon-button.map-overlay-button[aria-expanded='true']")
+    expect(styles).toContain(".map-overlay-button[aria-pressed='true']")
+    expect(styles).toContain(".map-overlay-button[aria-expanded='true']")
     expect(styles).toContain('background: var(--accent-selected)')
-    expect(styles).not.toMatch(/\.button\.icon-button\.map-overlay-button:active:not\(:disabled\)\s*{[^}]*transform:\s*none;/s)
   })
 
   it('keeps plain and nested SVGs on their feature-owned colors', () => {

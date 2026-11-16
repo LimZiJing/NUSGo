@@ -27,7 +27,8 @@ describe('MorePanelSurface navigation', () => {
 
     const backButton = screen.getByRole('button', { name: 'Back to previous view' })
     expect(backButton.classList.contains('icon-button')).toBe(true)
-    expect(backButton.getAttribute('data-variant')).toBe('plain')
+    expect(backButton.getAttribute('data-variant')).toBe('secondary')
+    expect(backButton.textContent).toBe('')
     expect(screen.queryByRole('button', { name: 'Close More' })).toBeNull()
     await user.click(backButton)
     expect(onClose).toHaveBeenCalledOnce()

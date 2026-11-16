@@ -2,6 +2,30 @@
 
 This is a dated record of past browser passes, not a standing checklist. The reusable checklist is [manual-smoke-check.md](manual-smoke-check.md).
 
+## Landscape side-panel follow-up — 2026-11-11 (#551)
+
+Application HEAD `fc0f00b34241a9371e98cb26c26e42e81979bdc9`; Codex In-app Browser, Chromium-based with exact version unavailable; local rehearsal at `http://localhost:4173/`.
+
+- At 812 × 375, 740 × 360, and 641 × 360, the desktop-style left column held the workflow tabs along its lower edge and the map stayed visible to the right. At 641 × 360, the column narrowed to about 321px, leaving about 320px for the map.
+- At 740 × 360, the Stops list scrolled to its final rows while Nearby/Favourites stayed pinned at the top of the panel. The map's Zoom in control visibly changed map scale. Tab moved focus from Explore to Stops, and Enter activated Stops.
+- At 640 × 360, the mobile sheet and bottom tabs appeared. At 740 × 420 the side panel appeared; at 740 × 421 the mobile sheet appeared; at 812 × 421 the side panel appeared.
+- Selected COM1 and LT 13 in Plan at 812 × 375, then resized to 375 × 812 and back without reloading. Both endpoints and the active Plan tab remained selected.
+- The first browser load showed a pending “Update NUSGo” notice and served the older cached app bundle. After applying that local update, the same endpoint-and-rotation check passed with the current bundle.
+- The browser kept a fine pointer; coarse-pointer emulation and physical-device gestures were unavailable. The backend was unavailable, so live arrivals and a Journey request were not verified. Safe-area behavior, 130% text zoom, and the broader keyboard checklist remain open.
+- `CONTEXT.md` reviewed; no update needed.
+
+## Initial mobile landscape support — 2026-11-11 (#551)
+
+This pass records the initial pointer-dependent layout at `c5749dc9`; its layout results were superseded by the side-panel follow-up above.
+
+Application revision `c5749dc9`; local production rehearsal at `http://127.0.0.1:4173/`; Codex In-app Browser, Chromium-based with exact version unavailable. Browser viewport override was used; its primary pointer remained fine. The managed backend could not start because Docker Desktop's Linux engine was unavailable.
+
+- At 740 × 360, the width-based mobile query matched. The bottom tabs and map controls were visible, the partial sheet left 108px of map exposed, and the expanded Stops list scrolled (`scrollTop` 0 → 1080; 1,633px content). Explore A1's route timeline scrolled to 676.8px of its 679.2px range.
+- In Plan, selected COM1 and LT 13. Both endpoints and the active Plan tab remained after resizing from 740 × 360 to 375 × 812 without reloading.
+- At 812 × 375 with a fine pointer, the mobile query did not match and the desktop column rendered. This browser session could not emulate a coarse pointer, so the new 812 × 375 mobile branch was not browser-tested. The 900 × 420 boundary was also not browser-tested.
+- The backend was unavailable, so live arrivals and a Journey request were not verified. Physical safe-area behavior, real touch input, keyboard navigation and 130% text zoom were not checked; the latter cases remain in the manual checklist.
+- `CONTEXT.md` reviewed; no update needed.
+
 ## Animation performance baseline — 2026-11-02 (#558)
 
 Application revision `29d9a884`; local production rehearsal and a separate diagnostic React profiling build, headless Edge 156 on Windows build 26100. Core runs used fresh browser profiles at 1440 × 900 and 390 × 844, DPR 1, with controlled API/location fixtures, one synthetic 1000-coordinate walking Path and an empty basemap. Three repetitions covered idle, tab changes, venue typing, zoom and refresh/cache/location overlap; mobile also covered sheet detents. Reproduction, measurements, constraints and follow-up coverage are in [the performance baseline](performance-baseline.md).

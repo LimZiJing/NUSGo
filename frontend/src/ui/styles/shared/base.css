@@ -64,6 +64,13 @@ p {
   min-height: 100svh;
 }
 
+/* Keep the desktop panel and its workflow tabs inside the visible browser viewport. */
+@supports (height: 100dvh) {
+  .map-shell {
+    height: 100dvh;
+  }
+}
+
 .map-stage {
   position: absolute;
   inset: 0;

@@ -118,7 +118,7 @@ export function useAppNavigation({
   const returnToExploreRef = useRef<{ readonly focusTarget: HTMLElement | null } | null>(null)
   // Render-visible mirror of returnToExploreRef; set and cleared at the same points.
   const [stopReturn, setStopReturn] = useState<{ readonly mode: ExploreMode } | null>(null)
-  // Read through a ref so the stop callbacks stay stable; App rebuilds the navigation session when they change.
+  // Read through a ref so the navigation session can keep stable map callbacks across viewport changes.
   const exploreModeRef = useRef(exploreState.mode)
 
   const activeView = state.activeView

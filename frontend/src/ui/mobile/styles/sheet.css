@@ -2,7 +2,7 @@
   display: none;
 }
 
-@media (max-width: 768px) {
+@media (width <= 640px), (width <= 768px) and (height > 420px) {
   .navigation-panel {
     position: absolute;
     z-index: 10;

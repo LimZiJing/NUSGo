@@ -208,6 +208,7 @@ export function useMapOverlayLayout({
         commands.setPresentationBottomInset(presentationBottomInset)
       }
       const nextInsets = applyMapOverlayMeasurements(commands, {
+        isMobileLayout: isMobileViewport,
         viewportWidth,
         viewportHeight,
         tripCardHeight: 0,

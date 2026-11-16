@@ -47,6 +47,7 @@ export function MapOverlayIconButton({
       aria-controls={controls}
       aria-pressed={pressed}
       aria-busy={busy === undefined ? undefined : busy ? true : 'false'}
+      data-hover-treatment="custom"
       onClick={onClick}
       ref={ref}
     />

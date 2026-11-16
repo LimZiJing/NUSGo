@@ -21,6 +21,7 @@ describe('LiveBusToggle', () => {
     expect(toggle.getAttribute('title')).toBe(enabled ? 'Hide live buses' : 'Show live buses')
     expect(toggle.getAttribute('data-size')).toBe('lg')
     expect(toggle.getAttribute('data-variant')).toBe('secondary')
+    expect(toggle.getAttribute('data-hover-treatment')).toBe('custom')
     await user.click(toggle)
     expect(onToggle).toHaveBeenCalledWith(nextEnabled)
   })

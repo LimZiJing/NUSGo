@@ -1,5 +1,5 @@
 import type { BuildingCatalogue } from './buildings.ts'
-import type { VenueLocation, VenueLocationMap } from './types.ts'
+import { EATERY_CATEGORIES, type EateryCategory, type EateryLocationMap, type VenueLocation, type VenueLocationMap } from './types.ts'
 
 export class VenueValidationError extends Error {
   readonly issues: readonly string[]
@@ -34,6 +34,12 @@ function validateVenue(
 
   if (typeof value.roomName !== 'string' || value.roomName.trim().length === 0) {
     issues.push(`Venue ${code} roomName must be a non-empty string`)
+  }
+  if (value.displayName !== undefined && !isNonEmptyString(value.displayName)) {
+    issues.push(`Venue ${code} displayName must be a non-empty string when provided`)
+  }
+  if (value.category !== undefined && !isEateryCategory(value.category)) {
+    issues.push(`Venue ${code} has invalid eatery category: ${String(value.category)}`)
   }
   if (!isValidFloor(value.floor)) {
     issues.push(`Venue ${code} floor must be an integer or null when provided`)
@@ -90,6 +96,71 @@ export function validateVenueLocationMap(input: unknown): VenueLocationMap {
     })]
   }))
   return Object.freeze(validatedVenues) as VenueLocationMap
+}
+
+function isEateryCategory(value: unknown): value is EateryCategory {
+  return typeof value === 'string' && EATERY_CATEGORIES.some((category) => category === value)
+}
+
+function validateEateryLocation(label: string, value: unknown, issues: string[]): boolean {
+  if (!isRecord(value)) {
+    issues.push(`Eatery ${label} must be an object`)
+    return false
+  }
+  if (!isNonEmptyString(value.name)) issues.push(`Eatery ${label} name must be a non-empty string`)
+  if (!isEateryCategory(value.category)) {
+    issues.push(`Eatery ${label} has invalid category: ${String(value.category)}`)
+  }
+  if (!isRecord(value.location)) {
+    issues.push(`Eatery ${label} location must be an object`)
+    return false
+  }
+  validateBuildingLocation(`Eatery ${label}`, value.location, issues)
+  return true
+}
+
+export function validateEateryLocationMap(input: unknown): EateryLocationMap {
+  const issues: string[] = []
+  if (!isRecord(input)) throw new VenueValidationError(['Eatery data must be an object'])
+
+  for (const [id, value] of Object.entries(input)) {
+    if (id.trim().length === 0) {
+      issues.push('Eatery ID must be a non-empty string')
+      continue
+    }
+    validateEateryLocation(id, value, issues)
+  }
+
+  if (issues.length > 0) throw new VenueValidationError(issues)
+  const validated = Object.fromEntries(Object.entries(input).map(([id, value]) => {
+    const eatery = value as EateryLocationMap[string]
+    return [id, Object.freeze({
+      name: eatery.name,
+      category: eatery.category,
+      location: Object.freeze({ ...eatery.location }),
+    })]
+  }))
+  return Object.freeze(validated) as EateryLocationMap
+}
+
+export function mergeVenueAndEateryMaps(
+  venues: VenueLocationMap,
+  eateries: EateryLocationMap,
+): VenueLocationMap {
+  const merged: Record<string, VenueLocation> = { ...venues }
+  for (const [eateryId, eatery] of Object.entries(eateries)) {
+    // Stable IDs are the only safe way to reuse a venue: names can refer to separate places.
+    const existing = venues[eateryId]
+    merged[eateryId] = Object.freeze({
+      ...(existing ?? { roomName: eatery.name }),
+      displayName: eatery.name,
+      category: eatery.category,
+      floor: undefined,
+      location: Object.freeze({ ...eatery.location }),
+    })
+  }
+
+  return Object.freeze(merged)
 }
 
 function isNonEmptyString(value: unknown): value is string {

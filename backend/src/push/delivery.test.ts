@@ -309,6 +309,47 @@ describe('service update publisher', () => {
     assert.equal(store.size, 1)
   })
 
+  it('retries a delay alert the push service refused instead of suppressing it for the repeat window', async () => {
+    const store = createPushSubscriptionStore()
+    subscribe(store, 'a')
+    const cap = createNotificationCap({ maxPerHour: 4 })
+    let nowMs = Date.parse('2026-11-06T10:00:00Z')
+    const sent: string[] = []
+    let failNext = true
+    const publisher = createServiceUpdatePublisher({
+      store,
+      cap,
+      stopName: () => 'COM3 Opp',
+      sendNotification: async (_subscription, payload) => {
+        sent.push((JSON.parse(payload) as { title: string }).title)
+        if (failNext) throw Object.assign(new Error('temporarily unavailable'), { statusCode: 503 })
+        return { statusCode: 201 }
+      },
+      now: () => nowMs,
+    })
+
+    await publisher.publish(previousSnapshot())
+    // The push service rejects the first attempt.
+    nowMs += 30_000
+    assert.equal((await publisher.publish(delayedSnapshot())).notificationsSent, 0)
+    assert.equal(sent.length, 1)
+
+    // Well inside the thirty-minute repeat window, the provider stops reporting the stop, so the
+    // delay is no longer derivable. The refusal must not have spent the window: the alert is still
+    // queued and the next accepted send delivers it.
+    failNext = false
+    nowMs += 60_000
+    const retry = await publisher.publish(snapshot('2026-11-06T10:01:30Z', {}))
+
+    assert.equal(retry.notificationsSent, 1)
+    assert.deepEqual(sent, ['Bus D1 delayed', 'Bus D1 delayed'])
+
+    // Now that a delivery was accepted, the same stop and route stay quiet for the repeat window.
+    nowMs += 60_000
+    assert.equal((await publisher.publish(snapshot('2026-11-06T10:02:30Z', { COM3: { D1: 900 } }))).notificationsSent, 0)
+    assert.deepEqual(sent, ['Bus D1 delayed', 'Bus D1 delayed'])
+  })
+
   it('reports only real deliveries when some subscriptions are over the cap', async () => {
     const store = createPushSubscriptionStore()
     subscribe(store, 'a')

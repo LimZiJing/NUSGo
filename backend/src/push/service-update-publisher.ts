@@ -8,6 +8,7 @@ import { createServiceUpdateDetector } from './service-updates.ts'
 import type { PushSubscriptionStore } from './subscription-store.ts'
 
 export interface PublishResult {
+  /** Updates still awaiting an accepted delivery after this cycle, including this one's detections. */
   readonly updates: readonly ServiceUpdate[]
   readonly notificationsSent: number
   readonly prunedEndpoints: readonly string[]
@@ -45,9 +46,9 @@ function mostSignificantPayload(
   payloads: readonly PushNotificationPayload[],
   updateIndexByPayloadIndex: readonly number[],
   updates: readonly ServiceUpdate[],
-): PushNotificationPayload | null {
+): { readonly payload: PushNotificationPayload; readonly update: ServiceUpdate } | null {
   if (payloads.length === 0 || updateIndexByPayloadIndex.length !== payloads.length) return null
-  let bestPayloadIndex = -1
+  let bestIndex = -1
   let bestDelay = -1
   payloads.forEach((_payload, payloadIndex) => {
     const update = updates[updateIndexByPayloadIndex[payloadIndex] ?? -1]
@@ -55,10 +56,13 @@ function mostSignificantPayload(
     const delay = update.kind === 'delay' ? update.delaySeconds : 0
     if (delay > bestDelay) {
       bestDelay = delay
-      bestPayloadIndex = payloadIndex
+      bestIndex = payloadIndex
     }
   })
-  return bestPayloadIndex === -1 ? null : payloads[bestPayloadIndex] ?? null
+  if (bestIndex === -1) return null
+  const payload = payloads[bestIndex]
+  const update = updates[updateIndexByPayloadIndex[bestIndex] ?? -1]
+  return payload && update ? { payload, update } : null
 }
 
 /**
@@ -80,21 +84,25 @@ export function createServiceUpdatePublisher(
     previousSnapshot = snapshot
     if (!previous) return { updates: [], notificationsSent: 0, prunedEndpoints: [] }
 
-    const updates = detectUpdates(previous, snapshot)
+    const updates = detectUpdates.observe(previous, snapshot)
     const notifications = createServiceUpdateNotifications(updates, { stopName: options.stopName })
-    const payload = mostSignificantPayload(
+    const chosen = mostSignificantPayload(
       notifications.payloads,
       notifications.updateIndexByPayloadIndex,
       updates,
     )
     const subscriptions = options.store.list('service-updates')
-    if (!payload || subscriptions.length === 0) {
+    if (!chosen || subscriptions.length === 0) {
       return { updates, notificationsSent: 0, prunedEndpoints: [] }
     }
 
+    const { payload, update } = chosen
     const summary = await deliverPushNotifications(options.store, options.sendNotification, subscriptions, {
       cap,
       payloadFor: () => payload,
+      // The cooldown starts only once the push service accepted this alert, so a failed or refused
+      // delivery leaves it queued and retried on a later cycle.
+      onDelivered: () => detectUpdates.accept(update),
     })
 
     return {

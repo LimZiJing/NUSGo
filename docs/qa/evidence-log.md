@@ -8,6 +8,20 @@ Application revision `29d9a884`; local production rehearsal and a separate diagn
 
 The shared preview delivered no animation frames despite reporting a visible document, so timing used a local Edge fallback. Longer-run and reused-browser samples sometimes became frame constrained and are excluded from smoothness conclusions. These runs do not verify physical mobile performance, real vector-tile GPU cost, software keyboards, native input latency, warm startup or leak freedom. Production application behaviour was not changed.
 
+## Explore default Bus routes (#647) — 2026-11-17
+
+Application revision `ff1e3fe6`; the built local-rehearsal bundle served as static files on loopback, driven through the shared preview browser (Chromium, Windows build 26100) at an actual 390 × 844 and 1280 × 800. Express was not running, so arrivals, service hours and public-bus requests failed with `net::ERR_CONNECTION_REFUSED`; that is expected here and does not affect Explore rendering, which uses the static shuttle network.
+
+- At both sizes the segmented control showed **Bus routes** left of **Find venue**, and Explore opened on Bus routes with A1's 13 ordered stops. Before this change the same first entry showed the venue search field.
+- On desktop, entering Explore and clicking route D2 selected it and rendered its stop timeline. This exercised the new rule that entering Explore starts the route session on every viewport, because nothing else starts one on desktop.
+- With Find venue selected, switching to Stops and back to Explore kept Find venue selected and focus on its segment, rather than reverting to Bus routes.
+- Resizing from 390 × 844 to 1280 × 800 kept the chosen view; the panel moved from the mobile sheet to the persistent desktop column.
+- With routes available but none chosen, the panel read "Choose a bus route to see its stops" on desktop instead of claiming route data was unavailable.
+
+The basemap rendered from OpenFreeMap tiles. Map sprite and font fallbacks logged the usual missing-image warnings. No application error was raised by these interactions. This pass covers the Explore panel, route chips and tab/breakpoint persistence; it does not verify live arrivals, device geolocation or assistive-technology output.
+
+`CONTEXT.md` reviewed; the Explore vocabulary already describes Find venue and Bus routes as segmented Explore choices, so no update was needed.
+
 ## Waypoint details Directions (#581, PR #598) — 2026-11-05
 
 Headless Microsoft Edge 156.0.4314.58, driven by Playwright against the local Vite development server at `http://127.0.0.1:4598/`, checked at 1280 × 800 and 390 × 844 after merging `origin/main` (`debcc6c2`) into the PR branch. Repeated all checks successfully after integrating dependency head `806387d3`:

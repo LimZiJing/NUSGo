@@ -60,4 +60,22 @@ describe('Chip', () => {
     expect(chip.getAttribute('data-size')).toBe('lg')
     expect(chip.hasAttribute('style')).toBe(false)
   })
+
+  it('keeps a leading icon out of the accessible name', () => {
+    render(
+      <Chip label="Drinks" leading={<svg data-testid="glyph" />} pressed={false} onClick={vi.fn()} />,
+    )
+
+    /* The label alone names the chip: an icon cannot change what it is called, and a
+       screen reader never has to describe it. */
+    const chip = screen.getByRole('button', { name: 'Drinks' })
+    expect(chip.querySelector('.chip-leading')?.getAttribute('aria-hidden')).toBe('true')
+    expect(screen.getByTestId('glyph').closest('.chip-leading')).not.toBeNull()
+  })
+
+  it('renders no leading wrapper when no icon is given', () => {
+    render(<Chip label="Pending" onClick={vi.fn()} />)
+
+    expect(screen.getByRole('button', { name: 'Pending' }).querySelector('.chip-leading')).toBeNull()
+  })
 })

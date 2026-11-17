@@ -45,6 +45,7 @@ function createFakeMap() {
 
 afterEach(() => {
   delete document.documentElement.dataset.theme
+  document.documentElement.removeAttribute('style')
 })
 
 describe('toDarkColor', () => {
@@ -147,6 +148,7 @@ describe('applyBasemapTheme', () => {
 describe('watchBasemapTheme', () => {
   it('applies the document theme once the style loads and follows later changes', async () => {
     const map = createFakeMap()
+    document.documentElement.style.setProperty('--map-basemap-tone', 'dark')
     document.documentElement.dataset.theme = 'dark'
 
     const stop = watchBasemapTheme(map as unknown as Map)
@@ -156,6 +158,7 @@ describe('watchBasemapTheme', () => {
     expect(map.setPaintProperty).toHaveBeenCalled()
 
     map.setPaintProperty.mockClear()
+    document.documentElement.style.setProperty('--map-basemap-tone', 'light')
     document.documentElement.dataset.theme = 'light'
     await Promise.resolve()
     expect(map.setPaintProperty).toHaveBeenCalledWith(

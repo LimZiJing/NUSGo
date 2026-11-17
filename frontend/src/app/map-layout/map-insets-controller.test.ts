@@ -7,6 +7,7 @@ describe('map overlay measurement seam', () => {
     const insets = applyMapOverlayMeasurements(
       { setViewportInsets },
       {
+        isMobileLayout: true,
         viewportWidth: 390,
         viewportHeight: 844,
         tripCardHeight: 92,
@@ -26,6 +27,7 @@ describe('map overlay measurement seam', () => {
     applyMapOverlayMeasurements(
       { setViewportInsets },
       {
+        isMobileLayout: false,
         viewportWidth: 769,
         viewportHeight: 900,
         tripCardHeight: 320,

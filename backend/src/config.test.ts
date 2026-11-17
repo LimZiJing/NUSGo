@@ -303,3 +303,14 @@ describe('backend live-data settings', () => {
     }
   })
 })
+describe('Community Waypoint submission configuration', () => {
+  it('keeps the private GitHub credential optional and backend-only', () => {
+    assert.equal(loadBackendConfig({}, 'C:/nusgo/backend').communityWaypointGithubToken, null)
+    assert.equal(
+      loadBackendConfig({
+        COMMUNITY_WAYPOINT_GITHUB_TOKEN: '  server-only-token  ',
+      }, 'C:/nusgo/backend').communityWaypointGithubToken,
+      'server-only-token',
+    )
+  })
+})

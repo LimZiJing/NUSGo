@@ -1,4 +1,6 @@
 import type { Building, BuildingCatalogueSource } from '@nusgo/shared/venue/buildings'
+import type { WaypointCoordinate } from '@nusgo/shared/waypoints/waypoint'
+import { getDistanceMeters } from '../location/coordinates'
 import { compareText, getMatchPriority, normalizeSearchText } from '../text-match'
 
 /**
@@ -137,6 +139,37 @@ export function buildBuildingIndex(
 /** The location a building endpoint resolves to: a whole entry, or one building of a group. */
 export function resolveBuildingLocation(index: BuildingIndex, id: string): Building['location'] | undefined {
   return index.byId.get(id)?.location ?? index.byPartId.get(id)?.part.location
+}
+
+/** Finds one building by its exact name, alias, or part name. Ambiguous names do not resolve. */
+export function findExactBuilding(index: BuildingIndex | null, value: string): BuildingEntry | null {
+  const normalizedValue = value.trim().toLocaleLowerCase()
+  if (!index || !normalizedValue) return null
+
+  const matches = index.entries.filter((entry) => [
+    entry.name,
+    ...entry.aliases,
+    ...entry.parts.map((part) => part.name),
+  ].some((name) => name.trim().toLocaleLowerCase() === normalizedValue))
+  return matches.length === 1 ? matches[0] ?? null : null
+}
+
+/** Returns the nearest indexed building, keeping catalogue order when distances tie. */
+export function findNearestBuilding(
+  index: BuildingIndex | null,
+  coordinate: WaypointCoordinate,
+): BuildingEntry | null {
+  if (!index) return null
+
+  let nearest: { readonly entry: BuildingEntry; readonly distance: number } | null = null
+  for (const entry of index.entries) {
+    const distance = getDistanceMeters(coordinate, {
+      longitude: entry.location.x,
+      latitude: entry.location.y,
+    })
+    if (nearest === null || distance < nearest.distance) nearest = { entry, distance }
+  }
+  return nearest?.entry ?? null
 }
 
 /** Secondary line for a result: the building count and block range for a group, else the address (after any block range). */

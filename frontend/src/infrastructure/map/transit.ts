@@ -7,7 +7,7 @@ import type {
 import type { MapViewportInsets } from '../../app/contracts/map'
 import { getOverlayPalette } from './overlay-theme'
 import type { TransitIndex } from '../../domain/transit'
-import { isMobileLayoutWidth } from '../../domain/layout-breakpoint'
+import { isMobileLayout } from '../../domain/layout-breakpoint'
 import type {
   TransitGeoJsonPosition,
   BusRouteGeometry,
@@ -143,6 +143,7 @@ export function getTransitRouteBounds(
 
 export function getTransitRouteFitPadding(
   viewportWidth: number,
+  viewportHeight: number,
   viewportInsets?: MapViewportInsets,
 ): PaddingOptions {
   if (viewportInsets && Object.values(viewportInsets).some((value) => value > 0)) {
@@ -154,7 +155,7 @@ export function getTransitRouteFitPadding(
     }
   }
 
-  if (isMobileLayoutWidth(viewportWidth)) {
+  if (isMobileLayout(viewportWidth, viewportHeight)) {
     return { top: 280, right: 24, bottom: 64, left: 24 }
   }
 
@@ -335,7 +336,11 @@ function fitTransitRoute(
   map.fitBounds(bounds, {
     duration: 500,
     maxZoom: 16,
-    padding: getTransitRouteFitPadding(map.getContainer().clientWidth, viewportInsets),
+    padding: getTransitRouteFitPadding(
+      map.getContainer().clientWidth,
+      map.getContainer().clientHeight,
+      viewportInsets,
+    ),
   })
 }
 

@@ -1,4 +1,4 @@
-import type { CSSProperties, Ref } from 'react'
+import type { CSSProperties, ReactNode, Ref } from 'react'
 import type { ControlSize } from './button'
 import { joinClassNames } from './class-names'
 
@@ -11,6 +11,12 @@ type ChipDataAttributes = Readonly<Record<`data-${string}`, string | undefined>>
 
 interface ChipProps {
   readonly label: string
+  /**
+   * Decorative content before the label, such as an icon. Hidden from assistive
+   * technology: the label stays the accessible name, so an icon never has to be
+   * described and an unreviewed one cannot change what the chip is called.
+   */
+  readonly leading?: ReactNode
   readonly onClick: () => void
   readonly size?: ControlSize
   /** Toggle state, announced through aria-pressed. Leave undefined for a chip that is not a toggle. */
@@ -31,6 +37,7 @@ interface ChipProps {
 
 export function Chip({
   label,
+  leading,
   onClick,
   size = 'sm',
   pressed,
@@ -59,6 +66,7 @@ export function Chip({
       title={title}
       onClick={onClick}
     >
+      {leading && <span className="chip-leading" aria-hidden="true">{leading}</span>}
       {label}
     </button>
   )

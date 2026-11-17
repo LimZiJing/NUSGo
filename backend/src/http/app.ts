@@ -8,6 +8,11 @@ import { registerJourneyRoutes } from './routes/journeys.ts'
 import { registerPushRoutes } from './routes/push.ts'
 import type { PushSubscriptionStore } from '../push/subscription-store.ts'
 import type { NotificationCap } from '../push/notification-cap.ts'
+import {
+  createPrivateSubmissionIssueWriter,
+  registerCommunityWaypointSubmissionRoute,
+  type PrivateSubmissionIssueWriter,
+} from './routes/community-waypoint-submissions.ts'
 import type { PathfindingService } from '../pathfinding/service.ts'
 import { createApiErrorHandler, sendApiError } from './error-response.ts'
 import { createCorsMiddleware } from './cors.ts'
@@ -29,6 +34,7 @@ type AppConfig = Pick<
   readonly environment?: BackendConfig['environment']
   /** Absent when a caller does not register push routes. */
   readonly push?: BackendConfig['push']
+  readonly communityWaypointGithubToken?: string | null
 }
 
 /** Push collaborators wired by the process; omitted in tests that do not exercise push routes. */
@@ -42,6 +48,9 @@ export function createApp(
   data: BackendData | null,
   liveData: BackendLiveData | null = null,
   planner: PathfindingService | null = null,
+  submissionIssueWriter: PrivateSubmissionIssueWriter | null = createPrivateSubmissionIssueWriter(
+    config.communityWaypointGithubToken ?? null,
+  ),
   pushDependencies: AppPushDependencies | null = null,
 ): Express {
   const app = express()
@@ -77,6 +86,7 @@ export function createApp(
     planner,
     config,
   )
+  registerCommunityWaypointSubmissionRoute(app, submissionIssueWriter)
   if (pushDependencies) {
     registerPushRoutes(app, {
       push: config.push ?? null,

@@ -1,6 +1,6 @@
 :root[data-theme='sakura'] {
-  --surface: #e9d4db;
-  --surface-raised: #f4e7eb;
+  --surface: #f4e7eb;
+  --surface-raised: #e9d4db;
   --surface-muted: #dfc3cc;
   --surface-subtle: #d8b7c2;
   --surface-inverse: #4a2633;

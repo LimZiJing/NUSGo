@@ -16,6 +16,11 @@ Run it against a local production build (`npm run build` followed by `npm run pr
 - [ ] The map, trip endpoint controls, and Explore panel are visible without overlap.
 - [ ] Venue search, venue detail, Back, Close, Escape, and map-click behavior work.
 - [ ] Selecting a venue flies to it and shows one selected venue marker without a duplicate popup.
+- [ ] In Explore → Community, confirm each category row shows its count and visibility switch. All categories start hidden; each switch changes map visibility and is persisted immediately, with no Save action. Confirm one Suggest a waypoint button sits below the list, that the list scrolls without pushing that button out of view, and that no visible Community Waypoints or Categories heading appears. Category rows remain available with no approved data, while individual points appear only as map markers. Selecting a marker opens matching details with a last-reviewed date and no Source row; Back restores focus to the marker. Community Waypoints remain unavailable as Journey endpoints.
+- [ ] From approved-place details, open Suggest a correction. Confirm the place is identified and prefilled, the reason is required, and Back/Done returns to details with focus on Suggest a correction.
+- [ ] From More → Suggest a waypoint, allow location and confirm the form starts from the current device fix with “Using current location” shown. Choose a category by keyboard and touch, enter an optional private reviewer note, and verify the public name is not requested. Confirm Building and floor are optional, the building field is prefilled with the nearest building and supports catalogue search, and floor options scroll horizontally when needed. With no exact building match, confirm the picker offers B1, G, 1–5, and Other; with a matched building, confirm it offers observed room floors plus Other. Selecting Other reveals a labeled integer field that accepts uncommon floors such as −3 and 12. For Printing / photocopying, open More details and check Services (Print, Photocopy), Colour (Yes, No), and side-by-side Grayscale/Colour Price per page fields with S$ units. For Vending machine, check Items (Drinks, Snacks, Meals, Supplies, Desserts) and Prep (Made live, Pre-packaged, Microwaved). Check the disclosure, field spacing, price inputs, keyboard use, and mobile layout. Deny location in a separate run and confirm the form requires map placement before sending. Submit a valid suggestion and confirm the receipt says it will be reviewed before publication and contains no private issue link. Confirm missing category, overlong note, invalid price, non-integer floor and out-of-bounds coordinates are rejected before a request.
+- [ ] Stub the submission endpoint with validation, rate-limit, unavailable, and network failures. Confirm each gives a safe retry message and never displays server or private-repository details. Confirm the request contains no reporter identity, email, photo, or private issue metadata.
+- [ ] In either form, adjust location on the map, drag or move the map-centre pin, and return with the coordinate and other form entries preserved. Repeat More entry and form navigation using keyboard only and at mobile width.
 - [ ] For a selected basement, ground-floor, and first-floor venue, venue details show “Basement 1”, “Ground floor”, and “Floor 1” respectively.
 - [ ] bus route browsing, route selection, route clearing, stop popups, and camera fitting work.
 - [ ] Trip endpoints can be set, swapped, and cleared for venues and bus stops.
@@ -29,32 +34,39 @@ Run it against a local production build (`npm run build` followed by `npm run pr
 
 ## Mobile — 390 × 844
 
-- [ ] Explore, Stops, Plan, and More open at the shared partial detent, with the sheet occupying 50% of the visual viewport above the bottom navigation. Verify More at 360 × 740, 375 × 812, and 414 × 896; its content remains usable and scrollable, the map and bottom navigation remain usable, and Settings and My waypoints open full-height. Desktop presentation is unchanged above 768px.
+- [ ] Explore, Stops, Plan, and More open at the shared partial detent, with the sheet occupying 50% of the visual viewport above the bottom navigation. Verify More at 360 × 740, 375 × 812, and 414 × 896; its content remains usable and scrollable, the map and bottom navigation remain usable, and Settings and My waypoints open full-height. Desktop presentation applies above 768px and when width exceeds 640px while height is 420px or less, regardless of pointer type.
 - [ ] Explore, Stops, and Plan tabs remain visible while the sheet is partial or collapsed. Full reaches the top and bottom of the viewport and covers the tab bar; collapsed leaves the 44px handle above it.
 - [ ] Switching tabs reaches each sheet's remembered detent immediately, without briefly opening full, and preserves the map camera and trip endpoints.
 - [ ] The handle works by tap, Enter, and Space (partial and full toggle; collapsed opens partial), and Up and Down Arrow move one detent, including full to partial. Swiping the handle or blank sheet whitespace tracks the touch smoothly and settles at a snap point; cancelling a swipe does not cause a second tap action.
 - [ ] Scrollable sheet content scrolls natively, text and controls remain usable, uncovered map areas remain interactive, and sheet surfaces block taps beneath them.
 - [ ] Explore venue search/details and bus route browsing, map-based stop selection, Plan endpoints and Journey, Back, Close, Escape, and map-click behavior continue to work.
+- [ ] In Explore → Community, filters remain usable with the mobile sheet, selecting a list row or marker opens its details, and Back restores focus to the opening control. Confirm the marker action does not alter Plan endpoints.
 - [ ] In Plan, endpoint controls stay compact at the phone width with controls at least 36px high, validation on the left, and the action group on the right. Check both light and dark themes.
 - [ ] Sheets are non-modal, scroll independently, respect safe-area and software-keyboard insets, and expose accessible names, expanded states, visible focus, and touch-sized controls.
 - [ ] Back, Escape, sheet collapse, and tab changes leave focus on a usable control without trapping it in an inactive sheet.
 - [ ] The single mobile location button stays inside the top-left safe area, clear of other map controls and the sheet while the map is exposed; in Plan it remains available when collapsed or partial and hides when full. Pointer and keyboard activation focus the active or first device fix; when no active fix is available, the map falls back to Kent Ridge MRT at zoom 15 before requesting or retrying location. Location updates alone do not move the camera.
 - [ ] Basemap attribution appears just above the mobile sheet during the five-second startup display, then disappears. The About section retains its source links.
 
-## Responsive boundary — 768 / 769px
+## Responsive boundaries — 640 / 768px and 420px
 
-- [ ] Resizing across the breakpoint without reloading switches between mobile and desktop layouts correctly.
+- [ ] Resizing across layout boundaries without reloading switches between mobile and desktop layouts correctly. Check fractional CSS sizes around 640px wide and 420px high so every size receives exactly one layout.
+- [ ] At 812 × 375, 900 × 420 and 740 × 360, the app uses the desktop side panel and keeps the map visible beside it, with fine or coarse pointer input. At 640 × 360 it uses mobile sheets; at 740 × 421 it uses mobile sheets; at 812 × 421 it uses the desktop side panel.
+- [ ] At 740 × 360, show and hide the mobile browser toolbar; the desktop panel tabs remain inside the visible viewport.
+- [ ] Rotate between 812 × 375 and 375 × 812 without reloading. Explore, Stops and Plan retain their selected state, sheet detents, journey endpoints and map centre.
+- [ ] At 130% text zoom, repeat the Explore, Stops and Plan reachability and scrolling checks in short landscape and portrait.
 - [ ] No overlay covers another control, traps focus, or makes the map unavailable.
 
 ## More menu and PWA installation
 
-- [ ] More lists My waypoints, Settings, Release notes, and a quiet Download NUSGo row in that order. Confirm the app icon loads at desktop and mobile sizes and Settings behaves as before.
+- [ ] More lists My waypoints, Suggest a waypoint, Settings, Release notes, and a quiet Download NUSGo row in that order. Confirm the app icon loads at desktop and mobile sizes and Settings behaves as before.
+- [ ] On mobile, open My waypoints, Settings, and Release notes from More. Confirm each submenu has the arrow-only Back button and grab handle; collapse each submenu and verify only the grab pill remains.
 - [ ] Confirm Download NUSGo reveals the existing browser instructions when no native install prompt is available, uses the browser prompt when one is available, and is hidden in an installed app.
 - [ ] Installation announces completion with More closed. Opening an already installed app stays silent; after an observed uninstall, reinstalling announces completion again.
 
 ## Settings, Stops and Plan additions
 
-- [ ] Settings opens from the map gear. Appearance, Favourites and About expand independently, Back restores the previous tab, and each theme (System, Light, Dark, NUS, Matcha, Sakura) applies immediately.
+- [ ] Settings opens from the map gear. Appearance, Favourites, About and Waypoints expand independently, Back restores the previous tab, and each theme (System, Light, Dark, NUS, Matcha, Sakura) applies immediately.
+- [ ] In Settings → Waypoints → Community waypoints, use Download approved community waypoints and confirm it is the checked-in file with no `source` or private fields and with `updatedAt` retained. Check the button at desktop and mobile sizes and under a prefixed preview base path such as `/NUSGo/`.
 - [ ] In Stops, Nearby opens timing rows only for stops within 250 m of the map centre, and the centre marker is the glowing dot.
 - [ ] In Stops, with live data unavailable, one list-wide "Live times unavailable" notice shows and scheduled internal rows remain.
 - [ ] On desktop and mobile, selecting an internal route pill from a stop card or detail view opens its route in Explore, scrolls to the originating stop, and focuses/highlights the row without activating it.

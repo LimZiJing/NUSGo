@@ -1,3 +1,4 @@
+@import '@astryxdesign/core/astryx.css';
 @import './base.css';
 @import './tokens.css';
 @import './themes/light.css';

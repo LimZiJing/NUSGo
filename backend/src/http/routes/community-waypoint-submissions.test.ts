@@ -191,6 +191,21 @@ describe('private submission issue creation', () => {
     assert.match(issue.body, /\*\*Colour price per page:\*\* S\$0\.20/)
   })
 
+  it('marks Toilet bidet answers as unverified and preserves Yes, No, and Not sure', () => {
+    for (const [bidet, label] of [[true, 'Yes'], [false, 'No'], [null, 'Not provided']] as const) {
+      const submission = parseCommunityWaypointSubmission({
+        ...validNewPlace,
+        category: 'toilet',
+        suggestedDetails: { category: 'toilet', bidet },
+      })
+      const issue = createPrivateSubmissionIssueDraft(submission)
+      assert.ok(issue.body.includes('| More details | Bidet available: ' + label + ' |'))
+      assert.ok(issue.body.includes('### More details (unverified)'))
+      assert.ok(issue.body.includes('**Bidet available:** ' + label))
+      assert.deepEqual(readRawSubmissionJson(issue.body), { schemaVersion: 1, submission })
+    }
+  })
+
   for (const [category, field, label] of [
     ['printing', 'services', 'Services'],
     ['vending_machine', 'items', 'Items'],

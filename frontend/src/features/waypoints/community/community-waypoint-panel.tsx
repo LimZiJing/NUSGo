@@ -38,7 +38,7 @@ function WaypointDetails({
       waypoint.grayscalePriceCentsPerPage !== undefined || waypoint.colourPriceCentsPerPage !== undefined
     : waypoint.category === 'vending_machine'
       ? (waypoint.items?.length ?? 0) > 0 || (waypoint.prep?.length ?? 0) > 0
-      : false
+      : waypoint.category === 'toilet' && waypoint.bidet !== undefined
 
   useLayoutEffect(() => {
     headingRef.current?.focus()
@@ -135,13 +135,14 @@ function WaypointDetails({
                   )}
                 </dl>
               )}
+              {waypoint.category === 'toilet' && hasCategoryDetails && (
+                <dl className="community-waypoint-facts">
+                  <div><dt>Bidet</dt><dd>{waypoint.bidet ? 'Yes' : 'No'}</dd></div>
+                </dl>
+              )}
             </section>
           )}
           <dl className="community-waypoint-metadata">
-            <div>
-              <dt>Source</dt>
-              <dd>{waypoint.source}</dd>
-            </div>
             <div>
               <dt>Last updated</dt>
               <dd><time dateTime={waypoint.updatedAt}>{waypoint.updatedAt}</time></dd>

@@ -34,16 +34,15 @@ import { FloorPicker } from './floor-picker'
 
 type SubmissionFieldValue = SubmissionDraft[keyof SubmissionDraft]
 
-/* Draft values for the colour question. '' is unanswered, which is where a new suggestion and
-   an unedited correction both start; 'unsure' is the deliberate "I don't know" answer. They
-   mean the same thing to the server (null) but must not look the same on screen. */
-type ColourAnswer = 'yes' | 'no' | 'unsure' | ''
+/* '' is unanswered; 'unsure' is a deliberate "I don't know" answer. Both become null in the
+   submission, but the form must not make an unanswered question look answered. */
+type AvailabilityAnswer = SubmissionDraft['colour']
 
-const COLOUR_ANSWERS = [
+const AVAILABILITY_ANSWERS = [
   { value: 'yes', label: 'Yes' },
   { value: 'no', label: 'No' },
   { value: 'unsure', label: 'Not sure' },
-] as const satisfies readonly { readonly value: ColourAnswer; readonly label: string }[]
+] as const satisfies readonly { readonly value: AvailabilityAnswer; readonly label: string }[]
 
 // HTML maxLength counts UTF-16 code units; allow one trimmed character at each edge.
 const MAX_SUBMISSION_TEXT_CODE_UNITS = (COMMUNITY_WAYPOINT_SUBMISSION_TEXT_LIMIT + 1) * 2
@@ -391,7 +390,7 @@ function CategoryDetailsFields({
   errors,
   onFieldChange,
 }: {
-  readonly category: 'printing' | 'vending_machine'
+  readonly category: 'printing' | 'vending_machine' | 'toilet'
   readonly draft: SubmissionDraft
   readonly errors: SubmissionErrors
   readonly onFieldChange: (field: keyof SubmissionDraft, value: SubmissionFieldValue) => void
@@ -407,9 +406,9 @@ function CategoryDetailsFields({
 
           onToggle={(value) => onFieldChange('services', toggleValue(draft.services, value))}
         />
-        <PillChoices<ColourAnswer>
+        <PillChoices<AvailabilityAnswer>
           legend="Colour printing"
-          options={COLOUR_ANSWERS}
+          options={AVAILABILITY_ANSWERS}
           /* Nothing is pressed until the user answers. 'unsure' is a real answer, so it
              presses; only the untouched state leaves the group blank. */
           selected={draft.colour === '' ? [] : [draft.colour]}
@@ -452,6 +451,19 @@ function CategoryDetailsFields({
     )
   }
 
+  if (category === 'toilet') {
+    return (
+      <div className="community-waypoint-submission-details community-waypoint-submission-details--toilet">
+        <PillChoices<AvailabilityAnswer>
+          legend="Bidet available"
+          options={AVAILABILITY_ANSWERS}
+          selected={draft.bidet === '' ? [] : [draft.bidet]}
+          onToggle={(value) => onFieldChange('bidet', value)}
+        />
+      </div>
+    )
+  }
+
   return (
     <div className="community-waypoint-submission-details community-waypoint-submission-details--vending">
       <PillChoices<CommunityWaypointVendingItem>
@@ -490,7 +502,7 @@ function MoreDetailsField({
   const detailsRef = useRef<HTMLDetailsElement>(null)
   const hasDetailsErrors = Boolean(
     errors.services || errors.colour || errors.grayscalePricePerPage ||
-    errors.colourPricePerPage || errors.items || errors.prep,
+    errors.colourPricePerPage || errors.items || errors.prep || errors.bidet,
   )
 
   /* Opens when a submit attempt reports details errors, so the field is visible before the
@@ -503,11 +515,12 @@ function MoreDetailsField({
   }, [validationAttempt])
 
   const category = draft.category || waypoint?.category
-  if (category !== 'printing' && category !== 'vending_machine') return null
+  if (category !== 'printing' && category !== 'vending_machine' && category !== 'toilet') return null
   const hasVerifiedDetails = waypoint !== null && (
     (waypoint.services?.length ?? 0) > 0 || waypoint.colour !== undefined ||
     waypoint.grayscalePriceCentsPerPage !== undefined || waypoint.colourPriceCentsPerPage !== undefined ||
-    (waypoint.items?.length ?? 0) > 0 || (waypoint.prep?.length ?? 0) > 0
+    (waypoint.items?.length ?? 0) > 0 || (waypoint.prep?.length ?? 0) > 0 ||
+    waypoint.bidet !== undefined
   )
   /* Counts the answers currently filled in, so a collapsed section still says it holds
      something. The disclosure's open state lives in the DOM, so this is not conditional
@@ -517,7 +530,9 @@ function MoreDetailsField({
     ? draft.services.length + (draft.colour === 'yes' || draft.colour === 'no' ? 1 : 0) +
       (draft.grayscalePricePerPage.trim() === '' ? 0 : 1) +
       (draft.colour === 'yes' && draft.colourPricePerPage.trim() !== '' ? 1 : 0)
-    : draft.items.length + draft.prep.length
+    : category === 'toilet'
+      ? draft.bidet === 'yes' || draft.bidet === 'no' ? 1 : 0
+      : draft.items.length + draft.prep.length
 
   return (
     <details ref={detailsRef} className="community-waypoint-more-details" open={hasVerifiedDetails}>

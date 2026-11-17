@@ -63,6 +63,9 @@ function getSuggestedDetailsSummary(details: CommunityWaypointDetailsSuggestion)
       'Colour price per page: ' + formatPriceCents(details.colourPriceCentsPerPage),
     ].join('; ')
   }
+  if (details.category === 'toilet') {
+    return 'Bidet available: ' + (details.bidet === null ? 'Not provided' : details.bidet ? 'Yes' : 'No')
+  }
   return [
     'Items: ' + getOptionLabels(details.items, COMMUNITY_WAYPOINT_VENDING_ITEMS),
     'Prep: ' + getOptionLabels(details.prep, COMMUNITY_WAYPOINT_VENDING_PREP_OPTIONS),
@@ -77,6 +80,12 @@ function getSuggestedDetailsLines(details: CommunityWaypointDetailsSuggestion): 
       formatIssueField('Colour available', details.colour === null ? 'Not provided' : details.colour ? 'Yes' : 'No'),
       formatIssueField('Grayscale price per page', formatPriceCents(details.grayscalePriceCentsPerPage)),
       formatIssueField('Colour price per page', formatPriceCents(details.colourPriceCentsPerPage)),
+    ]
+  }
+  if (details.category === 'toilet') {
+    return [
+      formatIssueField('Category', getCategoryLabel(details.category)),
+      formatIssueField('Bidet available', details.bidet === null ? 'Not provided' : details.bidet ? 'Yes' : 'No'),
     ]
   }
   return [

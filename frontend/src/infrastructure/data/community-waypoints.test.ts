@@ -9,7 +9,6 @@ const validFeature = {
   properties: {
     id: 'cw-7f0d8a24-93de-4e30-a02c-6f8cbd064120',
     category: 'water_cooler',
-    source: 'Example for loader test',
     updatedAt: '2026-10-30',
   },
 }
@@ -33,7 +32,6 @@ describe('loadCommunityWaypoints', () => {
       displayLabel: 'Water cooler',
       category: 'water_cooler',
       coordinate: { longitude: 103.7764, latitude: 1.2966 },
-      source: 'Example for loader test',
       updatedAt: '2026-10-30',
     }])
   })
@@ -104,7 +102,6 @@ describe('loadCommunityWaypoints', () => {
       category: 'printing',
       displayLabel: 'Printing / photocopying · PGP MPSH / Minimart · Basement 1',
       coordinate: { longitude: 103.7811238487892, latitude: 1.290637060820501 },
-      source: 'public_source',
       updatedAt: '2026-11-13',
       building: 'PGP MPSH / Minimart',
       floor: -1,

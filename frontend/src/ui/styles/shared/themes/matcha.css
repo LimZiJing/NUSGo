@@ -1,6 +1,6 @@
 :root[data-theme='matcha'] {
-  --surface: #e1e7d6;
-  --surface-raised: #f0f2e7;
+  --surface: #f0f2e7;
+  --surface-raised: #e1e7d6;
   --surface-muted: #cdd8c2;
   --surface-subtle: #bfccb2;
   --surface-inverse: #294536;

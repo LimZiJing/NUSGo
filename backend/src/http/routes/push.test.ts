@@ -48,7 +48,7 @@ async function withServer(
   const store = createPushSubscriptionStore({ maxSubscriptions: options.maxSubscriptions })
   const cap = createNotificationCap({ maxPerHour: 4 })
   const server = await listenHttpServer(
-    createApp(config, null, null, null, { store, cap }),
+    createApp(config, null, null, null, null, { store, cap }),
     '127.0.0.1',
     0,
   )

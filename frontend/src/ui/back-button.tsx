@@ -19,7 +19,7 @@ export function BackButton({ mode, label, title, onClick, ref }: BackButtonProps
         label={label}
         title={title}
         icon={<ArrowLeftIcon />}
-        variant="plain"
+        variant="secondary"
         ref={ref}
         onClick={onClick}
       />

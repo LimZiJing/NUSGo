@@ -3,7 +3,7 @@
 import { cleanup, render, screen } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import { afterEach, describe, expect, it, vi } from 'vitest'
-import type { WaypointCoordinate } from '../../../domain/waypoints/waypoint'
+import type { WaypointCoordinate } from '@nusgo/shared/waypoints/waypoint'
 import { PersonalWaypointPlacement } from './personal-waypoint-placement'
 
 afterEach(cleanup)

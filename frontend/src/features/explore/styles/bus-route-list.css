@@ -85,10 +85,12 @@
 }
 
 .explore-content .explore-bus-route-list-stop[data-route-stop-targeted='true'] {
-  outline: var(--focus-outline);
-  outline-offset: -2px;
   border-radius: var(--radius-sm);
-  background: var(--accent-soft);
+  border-left: 3px solid var(--status-success-strong);
+  padding-left: 17px;
+  color: var(--text-primary);
+  background: var(--surface-info-soft);
+  font-weight: 700;
 }
 
 .explore-bus-route-list-node {
@@ -147,7 +149,7 @@
   line-height: 1.4;
 }
 
-@media (max-width: 768px) {
+@media (width <= 640px), (width <= 768px) and (height > 420px) {
   .explore-content-bus-routes .explore-bus-route-list,
   .explore-content-bus-routes .explore-bus-route-list-timeline {
     min-height: 0;
@@ -183,7 +185,7 @@
 
 }
 
-@media (min-width: 769px) {
+@media (width > 768px), (width > 640px) and (height <= 420px) {
   .navigation-column .explore-content-bus-routes .explore-bus-route-list {
     display: flex;
     flex: 1 1 0;

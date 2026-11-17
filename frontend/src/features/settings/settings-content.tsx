@@ -1,12 +1,14 @@
 import type { ThemePreference } from '../../ui/theme'
+import { THEME_CATALOG } from '../../ui/themes/catalog'
 import type { MinuteFormat } from '../../domain/trip/minute-format'
 import { AppearanceSection } from './components/appearance-section'
 import { FavouritesSection, type FavoriteStopSummary } from './components/favourites-section'
 import { AboutSection } from './components/about-section'
 import { PushNotificationsSection } from './components/push-notifications-section'
+import { WaypointsSection } from './components/waypoints-section'
 import { SettingsDisclosure } from './components/settings-disclosure'
 import { usePushNotifications } from './use-push-notifications'
-import { BellIcon, FavoriteIcon, InfoIcon, PaletteIcon } from '../../ui/icons'
+import { BellIcon, FavoriteIcon, InfoIcon, MapPinIcon, PaletteIcon } from '../../ui/icons'
 import type { PushNotificationService } from '../../domain/push/push-notifications'
 import type { BuildingCatalogueSource } from '@nusgo/shared/venue/buildings'
 import type { TransitNetworkMetadata } from '@nusgo/shared/transit/types'
@@ -23,18 +25,10 @@ interface SettingsContentProps {
   readonly onClearFavorites: () => void
   readonly transitMetadata: TransitNetworkMetadata | null
   readonly buildingSource: BuildingCatalogueSource | null
+  readonly communityWaypointDownloadUrl: string
   readonly dataVersion: string
   /** Supplied by app composition so this feature never imports an infrastructure adapter. */
   readonly pushNotifications: PushNotificationService
-}
-
-const APPEARANCE_SUMMARIES: Record<ThemePreference, string> = {
-  system: 'System',
-  light: 'Light',
-  dark: 'Dark',
-  nus: 'NUS palette',
-  matcha: 'Matcha palette',
-  sakura: 'Sakura palette',
 }
 
 export function SettingsContent({
@@ -48,17 +42,21 @@ export function SettingsContent({
   onClearFavorites,
   transitMetadata,
   buildingSource,
+  communityWaypointDownloadUrl,
   dataVersion,
   pushNotifications,
 }: SettingsContentProps) {
   const push = usePushNotifications(pushNotifications)
+  const appearanceSummary = themePreference === 'system'
+    ? 'System'
+    : THEME_CATALOG.find(({ id }) => id === themePreference)?.summary ?? themePreference
 
   return (
     <div className="settings-content">
       <SettingsDisclosure
         title="Appearance"
         icon={<PaletteIcon />}
-        subtitle={APPEARANCE_SUMMARIES[themePreference]}
+        subtitle={appearanceSummary}
       >
         <AppearanceSection
           preference={themePreference}
@@ -104,6 +102,12 @@ export function SettingsContent({
           transitMetadata={transitMetadata}
           buildingSource={buildingSource}
         />
+      </SettingsDisclosure>
+      <SettingsDisclosure
+        title="Waypoints"
+        icon={<MapPinIcon />}
+      >
+        <WaypointsSection communityWaypointDownloadUrl={communityWaypointDownloadUrl} />
       </SettingsDisclosure>
     </div>
   )

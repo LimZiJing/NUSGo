@@ -86,7 +86,12 @@ async function withServer(
   const cap = createNotificationCap({ maxPerHour: 4 })
   const registry = createAlightReminderRegistry({ now: options.now ?? (() => registeredAtMs), maxReminders: options.maxReminders })
   const server = await listenHttpServer(
-    createApp(config, backendData, null, null, { store, cap, reminderRegistry: registry }),
+    // The submission writer sits before push; this suite leaves it at its config-derived default.
+    createApp(config, backendData, null, null, undefined, {
+      store,
+      cap,
+      reminderRegistry: registry,
+    }),
     '127.0.0.1',
     0,
   )

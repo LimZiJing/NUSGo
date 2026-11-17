@@ -75,7 +75,7 @@
   scrollbar-gutter: stable;
 }
 
-@media (max-width: 768px) {
+@media (width <= 640px), (width <= 768px) and (height > 420px) {
   .more-panel-body-menu .more-panel-header {
     min-height: 38px;
     margin: 0 1px 9px;
@@ -108,7 +108,8 @@
 
   .mobile-sheet-popup.more-panel-surface[data-page='settings'][data-detent='full'],
   .mobile-sheet-popup.more-panel-surface[data-page='waypoints'][data-detent='full'],
-  .mobile-sheet-popup.more-panel-surface[data-page='creating'][data-detent='full'] {
+  .mobile-sheet-popup.more-panel-surface[data-page='creating'][data-detent='full'],
+  .mobile-sheet-popup.more-panel-surface[data-page='community-submission'][data-detent='full'] {
     padding: 0 0 12px;
     border-radius: 0;
     background: var(--surface);
@@ -122,15 +123,25 @@
 
   .mobile-sheet-popup.more-panel-surface[data-page='settings'] .mobile-sheet-handle-row,
   .mobile-sheet-popup.more-panel-surface[data-page='waypoints'] .mobile-sheet-handle-row,
-  .mobile-sheet-popup.more-panel-surface[data-page='creating'] .mobile-sheet-handle-row {
+  .mobile-sheet-popup.more-panel-surface[data-page='creating'] .mobile-sheet-handle-row,
+  .mobile-sheet-popup.more-panel-surface[data-page='community-submission'] .mobile-sheet-handle-row {
     display: none;
   }
 
   .mobile-sheet-popup.more-panel-surface[data-page='release-notes'] .mobile-sheet-handle-row { display: none; }
 
+  .mobile-sheet-popup.more-panel-surface[data-page][data-detent] .mobile-sheet-handle-row {
+    display: flex;
+  }
+
+  .mobile-sheet-popup.more-panel-surface[data-page][data-detent='collapsed'] .more-panel-body {
+    display: none;
+  }
+
   .mobile-sheet-popup.more-panel-surface[data-page='settings'] .more-panel-header,
   .mobile-sheet-popup.more-panel-surface[data-page='waypoints'] .more-panel-header,
-  .mobile-sheet-popup.more-panel-surface[data-page='creating'] .more-panel-header {
+  .mobile-sheet-popup.more-panel-surface[data-page='creating'] .more-panel-header,
+  .mobile-sheet-popup.more-panel-surface[data-page='community-submission'] .more-panel-header {
     padding-inline: 14px;
   }
 
@@ -138,14 +149,15 @@
 
   .mobile-sheet-popup.more-panel-surface[data-page='settings'] .more-panel-content-scroll,
   .mobile-sheet-popup.more-panel-surface[data-page='waypoints'] .more-panel-content-scroll,
-  .mobile-sheet-popup.more-panel-surface[data-page='creating'] .more-panel-content-scroll {
+  .mobile-sheet-popup.more-panel-surface[data-page='creating'] .more-panel-content-scroll,
+  .mobile-sheet-popup.more-panel-surface[data-page='community-submission'] .more-panel-content-scroll {
     padding: 12px 13px 68px;
   }
 
   .mobile-sheet-popup.more-panel-surface[data-page='release-notes'] .more-panel-content-scroll { padding: 12px 13px 68px; }
 }
 
-@media (min-width: 769px) {
+@media (width > 768px), (width > 640px) and (height <= 420px) {
   .navigation-column .navigation-panel.more-panel-surface {
     display: flex;
     overflow: hidden;

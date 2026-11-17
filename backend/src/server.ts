@@ -115,7 +115,9 @@ async function startBackend(): Promise<void> {
   }
   const pathfinding = createPathfindingService(data, liveData, config)
   const server = await listenHttpServer(
-    createApp(config, data, liveData, pathfinding, {
+    // The submission writer is left to createApp's config-derived default; push needs the
+    // process-wide store and cap so its routes share the publisher's hourly window.
+    createApp(config, data, liveData, pathfinding, undefined, {
       store: pushStore,
       cap: pushCap,
       reminderRegistry,

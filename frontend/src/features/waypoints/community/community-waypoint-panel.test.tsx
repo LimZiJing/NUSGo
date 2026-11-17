@@ -78,6 +78,31 @@ function DiscoveryHarness({
 }
 
 describe('CommunityWaypointPanel', () => {
+  it.each([[true, 'Yes'], [false, 'No']] as const)(
+    'displays verified Toilet bidet availability as %s',
+    async (bidet, label) => {
+      const toiletWaypoint: CommunityWaypoint = {
+        id: 'cw-toilet-001',
+        displayLabel: 'Toilet at UTown',
+        category: 'toilet',
+        coordinate: { longitude: 103.78, latitude: 1.29 },
+        source: 'Checked on site',
+        updatedAt: '2026-11-17',
+        bidet,
+      }
+      render(
+        <DiscoveryHarness
+          load={async () => [toiletWaypoint]}
+          selectWaypointOnMount={toiletWaypoint.id}
+        />,
+      )
+
+      const detailPanel = await screen.findByRole('region', { name: toiletWaypoint.displayLabel })
+      expect(within(detailPanel).getByText('Bidet')).toBeTruthy()
+      expect(within(detailPanel).getByText(label)).toBeTruthy()
+    },
+  )
+
   it('persists category visibility as soon as a category is toggled', async () => {
     const user = userEvent.setup()
     const onVisibleWaypointsChange = vi.fn()

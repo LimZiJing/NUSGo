@@ -62,6 +62,10 @@ export type CommunityWaypointDetailsSuggestion =
       readonly items: readonly CommunityWaypointVendingItem[]
       readonly prep: readonly CommunityWaypointVendingPrep[]
     })
+  | ({
+      readonly category: 'toilet'
+      readonly bidet: boolean | null
+    })
 
 export interface CommunityWaypoint extends Omit<Waypoint, 'name'> {
   readonly id: CommunityWaypointId
@@ -81,6 +85,7 @@ export interface CommunityWaypoint extends Omit<Waypoint, 'name'> {
   readonly colourPriceCentsPerPage?: number
   readonly items?: readonly CommunityWaypointVendingItem[]
   readonly prep?: readonly CommunityWaypointVendingPrep[]
+  readonly bidet?: boolean
 }
 
 export function getCommunityWaypointCategoryLabel(category: CommunityWaypointCategory): string {

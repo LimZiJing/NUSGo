@@ -31,6 +31,7 @@ const PROPERTY_MEMBERS = new Set([
   'colourPriceCentsPerPage',
   'items',
   'prep',
+  'bidet',
 ])
 
 export class CommunityWaypointGeoJsonValidationError extends Error {
@@ -239,14 +240,19 @@ function parseFeature(input: unknown, index: number): CommunityWaypoint {
     COMMUNITY_WAYPOINT_VENDING_PREP_OPTIONS,
     `${location}.properties`,
   )
+  const bidet = readOptionalBoolean(properties, 'bidet', `${location}.properties`)
   const hasPrintingDetails = services !== undefined || colour !== undefined ||
     grayscalePriceCentsPerPage !== undefined || colourPriceCentsPerPage !== undefined
   const hasVendingDetails = items !== undefined || prep !== undefined
+  const hasToiletDetails = bidet !== undefined
   if (category !== 'printing' && hasPrintingDetails) {
     invalid(`${location}.properties`, 'printing details are only allowed for printing waypoints')
   }
   if (category !== 'vending_machine' && hasVendingDetails) {
     invalid(`${location}.properties`, 'vending details are only allowed for vending machine waypoints')
+  }
+  if (category !== 'toilet' && hasToiletDetails) {
+    invalid(`${location}.properties`, 'toilet details are only allowed for toilet waypoints')
   }
   if (colour !== true && colourPriceCentsPerPage !== undefined) {
     invalid(`${location}.properties.colourPriceCentsPerPage`, 'requires colour to be true')
@@ -286,6 +292,7 @@ function parseFeature(input: unknown, index: number): CommunityWaypoint {
     ...(colourPriceCentsPerPage === undefined ? {} : { colourPriceCentsPerPage }),
     ...(items === undefined ? {} : { items }),
     ...(prep === undefined ? {} : { prep }),
+    ...(bidet === undefined ? {} : { bidet }),
   }
 }
 

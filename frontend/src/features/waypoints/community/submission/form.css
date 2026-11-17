@@ -66,26 +66,8 @@
 .community-waypoint-field-label span { color: var(--text-muted); font-weight: 400; }
 
 .community-waypoint-field--search {
-  /* Shared with the results popup. The popup is portalled to the body, so it inherits
-     nothing from this field: the same names are declared on the popup below, and both
-     must stay in step or the rows stop lining up with the input text. */
-  --community-waypoint-building-icon-inset: 12px;
-  --community-waypoint-building-icon-size: 18px;
-  --community-waypoint-building-icon-gap: 10px;
-  --community-waypoint-building-input-offset: calc(
-    var(--community-waypoint-building-icon-inset) +
-    var(--community-waypoint-building-icon-size) +
-    var(--community-waypoint-building-icon-gap)
-  );
-}
-
-.community-waypoint-field--search > .community-waypoint-field-label {
-  left: var(--community-waypoint-building-input-offset);
-}
-
-.community-waypoint-field--search:focus-within > .community-waypoint-field-label,
-.community-waypoint-field--search:has(.community-waypoint-field-control:not(:placeholder-shown)) > .community-waypoint-field-label {
-  left: var(--space-4);
+  gap: 0;
+  --community-waypoint-building-icon-inset: var(--space-3);
 }
 
 .community-waypoint-field-control {

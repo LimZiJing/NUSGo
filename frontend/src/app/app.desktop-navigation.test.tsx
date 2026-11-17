@@ -1779,6 +1779,7 @@ describe('More surface', () => {
     await user.click(screen.getByRole('button', { name: 'Settings' }))
     const settingsPanel = document.querySelector<HTMLElement>('.more-panel-content-scroll')
     if (!settingsPanel) throw new Error('Settings panel is missing')
+    await user.click(within(settingsPanel).getByRole('button', { name: 'Favourites' }))
     expect(within(settingsPanel).queryByRole('button', { name: /More actions for/ })).toBeNull()
     await user.click(within(settingsPanel).getByRole('button', { name: 'Edit list' }))
     await user.click(within(settingsPanel).getByRole('button', { name: 'Move Stop B up' }))
@@ -1789,12 +1790,12 @@ describe('More surface', () => {
     render(<App />)
     await user.click(screen.getByRole('button', { name: 'More' }))
     await user.click(screen.getByRole('button', { name: 'Settings' }))
+    const reloadedSettingsPanel = document.querySelector<HTMLElement>('.more-panel-content-scroll')
+    if (!reloadedSettingsPanel) throw new Error('Settings panel is missing after reload')
+    await user.click(within(reloadedSettingsPanel).getByRole('button', { name: 'Favourites' }))
     const reloadedFavorites = screen.getByRole('list', { name: 'Favourite bus stops' })
     expect(within(reloadedFavorites).getAllByRole('listitem').map((row) => row.textContent?.trim()))
       .toEqual(['Stop B', 'Stop A'])
-    const reloadedSettingsPanel = document.querySelector<HTMLElement>('.more-panel-content-scroll')
-    if (!reloadedSettingsPanel) throw new Error('Settings panel is missing after reload')
-
     await user.click(within(reloadedSettingsPanel).getByRole('button', { name: 'Edit list' }))
     await user.click(within(reloadedSettingsPanel).getByRole('button', { name: 'Remove Stop A from favourites' }))
     await waitFor(() => expect(JSON.parse(localStorage.getItem('navus:favorite-stops:v1') ?? '[]'))
@@ -1807,8 +1808,8 @@ describe('More surface', () => {
     await waitFor(() => expect(JSON.parse(localStorage.getItem('navus:favorite-stops:v1') ?? '[]'))
       .toEqual([]))
 
-    expect(screen.getByRole('heading', { name: 'Settings' })).toBeTruthy()
-    expect(screen.getByText('Star a stop in Stops to add it to your favourites.')).toBeTruthy()
+    expect(screen.getByRole('heading', { name: 'Favourites' })).toBeTruthy()
+    expect(screen.getByText('No favourites yet.')).toBeTruthy()
     expect(screen.queryByRole('button', { name: 'Manage in Stops' })).toBeNull()
   })
 
@@ -1841,6 +1842,103 @@ describe('More surface', () => {
     expect(screen.getByRole('button', { name: 'Explore' }).getAttribute('aria-current')).toBe('page')
   })
 
+  it('returns from Settings to More and then back to the previous view', async () => {
+    mockDesktopViewport()
+    const user = userEvent.setup()
+    render(<App />)
+
+    await user.click(screen.getByRole('button', { name: 'More' }))
+    await user.click(screen.getByRole('button', { name: 'Settings' }))
+    expect(document.querySelector('.more-panel-surface')?.getAttribute('data-page')).toBe('settings')
+    expect(screen.getByRole('heading', { name: 'Settings' })).toBeTruthy()
+
+    await user.click(screen.getByRole('button', { name: 'Appearance' }))
+    expect(screen.getByRole('heading', { name: 'Appearance' })).toBeTruthy()
+    await user.click(screen.getByRole('button', { name: 'Back to Settings' }))
+    expect(screen.getByRole('heading', { name: 'Settings' })).toBeTruthy()
+
+    await user.click(screen.getByRole('button', { name: 'Back to previous view' }))
+    expect(document.querySelector('.more-panel-surface')?.getAttribute('data-page')).toBe('menu')
+    expect(screen.getByRole('heading', { name: 'More' })).toBeTruthy()
+
+    await user.click(screen.getByRole('button', { name: 'Back to previous view' }))
+    expect(document.querySelector('.more-panel-surface')?.getAttribute('data-open')).toBe('false')
+    expect(screen.queryByRole('heading', { name: 'More' })).toBeNull()
+    expect(screen.getByRole('button', { name: 'Stops' }).getAttribute('aria-current')).toBe('page')
+  })
+
+  it('clears Settings search before Escape returns to More', async () => {
+    mockDesktopViewport()
+    const user = userEvent.setup()
+    render(<App />)
+
+    await user.click(screen.getByRole('button', { name: 'More' }))
+    await user.click(screen.getByRole('button', { name: 'Settings' }))
+    const search = screen.getByRole('combobox', { name: 'Search settings' })
+    await user.type(search, 'waypoint')
+    await user.keyboard('{Escape}')
+
+    expect(search).toHaveProperty('value', '')
+    expect(screen.getByRole('heading', { name: 'Settings' })).toBeTruthy()
+
+    await user.keyboard('{Escape}')
+    expect(screen.getByRole('heading', { name: 'More' })).toBeTruthy()
+  })
+
+  it('clears Settings search with Escape when the clear button has focus', async () => {
+    mockDesktopViewport()
+    const user = userEvent.setup()
+    render(<App />)
+
+    await user.click(screen.getByRole('button', { name: 'More' }))
+    await user.click(screen.getByRole('button', { name: 'Settings' }))
+    const search = screen.getByRole('combobox', { name: 'Search settings' })
+    await user.type(search, 'waypoint')
+    const clearButton = screen.getByRole('button', { name: 'Clear Search settings' })
+    await user.tab()
+    expect(document.activeElement).toBe(clearButton)
+
+    await user.keyboard('{Escape}')
+
+    expect(search).toHaveProperty('value', '')
+    expect(screen.getByRole('heading', { name: 'Settings' })).toBeTruthy()
+    await user.keyboard('{Escape}')
+    expect(screen.getByRole('heading', { name: 'More' })).toBeTruthy()
+  })
+
+  it('clears mobile Settings search without collapsing the full sheet', async () => {
+    mockMobileViewport()
+    const user = userEvent.setup()
+    render(<App />)
+
+    await user.click(screen.getByRole('button', { name: 'More' }))
+    await user.click(screen.getByRole('button', { name: 'Settings' }))
+    const settingsSheet = document.querySelector<HTMLElement>('.more-panel-surface')
+    expect(settingsSheet?.getAttribute('data-detent')).toBe('full')
+    expect(settingsSheet?.querySelector('.mobile-sheet-handle-row')).toBeNull()
+    expect(screen.getByRole('list', { name: 'Settings categories' })).toBeTruthy()
+    expect(screen.queryByRole('region', { name: 'Appearance' })).toBeNull()
+
+    const search = screen.getByRole('combobox', { name: 'Search settings' })
+    await user.type(search, 'theme')
+    await user.keyboard('{Escape}')
+
+    expect(search).toHaveProperty('value', '')
+    expect(settingsSheet?.getAttribute('data-page')).toBe('settings')
+    expect(settingsSheet?.getAttribute('data-detent')).toBe('full')
+    expect(screen.getByRole('heading', { name: 'Settings' })).toBeTruthy()
+
+    await user.click(screen.getByRole('button', { name: 'Appearance' }))
+    expect(screen.getByRole('heading', { name: 'Appearance' })).toBeTruthy()
+    expect(settingsSheet?.getAttribute('data-detent')).toBe('full')
+    expect(settingsSheet?.querySelector('.mobile-sheet-handle-row')).toBeNull()
+    await user.click(screen.getByRole('button', { name: 'Back to Settings' }))
+    expect(screen.getByRole('list', { name: 'Settings categories' })).toBeTruthy()
+
+    await user.keyboard('{Escape}')
+    expect(settingsSheet?.getAttribute('data-page')).toBe('menu')
+    expect(screen.getByRole('heading', { name: 'More' })).toBeTruthy()
+  })
   it('applies and remembers a chosen theme after remount', async () => {
     mockDesktopViewport()
     const user = userEvent.setup()
@@ -1848,6 +1946,7 @@ describe('More surface', () => {
 
     await user.click(screen.getByRole('button', { name: 'More' }))
     await user.click(screen.getByRole('button', { name: 'Settings' }))
+    await user.click(screen.getByRole('button', { name: 'Appearance' }))
     await user.click(screen.getByRole('radio', { name: 'Dark' }))
     expect(document.documentElement.dataset.theme).toBe('dark')
     expect(localStorage.getItem('navus:theme-preference:v1')).toBe('dark')
@@ -1857,7 +1956,8 @@ describe('More surface', () => {
 
     await user.click(screen.getByRole('button', { name: 'More' }))
     await user.click(screen.getByRole('button', { name: 'Settings' }))
-    expect((screen.getByRole('radio', { name: 'Dark' }) as HTMLInputElement).checked).toBe(true)
+    await user.click(screen.getByRole('button', { name: 'Appearance' }))
+    expect(screen.getByRole('radio', { name: 'Dark' }).getAttribute('aria-checked')).toBe('true')
     expect(document.documentElement.dataset.theme).toBe('dark')
   })
 
@@ -1868,13 +1968,15 @@ describe('More surface', () => {
 
     await user.click(screen.getByRole('button', { name: 'More' }))
     await user.click(screen.getByRole('button', { name: 'Settings' }))
-    await user.click(screen.getByRole('button', { name: /Other themes Choose/ }))
+    await user.click(screen.getByRole('button', { name: 'Appearance' }))
+    const paletteSelector = screen.getByRole('button', { name: /Other themes Choose/ })
+    await user.click(paletteSelector)
     expect(screen.getByRole('listbox', { name: 'Other themes' })).toBeTruthy()
 
     await user.keyboard('{Escape}')
 
     expect(screen.queryByRole('listbox', { name: 'Other themes' })).toBeNull()
-    expect(screen.getByRole('heading', { name: 'Settings' })).toBeTruthy()
+    expect(screen.getByRole('heading', { name: 'Appearance' })).toBeTruthy()
     expect(screen.getByRole('button', { name: /Other themes Choose/ })).toBeTruthy()
   })
 

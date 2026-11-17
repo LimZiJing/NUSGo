@@ -54,6 +54,7 @@ import { usePlanTripForm } from '../features/plan/hooks/use-plan-trip-form'
 import { useShuttleVehicles } from '../features/live-buses/hooks/use-shuttle-vehicles'
 import { LiveBusToggle } from '../features/live-buses/components/live-bus-toggle'
 import { SettingsContent } from '../features/settings/settings-content'
+import { getSettingsSectionTitle, type SettingsSectionId } from '../features/settings/settings-section'
 import { buildBasePathUrl } from '../infrastructure/data/json'
 import type { MinuteFormat } from '../domain/trip/minute-format'
 import {
@@ -136,6 +137,7 @@ function App() {
   const [session, setSession] = useState<NavigationSession | null>(null)
   const [morePage, setMorePage] = useState<MorePanelPage>('closed')
   const [moreSheetDetent, setMoreSheetDetent] = useState<MobileSheetDetent>('partial')
+  const [selectedSettingsSection, setSelectedSettingsSection] = useState<SettingsSectionId | null>(null)
   const [isEditingPersonalWaypoints, setIsEditingPersonalWaypoints] = useState(false)
   const [hasPersonalWaypointSearchFilter, setHasPersonalWaypointSearchFilter] = useState(false)
   const [personalWaypointEditReturnPage, setPersonalWaypointEditReturnPage] = useState<'waypoints' | 'waypoint-details'>('waypoint-details')
@@ -926,6 +928,7 @@ function App() {
   }
   const openSettings = (): void => {
     setIsEditingPersonalWaypoints(false)
+    setSelectedSettingsSection(null)
     setMoreSheetDetent('full')
     setMorePage('settings')
   }
@@ -1025,6 +1028,10 @@ function App() {
       setMoreSheetDetent('partial')
       return
     }
+    if (morePage === 'settings' && selectedSettingsSection !== null) {
+      setSelectedSettingsSection(null)
+      return
+    }
     if (morePage === 'release-notes' || morePage === 'settings') {
       setMorePage('menu')
       setMoreSheetDetent('partial')
@@ -1049,6 +1056,7 @@ function App() {
     activePersonalWaypointCategory,
     communitySubmissionReturnPage,
     isCommunitySubmissionPending,
+    selectedSettingsSection,
   ])
   const closeMore = goBackInMore
   const toggleMore = (): void => {
@@ -1293,8 +1301,15 @@ function App() {
                     ? communitySubmissionWaypoint ? 'Suggest a correction' : 'Suggest a waypoint'
                     : morePage === 'community-placing' ? 'Adjust location'
                   : morePage === 'editing-waypoint' ? 'Edit waypoint'
-                    : morePage === 'settings' ? 'Settings'
+                    : morePage === 'settings'
+                      ? selectedSettingsSection === null ? 'Settings' : getSettingsSectionTitle(selectedSettingsSection)
                       : morePage === 'release-notes' ? 'Release notes' : 'More',
+            backButtonLabel: morePage === 'settings' && selectedSettingsSection !== null
+              ? 'Back to Settings'
+              : 'Back to previous view',
+            scrollResetKey: morePage === 'settings'
+              ? selectedSettingsSection ?? 'home'
+              : morePage,
             initialFocusRef: moreInitialFocusRef,
             onClose: closeMore,
             onDetentChange: setMoreSheetDetent,
@@ -1393,6 +1408,8 @@ function App() {
               <SettingsContent
                 communityWaypointDownloadUrl={buildBasePathUrl('data/community-waypoints.geojson')}
                 themePreference={themePreference}
+                activeSection={selectedSettingsSection}
+                onActiveSectionChange={setSelectedSettingsSection}
                 onThemePreferenceChange={changeThemePreference}
                 minuteFormat={minuteFormat}
                 onMinuteFormatChange={changeMinuteFormat}

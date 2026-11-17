@@ -29,6 +29,8 @@ export interface AppViewsProps {
     readonly statusRevision: number
     readonly headerAction?: ReactNode
     readonly title: string
+    readonly backButtonLabel: string
+    readonly scrollResetKey: string | null
     readonly initialFocusRef: Ref<HTMLButtonElement>
     readonly onClose: () => void
     readonly onDetentChange: (detent: MobileSheetDetent) => void
@@ -136,6 +138,7 @@ export function AppViews({
             className="more-panel-surface"
             label="More panel"
             controlsId="more-panel-content"
+            isDetentLocked={morePanel.page === 'settings'}
             detent={isMobileViewport ? morePanel.detent : 'partial'}
             enabled={isMobileViewport}
             active={morePanel.open}
@@ -151,6 +154,8 @@ export function AppViews({
             <MorePanelSurface
               page={morePanel.page}
               title={morePanel.title}
+              backButtonLabel={morePanel.backButtonLabel}
+              scrollResetKey={morePanel.scrollResetKey}
               statusMessage={morePanel.statusMessage}
               statusRevision={morePanel.statusRevision}
               headerAction={morePanel.headerAction}

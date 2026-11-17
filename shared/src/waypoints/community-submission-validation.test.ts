@@ -58,6 +58,41 @@ describe('parseCommunityWaypointSubmission suggested details', () => {
     })
   })
 
+  it.each([true, false, null])('accepts a Toilet bidet answer of %s', (bidet) => {
+    const input = {
+      ...newPlace,
+      category: 'toilet',
+      suggestedDetails: { category: 'toilet', bidet },
+    }
+    expect(parseCommunityWaypointSubmission(input)).toEqual(input)
+  })
+
+  it('normalizes an omitted Toilet bidet answer to null', () => {
+    expect(parseCommunityWaypointSubmission({
+      ...newPlace,
+      category: 'toilet',
+      suggestedDetails: { category: 'toilet' },
+    })).toEqual({
+      ...newPlace,
+      category: 'toilet',
+      suggestedDetails: { category: 'toilet', bidet: null },
+    })
+  })
+
+  it('rejects non-boolean Toilet bidet answers and other Toilet detail fields', () => {
+    for (const suggestedDetails of [
+      { category: 'toilet', bidet: 'yes' },
+      { category: 'toilet', bidet: 1 },
+      { category: 'toilet', bidet: false, items: ['drinks'] },
+    ]) {
+      expect(() => parseCommunityWaypointSubmission({
+        ...newPlace,
+        category: 'toilet',
+        suggestedDetails,
+      })).toThrow(InvalidCommunityWaypointSubmissionError)
+    }
+  })
+
   it('continues to reject present invalid booleans and prices', () => {
     for (const invalidValue of [
       { colour: 'yes' }, { colour: 1 }, { grayscalePriceCentsPerPage: '10' },
@@ -92,6 +127,20 @@ describe('parseCommunityWaypointSubmission suggested details', () => {
   it('accepts correction details with a matching proposed category', () => {
     const input = { ...correction, category: 'printing', suggestedDetails: printingDetails }
     expect(parseCommunityWaypointSubmission(input)).toEqual(input)
+  })
+
+  it('accepts Toilet correction details only with the proposed Toilet category', () => {
+    const input = {
+      ...correction,
+      category: 'toilet',
+      suggestedDetails: { category: 'toilet', bidet: false },
+    }
+    expect(parseCommunityWaypointSubmission(input)).toEqual(input)
+    expect(() => parseCommunityWaypointSubmission({
+      ...correction,
+      category: 'printing',
+      suggestedDetails: { category: 'toilet', bidet: false },
+    })).toThrow('suggestedDetails category must match the proposed category')
   })
 
   it('continues to accept corrections without details or a proposed category', () => {

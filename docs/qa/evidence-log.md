@@ -228,7 +228,7 @@ The [responsive layout browser evidence](responsive-layout-browser-evidence.md) 
 
 Codex In-App Browser (Chromium-based; exact version unavailable), local Vite app at `http://localhost:32916`, HEAD `5d0ec90f8b0ebebd9291ef55bfd9b08ec0786c44`:
 
-- At 1280 × 800, Explore → Community showed the category filters, map legend, and empty state without overlap. At 1280 × 720, with a temporary approved fixture, the distinct map marker appeared; selecting either the row or marker opened details with category, building/floor, optional notes, source, and last-updated date.
+- Historical evidence from before source removal: at 1280 × 800, Explore → Community showed the category filters, map legend, and empty state without overlap. At 1280 × 720, with a temporary approved fixture, the distinct map marker appeared; selecting either the row or marker opened details with category, building/floor, optional notes, source, and last-updated date. This does not verify the source-free detail view.
 - Toggling a category removed its marker and list row; Show all restored them. The fixture was removed and the checked-in collection returned to empty after the smoke check.
 - At 390 × 844, the list and details fit the mobile sheet without overlap. Keyboard activation opened details; Back returned focus to the same list row. The browser console had no errors.
 - Targeted interactions were checked at desktop 1280 × 720 and mobile 390 × 844; this was not the full release checklist.
@@ -241,7 +241,7 @@ Codex In-App Browser (Chromium-based; exact version unavailable), local managed 
 - At 390 × 844, Tab from the Community selector focused Suggest a place. Enter opened the text-only form; Cancel returned to Community and restored focus to the same action.
 - At 1280 × 800, the form opened from Suggest a place. Adjust on map → Use map centre → Done returned to the form with the selected coordinate updated. Cancel returned to Community and restored focus to Suggest a place.
 - The form displayed its review and privacy notice. No suggestion was submitted; the private API and review queue were not exercised. The browser console had no errors.
-- The earlier discovery pass above remains evidence for the temporary approved-place marker, filtering, details, provenance, and correction entry; this pass records the updated empty state and submission entry points. Neither pass is a full release checklist.
+- The earlier discovery pass above is historical evidence for the temporary approved-place marker, filtering, details, previously displayed review information, and correction entry; this pass records the updated empty state and submission entry points. Neither pass is a full release checklist.
 
 ## Community submission form redesign verification — 2026-11-09
 

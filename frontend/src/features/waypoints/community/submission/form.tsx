@@ -120,6 +120,9 @@ export function CommunityWaypointSubmissionForm({
           colour: preserveExisting && waypoint?.colour !== undefined
             ? waypoint.colour ? 'yes' : 'no'
             : '',
+          bidet: preserveExisting && waypoint?.bidet !== undefined
+            ? waypoint.bidet ? 'yes' : 'no'
+            : '',
           grayscalePricePerPage: preserveExisting
             ? priceCentsToDraft(waypoint?.grayscalePriceCentsPerPage)
             : '',
@@ -134,7 +137,7 @@ export function CommunityWaypointSubmissionForm({
 
       const isDetailsField = field === 'services' || field === 'colour' ||
         field === 'grayscalePricePerPage' || field === 'colourPricePerPage' ||
-        field === 'items' || field === 'prep'
+        field === 'items' || field === 'prep' || field === 'bidet'
       return {
         ...current,
         [field]: value,
@@ -153,6 +156,7 @@ export function CommunityWaypointSubmissionForm({
         delete next.colourPricePerPage
         delete next.items
         delete next.prep
+        delete next.bidet
       }
       return next
     })

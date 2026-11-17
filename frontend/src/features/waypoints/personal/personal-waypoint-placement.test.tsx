@@ -33,7 +33,7 @@ describe('PersonalWaypointPlacement', () => {
     expect(screen.getByRole('heading', { name: 'Adjust waypoint location' })).toBeTruthy()
     expect(screen.getByText('1.293300° N · 103.784400° E')).toBeTruthy()
     expect(screen.getAllByRole('button').map((button) => button.textContent)).toEqual([
-      'Edit', 'Use map centre', 'Use current location', 'Cancel', 'Done adjusting location',
+      'Edit', 'Use map centre', 'Cancel', 'Done adjusting location',
     ])
     expect(screen.queryByRole('textbox')).toBeNull()
     expect(screen.queryByRole('spinbutton')).toBeNull()
@@ -83,6 +83,29 @@ describe('PersonalWaypointPlacement', () => {
 
     await user.click(input)
     expect(document.activeElement).toBe(input)
+  })
+
+  it('shows current-location placement only when requested and explains when unavailable', async () => {
+    const onUseCurrentLocation = vi.fn()
+    const { rerender } = renderPlacement({ showCurrentLocationAction: true })
+    const unavailableButton = screen.getByRole('button', { name: 'Use current location' })
+    expect(unavailableButton.getAttribute('aria-disabled')).toBe('true')
+    expect(unavailableButton.getAttribute('aria-describedby')).toBeTruthy()
+
+    rerender(<PersonalWaypointPlacement
+      coordinate={coordinate}
+      showCurrentLocationAction
+      onUseCurrentLocation={onUseCurrentLocation}
+      onApplyCoordinate={vi.fn()}
+      onContinue={vi.fn()}
+      onCancel={vi.fn()}
+    />)
+    const availableButton = screen.getByRole('button', { name: 'Use current location' })
+    expect(availableButton.getAttribute('aria-disabled')).toBeNull()
+
+    const user = userEvent.setup()
+    await user.click(availableButton)
+    expect(onUseCurrentLocation).toHaveBeenCalledOnce()
   })
 
   it('shows the parser message for invalid input and keeps the previous coordinate', async () => {

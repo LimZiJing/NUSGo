@@ -20,6 +20,7 @@ const OUTSIDE_SINGAPORE_NOTE = 'This point is outside Singapore. Check latitude 
 
 export function PersonalWaypointPlacement({
   coordinate,
+  showCurrentLocationAction,
   onUseMapCentre,
   onUseCurrentLocation,
   onApplyCoordinate,
@@ -27,6 +28,7 @@ export function PersonalWaypointPlacement({
   onCancel,
 }: {
   readonly coordinate: WaypointCoordinate
+  readonly showCurrentLocationAction?: boolean
   readonly onUseMapCentre?: () => void
   readonly onUseCurrentLocation?: () => void
   /** Called with a coordinate the person typed or pasted; it has passed validation. */
@@ -163,13 +165,13 @@ export function PersonalWaypointPlacement({
           isDisabled={!onUseMapCentre}
           onClick={() => onUseMapCentre?.()}
         />
-        <Button
+        {showCurrentLocationAction && <Button
           className="personal-waypoint-use-current-location personal-waypoint-location-action"
           label="Use current location"
           isDisabled={!onUseCurrentLocation}
           tooltip={!onUseCurrentLocation ? 'Current location is unavailable' : undefined}
           onClick={() => onUseCurrentLocation?.()}
-        />
+        />}
       </div>
     </div>
     <div className="personal-waypoint-actions">

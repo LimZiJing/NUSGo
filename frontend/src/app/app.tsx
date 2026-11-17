@@ -1180,17 +1180,13 @@ function App() {
         {morePage === 'placing' && <PersonalWaypointPlacement
           coordinate={personalWaypoints.draft.coordinate}
           onUseMapCentre={mapCenter && !isMapMoving ? () => updatePersonalWaypointDraft({ coordinate: mapCenter }) : undefined}
-          onUseCurrentLocation={currentLocationFix
-            ? () => updatePersonalWaypointDraft({
-              coordinate: { latitude: currentLocationFix.latitude, longitude: currentLocationFix.longitude },
-            })
-            : undefined}
           onApplyCoordinate={applyTypedWaypointCoordinate}
           onContinue={() => setMorePage(placementReturnPage ?? 'creating')}
           onCancel={cancelWaypointPlacement}
         />}
         {morePage === 'community-placing' && <PersonalWaypointPlacement
           coordinate={communitySubmissionCoordinate}
+          showCurrentLocationAction
           onUseMapCentre={mapCenter && !isMapMoving
             ? () => {
               setCommunitySubmissionCoordinate(mapCenter)

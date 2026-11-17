@@ -472,7 +472,7 @@
   color: var(--text-primary);
   background: var(--surface-card);
   font-size: var(--font-size-sm);
-  font-weight: 600;
+  font-weight: 500;
 }
 
 .community-waypoint-category-card svg {

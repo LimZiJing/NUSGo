@@ -191,7 +191,12 @@ function readSuggestedDetails(
     }
   }
 
-  invalid('suggestedDetails is only supported for printing and vending machine waypoints')
+  if (category === 'toilet') {
+    assertAllowedFields(input, new Set(['category', 'bidet']))
+    return { category, bidet: readOptionalBoolean(input, 'bidet') }
+  }
+
+  invalid('suggestedDetails is only supported for printing, toilet, and vending machine waypoints')
 }
 
 function readWaypointId(input: Record<string, unknown>): CommunityWaypointId {

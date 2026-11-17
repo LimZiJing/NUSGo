@@ -94,9 +94,17 @@ function getIssueTitle(submission: CommunityWaypointSubmission): string {
   return '[' + kind + '] ' + submission.waypointId
 }
 
+function formatCoordinate(value: number, positiveDirection: string, negativeDirection: string): string {
+  return `${Math.abs(value).toFixed(6)}° ${value < 0 ? negativeDirection : positiveDirection}`
+}
+
+function formatCoordinatePair(latitude: number, longitude: number): string {
+  return `${formatCoordinate(latitude, 'N', 'S')}, ${formatCoordinate(longitude, 'E', 'W')}`
+}
+
 function locationSummary(latitude: number, longitude: number): string {
   const mapUrl = `https://www.openstreetmap.org/?mlat=${latitude}&mlon=${longitude}#map=19/${latitude}/${longitude}`
-  return `Latitude ${latitude}, longitude ${longitude} ([open map](${mapUrl}))`
+  return `${formatCoordinatePair(latitude, longitude)} ([open map](${mapUrl}))`
 }
 
 function getSummaryRows(submission: CommunityWaypointSubmission): readonly (readonly [string, string])[] {
@@ -137,13 +145,13 @@ function getSubmissionDetailLines(submission: CommunityWaypointSubmission): read
   if (submission.kind === 'new-place') {
     return [
       formatIssueField('Category', getCategoryLabel(submission.category)),
-      formatIssueField('Coordinates (latitude, longitude)', `${submission.latitude}, ${submission.longitude}`),
+      formatIssueField('Coordinates', formatCoordinatePair(submission.latitude, submission.longitude)),
       formatIssueField('Building or nearby landmark', submission.building ?? 'Not provided'),
       formatIssueField('Floor', submission.floor ?? 'Not provided'),
-      formatIssueField('Submitter explanation (unverified)', submission.explanation ?? 'Not provided'),
+      formatIssueField('Submitter explanation', submission.explanation ?? 'Not provided'),
       ...(submission.suggestedDetails === undefined
         ? []
-        : ['', '### More details (unverified)', '', ...getSuggestedDetailsLines(submission.suggestedDetails)]),
+        : ['', '### More details', '', ...getSuggestedDetailsLines(submission.suggestedDetails)]),
     ]
   }
   if (submission.kind === 'correction') {
@@ -151,22 +159,22 @@ function getSubmissionDetailLines(submission: CommunityWaypointSubmission): read
       ...(submission.category === undefined ? [] : [formatIssueField('Proposed category', getCategoryLabel(submission.category))]),
       ...(submission.latitude === undefined || submission.longitude === undefined
         ? []
-        : [formatIssueField('Proposed coordinates (latitude, longitude)', `${submission.latitude}, ${submission.longitude}`)]),
+        : [formatIssueField('Proposed coordinates', formatCoordinatePair(submission.latitude, submission.longitude))]),
       ...(submission.building === undefined ? [] : [formatIssueField('Proposed building', submission.building)]),
       ...(submission.floor === undefined ? [] : [formatIssueField('Proposed floor', submission.floor)]),
     ]
     return [
       formatIssueField('Public waypoint ID', submission.waypointId),
-      formatIssueField('Requested change (unverified)', submission.requestedChange),
+      formatIssueField('Requested change', submission.requestedChange),
       ...(proposedFields.length === 0 ? [] : ['', '### Proposed field values', '', ...proposedFields]),
       ...(submission.suggestedDetails === undefined
         ? []
-        : ['', '### More details (unverified)', '', ...getSuggestedDetailsLines(submission.suggestedDetails)]),
+        : ['', '### More details', '', ...getSuggestedDetailsLines(submission.suggestedDetails)]),
     ]
   }
   return [
     formatIssueField('Public waypoint ID', submission.waypointId),
-    formatIssueField('Removal reason (unverified)', submission.reason),
+    formatIssueField('Removal reason', submission.reason),
   ]
 }
 
@@ -179,7 +187,7 @@ function formatSubmissionJson(submission: CommunityWaypointSubmission): string {
   const fence = '`'.repeat(Math.max(3, longestBacktickRun + 1))
   return [
     '<details>',
-    '<summary>Raw submission JSON — unverified (schema version 1)</summary>',
+    '<summary>Submission data (schema version 1)</summary>',
     '',
     '<!-- NUSGO_SUBMISSION_JSON_V1_START -->',
     fence + 'json',
@@ -207,30 +215,15 @@ export function createPrivateSubmissionIssueDraft(
   return {
     title: getIssueTitle(submission),
     body: [
-      '> Anonymous NUSGo submission. Submitted values are unverified and must be checked before publication.',
-      '',
       '## Summary',
       '',
       ...summaryTable,
       '',
-      '## Submitted details (unverified)',
+      '## Details',
       '',
       ...getSubmissionDetailLines(submission),
       '',
       formatSubmissionJson(submission),
-      '',
-      '## Maintainer review',
-      '',
-      '- [ ] Kind label and exactly one review-state label are set',
-      '- [ ] Category and Singapore coordinate bounds are valid',
-      '- [ ] NUS location eligibility is confirmed',
-      '- [ ] Checked against published waypoints and open submissions',
-      '- [ ] Location and details are verified or marked for a field check',
-      '- [ ] Correction keeps its existing waypoint ID; removal ID will never be reused',
-      '- [ ] If approved, cleaned public GeoJSON change and public provenance are reviewed and published',
-      '- [ ] Private issue URL, raw text, reviewer notes, reporter identity, and photo IDs are excluded from the public change',
-      '- [ ] Approved, rejected, duplicate, or outdated outcome is recorded with reason and date',
-      '- Photo evidence is disabled at launch; do not collect or attach it.',
     ].join('\n'),
     labels: ['kind:' + submission.kind, 'review:new'],
   }

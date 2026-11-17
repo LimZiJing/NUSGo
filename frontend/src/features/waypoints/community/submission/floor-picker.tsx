@@ -1,12 +1,9 @@
 import { useCallback, useLayoutEffect, useMemo, useRef, useState } from 'react'
-import { Field } from '@base-ui/react/field'
-import { Input } from '@base-ui/react/input'
-import { Radio } from '@base-ui/react/radio'
-import { RadioGroup } from '@base-ui/react/radio-group'
-import { Button } from '../../../../ui/button'
-import { ScrollArea } from '../../../../ui/scroll-area'
+import { IconButton } from '@astryxdesign/core/IconButton'
+import { Icon } from '@astryxdesign/core/Icon'
+import { NumberInput } from '@astryxdesign/core/NumberInput'
+import { RadioList, RadioListItem } from '@astryxdesign/core/RadioList'
 import { FLOOR_UNSET, OTHER_FLOOR } from './draft'
-import { SubmissionField } from './field'
 
 const DEFAULT_FLOORS = [-1, 0, 1, 2, 3, 4, 5] as const
 
@@ -71,10 +68,9 @@ export function FloorPicker({
   }, [])
 
   useLayoutEffect(() => {
-    const selectedChoice = scrollAreaRef.current?.querySelector<HTMLElement>('[role="radio"][aria-checked="true"]')
-    if (selectedChoice && typeof selectedChoice.scrollIntoView === 'function') {
-      selectedChoice.scrollIntoView({ block: 'nearest', inline: 'nearest' })
-    }
+    const selectedRadio = scrollAreaRef.current?.querySelector<HTMLInputElement>('input[type="radio"]:checked')
+    const selectedChoice = selectedRadio?.closest<HTMLElement>('.community-waypoint-floor-option')
+    selectedChoice?.scrollIntoView?.({ block: 'nearest', inline: 'nearest' })
   }, [selectedValue])
 
   useLayoutEffect(() => {
@@ -95,99 +91,82 @@ export function FloorPicker({
     const scrollArea = scrollAreaRef.current
     if (!scrollArea) return
     const distance = Math.max(120, scrollArea.clientWidth * 0.75)
-    if (typeof scrollArea.scrollBy === 'function') {
-      scrollArea.scrollBy({ left: direction * distance, behavior: 'smooth' })
-    } else {
-      scrollArea.scrollLeft += direction * distance
-    }
+    scrollArea.scrollBy({ left: direction * distance, behavior: 'smooth' })
   }
 
+  const otherFloorValue = displayedOtherFloor.trim() === '' || !Number.isFinite(Number(displayedOtherFloor))
+    ? null
+    : Number(displayedOtherFloor)
+
   return (
-    <SubmissionField
-      id="community-submission-floor"
-      name="floor"
-      label="Floor"
-      error={error}
-      layout="floor"
-    >
+    <div id="community-submission-floor" className="community-waypoint-field community-waypoint-field--floor">
+      <span className="community-waypoint-field-label" id="community-submission-floor-label">Floor</span>
       <div
         className="route-chip-scroller"
         data-can-scroll-left={scrollState.canScrollLeft ? 'true' : undefined}
         data-can-scroll-right={scrollState.canScrollRight ? 'true' : undefined}
       >
-        <ScrollArea
+        <div
           ref={scrollAreaRef}
-          axis="horizontal"
           className="route-chip-list community-waypoint-floor-scroll"
           onScroll={(event) => updateScrollState(event.currentTarget)}
         >
-          <RadioGroup
-            id="community-submission-floor-options"
-            className="community-waypoint-floor-options"
-            aria-orientation="horizontal"
-            aria-labelledby="community-submission-floor-label"
-            aria-invalid={Boolean(error)}
-            aria-describedby={error ? 'community-submission-floor-error' : undefined}
+          <RadioList
+            label="Floor"
+            isLabelHidden
+            orientation="horizontal"
             value={selectedValue}
-            onValueChange={(value) => onFloorChange(value === null || value === FLOOR_UNSET ? '' : value)}
+            htmlName="floor"
+            status={error ? { type: 'error', message: error } : undefined}
+            controlClassName="community-waypoint-floor-options"
+            onChange={(value) => onFloorChange(value === FLOOR_UNSET ? '' : value)}
           >
-            {choices.map(({ value, label }) => {
-              const labelId = `community-submission-floor-label-${value}`
-              return <Radio.Root
+            {choices.map(({ value, label }) => (
+              <RadioListItem
                 key={value}
                 value={value}
-                aria-labelledby={labelId}
+                label={label}
                 className="route-chip community-waypoint-floor-option"
-                data-size="compact"
-              >
-                <span
-                  id={labelId}
-                  className={value === FLOOR_UNSET ? 'community-waypoint-floor-value--unset' : undefined}
-                >
-                  {label}
-                </span>
-              </Radio.Root>
-            })}
-          </RadioGroup>
-        </ScrollArea>
-        <Button
+                data-floor-unset={value === FLOOR_UNSET ? 'true' : undefined}
+              />
+            ))}
+          </RadioList>
+        </div>
+        {scrollState.canScrollLeft && <IconButton
           className="route-scroll-arrow route-scroll-arrow-left"
-          ariaLabel="Scroll floor options left"
-          hidden={!scrollState.canScrollLeft}
+          label="Scroll floor options left"
+          icon={<Icon icon="chevronLeft" />}
           onClick={() => scroll(-1)}
-        >
-          <span aria-hidden="true">‹</span>
-        </Button>
-        <Button
+        />}
+        {scrollState.canScrollRight && <IconButton
           className="route-scroll-arrow route-scroll-arrow-right"
-          ariaLabel="Scroll floor options right"
-          hidden={!scrollState.canScrollRight}
+          label="Scroll floor options right"
+          icon={<Icon icon="chevronRight" />}
           onClick={() => scroll(1)}
-        >
-          <span aria-hidden="true">›</span>
-        </Button>
+        />}
       </div>
-      {selectedValue === OTHER_FLOOR && <Field.Root
-        className="community-waypoint-floor-other-panel"
-        name="otherFloor"
-        invalid={Boolean(error)}
-      >
-        <Field.Label className="community-waypoint-floor-other-label" htmlFor="community-submission-other-floor">
+      {selectedValue === OTHER_FLOOR && <div className="community-waypoint-floor-other-panel">
+        <span className="community-waypoint-floor-other-label">
           Other floor number
-        </Field.Label>
-        <Input
+        </span>
+        <NumberInput
           id="community-submission-other-floor"
-          name="otherFloor"
-          className="community-waypoint-field-control community-waypoint-floor-other-input"
-          type="number"
+          label="Other floor number"
+          isLabelHidden
+          htmlName="otherFloor"
+          value={otherFloorValue}
+          hasClear
+          isIntegerOnly
           step={1}
+          isWheelEnabled={false}
+          hasNumberSteppers={false}
           placeholder="e.g. -3"
-          value={displayedOtherFloor}
-          aria-invalid={Boolean(error)}
-          aria-describedby={error ? 'community-submission-floor-error' : undefined}
-          onChange={(event) => onOtherFloorChange(event.target.value)}
+          status={error ? { type: 'error', message: error } : undefined}
+          containerClassName="community-waypoint-floor-other-astryx-field"
+          controlClassName="community-waypoint-floor-other-control"
+          onChange={(value) => onOtherFloorChange(value === null ? '' : String(value))}
         />
-      </Field.Root>}
-    </SubmissionField>
+      </div>}
+    </div>
   )
 }

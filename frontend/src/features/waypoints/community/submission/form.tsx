@@ -1,13 +1,14 @@
-import { useEffect, useLayoutEffect, useMemo, useRef, useState, type FormEvent } from 'react'
+import { useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState, type FormEvent } from 'react'
+import { Button } from '@astryxdesign/core/Button'
 import type {
   CommunityWaypoint,
   CommunityWaypointSubmission,
 } from '@nusgo/shared'
 import type { VenueLocationMap } from '@nusgo/shared/venue/types'
 import type { WaypointCoordinate } from '@nusgo/shared/waypoints/waypoint'
+import { getIsMobileViewport } from '../../../../app/navigation/navigation-state'
 import { createBuildingFloorLookup } from '../../../../domain/venue/building-floors'
 import { findNearestBuilding, type BuildingIndex } from '../../../../domain/venue/building-index'
-import { Button } from '../../../../ui/button'
 import {
   createSubmission,
   getSubmissionErrorMessage,
@@ -50,9 +51,11 @@ export function CommunityWaypointSubmissionForm({
   const [draft, setDraft] = useState(() => initialSubmissionDraft(waypoint))
   const [status, setStatus] = useState<FormStatus>('editing')
   const [errors, setErrors] = useState<SubmissionErrors>({})
-  /* Counts submit attempts, so a child can react to "this submit failed validation"
-     without watching the errors object, which changes identity for unrelated fields too. */
-  const [validationAttempt, setValidationAttempt] = useState(0)
+  const [isDetailsOpen, setIsDetailsOpen] = useState(() => Boolean(waypoint && (
+    (waypoint.services?.length ?? 0) > 0 || waypoint.colour !== undefined ||
+    waypoint.grayscalePriceCentsPerPage !== undefined || waypoint.colourPriceCentsPerPage !== undefined ||
+    (waypoint.items?.length ?? 0) > 0 || (waypoint.prep?.length ?? 0) > 0 || waypoint.bidet !== undefined
+  )))
   const [submissionError, setSubmissionError] = useState<string | null>(null)
   const [previousLocationStatus, setPreviousLocationStatus] = useState(locationStatus)
   const [locationAnnouncement, setLocationAnnouncement] = useState('')
@@ -74,6 +77,40 @@ export function CommunityWaypointSubmissionForm({
   const receiptHeading = isCorrection ? 'Correction received' : 'Suggestion received'
   const fieldErrorMessage = Object.values(errors).filter(Boolean).join(' ')
   const errorMessageText = [fieldErrorMessage, submissionError].filter(Boolean).join(' ')
+
+  const revealFocusedControl = useCallback((): void => {
+    const active = document.activeElement
+    if (!(active instanceof HTMLInputElement || active instanceof HTMLTextAreaElement)) return
+    const scrollContainer = formRef.current?.closest<HTMLElement>('.more-panel-content-scroll')
+    const viewport = window.visualViewport
+    if (!scrollContainer || !viewport) return
+
+    const fieldRect = active.getBoundingClientRect()
+    const panelRect = scrollContainer.getBoundingClientRect()
+    const visibleTop = Math.max(panelRect.top, viewport.offsetTop + 12)
+    const visibleBottom = Math.min(panelRect.bottom, viewport.offsetTop + viewport.height - 24)
+    if (fieldRect.bottom > visibleBottom) {
+      scrollContainer.scrollBy({ top: fieldRect.bottom - visibleBottom + 24, behavior: 'smooth' })
+    } else if (fieldRect.top < visibleTop) {
+      scrollContainer.scrollBy({ top: fieldRect.top - visibleTop - 16, behavior: 'smooth' })
+    }
+  }, [])
+
+  const scheduleFocusedControlReveal = useCallback((): void => {
+    window.requestAnimationFrame(revealFocusedControl)
+    window.setTimeout(revealFocusedControl, 220)
+  }, [revealFocusedControl])
+
+  useEffect(() => {
+    const viewport = window.visualViewport
+    if (!viewport) return
+    viewport.addEventListener('resize', revealFocusedControl)
+    viewport.addEventListener('scroll', revealFocusedControl)
+    return () => {
+      viewport.removeEventListener('resize', revealFocusedControl)
+      viewport.removeEventListener('scroll', revealFocusedControl)
+    }
+  }, [revealFocusedControl])
 
   if (locationStatus !== previousLocationStatus) {
     setPreviousLocationStatus(locationStatus)
@@ -169,9 +206,12 @@ export function CommunityWaypointSubmissionForm({
 
     const validationErrors = validateSubmissionDraft(draft, waypoint, coordinate, locationStatus === 'ready')
     if (Object.keys(validationErrors).length > 0) {
+      if (
+        validationErrors.services || validationErrors.colour || validationErrors.grayscalePricePerPage ||
+        validationErrors.colourPricePerPage || validationErrors.items || validationErrors.prep || validationErrors.bidet
+      ) setIsDetailsOpen(true)
       pendingInvalidFieldRef.current = Object.keys(validationErrors)[0] as SubmissionField
       setErrors(validationErrors)
-      setValidationAttempt((attempt) => attempt + 1)
       return
     }
 
@@ -202,9 +242,12 @@ export function CommunityWaypointSubmissionForm({
       ? formRef.current?.querySelector<HTMLElement>('.community-waypoint-submission-coordinate button')
       : field === 'floor'
         ? formRef.current?.querySelector<HTMLElement>('#community-submission-other-floor')
-          ?? formRef.current?.querySelector<HTMLElement>('#community-submission-floor [role="radio"][aria-checked="true"]')
+          ?? formRef.current?.querySelector<HTMLElement>('#community-submission-floor input[name="floor"]:checked')
+          ?? formRef.current?.querySelector<HTMLElement>('#community-submission-floor input[name="floor"]')
         : formRef.current?.querySelector<HTMLElement>(`[name="${field}"]`)
-    target?.focus()
+    if (!getIsMobileViewport() || !(target instanceof HTMLInputElement || target instanceof HTMLTextAreaElement)) {
+      target?.focus()
+    }
   }, [errors])
 
   return (
@@ -228,6 +271,7 @@ export function CommunityWaypointSubmissionForm({
         <form
           ref={formRef}
           className="community-waypoint-submission-form"
+          onFocusCapture={scheduleFocusedControlReveal}
           onSubmit={(event) => { void submit(event) }}
           noValidate
         >
@@ -240,7 +284,8 @@ export function CommunityWaypointSubmissionForm({
             locationAccuracy={locationAccuracy}
             buildingIndex={buildingIndex}
             observedFloors={observedFloors}
-            validationAttempt={validationAttempt}
+            isDetailsOpen={isDetailsOpen}
+            onDetailsOpenChange={setIsDetailsOpen}
             onFieldChange={updateField}
             onAdjustLocation={onAdjustLocation}
           />
@@ -249,12 +294,13 @@ export function CommunityWaypointSubmissionForm({
             {submissionError}
           </p>}
           <div className="community-waypoint-submission-actions">
-            <Button label="Cancel" variant="ghost" onClick={onBack} disabled={status === 'submitting'} />
+            <Button className="community-waypoint-form-action" label="Cancel" variant="ghost" onClick={onBack} isDisabled={status === 'submitting'} />
             <Button
               label={status === 'submitting' ? 'Sending…' : 'Send suggestion'}
+              className="community-waypoint-form-action"
               variant="primary"
               type="submit"
-              busy={status === 'submitting'}
+              isLoading={status === 'submitting'}
             />
           </div>
         </form>

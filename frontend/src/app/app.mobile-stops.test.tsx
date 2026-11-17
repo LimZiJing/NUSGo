@@ -288,7 +288,7 @@ describe('mobile Stops tab state', () => {
     expect(localStorage.getItem('navus:minute-format:v1')).toBe('m')
 
     await user.click(screen.getByRole('button', { name: 'Back to previous view' }))
-    await user.click(screen.getByRole('button', { name: 'Close More' }))
+    await user.click(screen.getByRole('button', { name: 'Back to previous view' }))
     await waitFor(() => expect(screen.getByText('5m')).toBeTruthy())
 
     view.unmount()
@@ -393,7 +393,7 @@ describe('mobile Stops tab state', () => {
     // The form has no Cancel of its own: the panel's Back leaves it.
     await user.click(screen.getByRole('button', { name: 'Back to previous view' }))
     await user.click(screen.getByRole('button', { name: 'Back to previous view' }))
-    await user.click(screen.getByRole('button', { name: 'Close More' }))
+    await user.click(screen.getByRole('button', { name: 'Back to previous view' }))
 
     expect(stopsSheet.getAttribute('data-detent')).toBe('collapsed')
     expect(stopsSheet.style.getPropertyValue('--drawer-snap-point-offset')).toBe(initialSnapOffset)

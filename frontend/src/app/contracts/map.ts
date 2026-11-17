@@ -10,6 +10,7 @@ import type { VenueLocation, VenueLocationMap } from '@nusgo/shared/venue/types'
 import type { LoadedTransitData } from './data'
 import type { ShuttleVehiclePosition } from '@nusgo/shared'
 import type { PersonalWaypoint } from '../../domain/waypoints/personal/personal-waypoint'
+import type { CommunityWaypoint } from '@nusgo/shared/waypoints/community'
 
 export interface MapBuildingSelection {
   readonly name: string
@@ -138,8 +139,8 @@ export interface MapSession {
   setPresentationBottomInset(bottom: number | null): void
   /** Zoom around the visible-area centre while a centre crosshair is shown. */
   setVisibleCenterZoom(enabled: boolean): void
-  /** Shows the temporary Personal Waypoint pin; only placement mode permits dragging it. */
-  setPersonalWaypointPlacement(
+  /** Shows a temporary waypoint pin; only placement mode permits dragging it. */
+  setWaypointPlacement(
     coordinate: MapCoordinate | null,
     editable: boolean,
     onDrag: (coordinate: MapCoordinate) => void,
@@ -151,11 +152,18 @@ export interface MapSession {
     onSelect: (waypointId: string, trigger: HTMLButtonElement) => void,
     selectedWaypointId?: string | null,
   ): void
+  /** Shows the approved Community Waypoint markers without changing the map camera. */
+  setCommunityWaypoints(
+    waypoints: readonly CommunityWaypoint[],
+    onSelect: (waypointId: string, trigger: HTMLButtonElement) => void,
+  ): void
   /**
    * Shows a saved Personal Waypoint marker and centers it, keeping the map area left visible by
    * `occlusion` (which may include a panel the session does not measure itself) in view.
    */
   focusPersonalWaypoint(waypoint: PersonalWaypoint, occlusion?: MapViewportInsets): void
+  /** Centers on a Community Waypoint while keeping existing overlays in view. */
+  focusCommunityWaypoint(waypoint: CommunityWaypoint): void
   /** Reads the exact camera position without moving it. */
   captureCamera(): MapCameraSnapshot
   /** Returns to a captured camera position, without animation when reduced motion is preferred. */

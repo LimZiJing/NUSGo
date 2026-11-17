@@ -8,6 +8,7 @@ import type { VenueLocationMap } from '@nusgo/shared/venue/types'
 import type { TripRequest } from '../../../domain/trip/types'
 import { BuildingIcon, BusIcon, FootprintsIcon, MapPinIcon, RoomIcon } from '../../../ui/icons'
 import { DisclosureChevron } from '../../../ui/disclosure-chevron'
+import { Button } from '../../../ui/button'
 import {
   getJourneyCompactSummary,
   getJourneyOptionDetail,
@@ -277,14 +278,14 @@ export function JourneyResults({
               aria-labelledby={titleId}
             >
               <h3 className="journey-result-heading">
-                <button
+                <Button
                   id={titleId}
                   type="button"
                   className="journey-option-summary"
                   data-candidate-key={candidateKey}
-                  aria-expanded={expanded}
+                  expanded={expanded}
                   aria-current={selected ? 'true' : undefined}
-                  aria-controls={detailsId}
+                  controls={detailsId}
                   onClick={() => {
                     if (expanded) {
                       // Already open: the tap recentres the map on this route.
@@ -306,14 +307,15 @@ export function JourneyResults({
                     {renderJourneyOptionHeader(path, index)}
                     <span className="journey-option-detail">{getJourneyOptionDetail(path, summary)}</span>
                   </span>
-                </button>
+                </Button>
                 {expanded && (
-                  <button
+                  <Button
                     type="button"
                     className="journey-option-collapse"
-                    aria-label={`Collapse journey ${index + 1} details`}
                     onClick={() => setExpandedKey(null)}
-                  />
+                  >
+                    <span className="visually-hidden">Collapse journey {index + 1} details</span>
+                  </Button>
                 )}
               </h3>
               <div

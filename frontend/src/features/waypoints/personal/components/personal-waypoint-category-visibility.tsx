@@ -72,13 +72,13 @@ export function PersonalWaypointCategoryVisibility({
 
   return <section className="personal-waypoint-visibility" aria-label="Map categories">
     <h2 className="personal-waypoint-visibility-heading">
-      <button
+      <Button
         id="personal-waypoint-visibility-heading"
         className="personal-waypoint-visibility-trigger"
         ref={triggerRef}
         type="button"
-        aria-expanded={pickerOpen}
-        aria-controls="personal-waypoint-category-picker"
+        expanded={pickerOpen}
+        controls="personal-waypoint-category-picker"
         onClick={onTogglePicker}
       >
         <span className="personal-waypoint-visibility-summary">
@@ -90,7 +90,7 @@ export function PersonalWaypointCategoryVisibility({
           </span>
         </span>
         <ChevronDownIcon aria-hidden="true" />
-      </button>
+      </Button>
     </h2>
     <div className="personal-waypoint-category-picker" id="personal-waypoint-category-picker" hidden={!pickerOpen}>
       <div className="personal-waypoint-category-search">

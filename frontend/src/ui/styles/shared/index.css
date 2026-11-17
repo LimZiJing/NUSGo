@@ -1,3 +1,4 @@
+@import '@astryxdesign/core/astryx.css';
 @import './base.css';
 @import './tokens.css';
 @import './themes/light.css';
@@ -19,9 +20,9 @@
 @import '../disclosure-header.css';
 @import '../overflow-menu.css';
 @import '../confirm-dialog.css';
-@import './controls/ghost-back-button.css';
 @import './controls/search-field.css';
 @import './controls/scroll-area.css';
 @import './controls/navigate-button.css';
 @import './controls/info-pill.css';
 @import './more-panel.css';
+@import './menu-icon-tile.css';

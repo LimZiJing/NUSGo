@@ -73,7 +73,7 @@ describe('StopCard', () => {
 
     expect(onToggleExpanded).toHaveBeenCalledExactlyOnceWith('STOP-A')
     expect(onToggleFavorite).toHaveBeenCalledExactlyOnceWith('STOP-A')
-    expect(onSelectRoute).toHaveBeenCalledExactlyOnceWith('A1')
+    expect(onSelectRoute).toHaveBeenCalledExactlyOnceWith('A1', 'STOP-A')
     expect(screen.queryByRole('button', { name: /View 95 route details/ })).toBeNull()
   })
 

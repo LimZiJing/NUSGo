@@ -1,15 +1,16 @@
-import { useMemo } from 'react'
+import { useMemo, type ReactNode } from 'react'
 import type { VenueLocationMap } from '@nusgo/shared/venue/types'
 import { EMPTY_BUILDING_INDEX, type BuildingIndex } from '../../domain/venue/building-index'
 import { linkVenuesToBuildings } from '../../domain/venue/building-links'
 import type { TransitIndex } from '../../domain/transit'
-import { GhostBackButton } from '../../ui/ghost-back-button.tsx'
+import { BackButton } from '../../ui/back-button.tsx'
 import { SegmentedControl } from '../../ui/segmented-control.tsx'
 import type { MobileSheetDetent } from '../../ui/mobile/mobile-sheet/mobile-sheet-detent.ts'
 import type { ExplorePanelFocusBindings } from './hooks/use-explore-panel-focus.ts'
 import type { ExploreMode, ExploreState } from './state/explore-state.ts'
 import type { ExplorePanelStatus } from './state/explore-panel-status.ts'
 import { BusRouteList } from './components/bus-route-list.tsx'
+import type { RouteStopFocusRequest } from './route-stop-focus.ts'
 import { BuildingDetails, VenueDetails } from './components/venue-details.tsx'
 import { VenueSearch } from './components/venue-search.tsx'
 import './styles/explore-content.css'
@@ -35,22 +36,37 @@ interface ExploreContentProps {
   onRestore?: () => void
   status?: ExplorePanelStatus | null
   selectedRouteId?: string | null
+  routeStopFocusRequest?: RouteStopFocusRequest | null
+  onRouteStopFocusHandled?: (sequence: number) => void
   onRouteSelect: (routeId: string) => void
   onQueryChange: (query: string) => void
   onNavigateToVenue?: (venueCode: string) => void
   onNavigateToBuilding?: (buildingId: string, partId?: string) => void
   onSelectBuildingPart?: (buildingId: string, partId: string | null) => void
   onSearchFocus?: () => void
+  community?: {
+    readonly active: boolean
+    readonly selectedWaypointLabel: string | null
+    readonly content: ReactNode
+    readonly onModeChange: (active: boolean) => void
+    readonly onOpen: () => void
+  }
   focus: ExplorePanelFocusBindings
 }
 
-function getExplorePanelHeading(state: ExploreState): string {
+function getExplorePanelHeading(state: ExploreState, communityMode: boolean): string {
+  if (communityMode) return 'Community Waypoints'
   if (state.mode === 'bus-routes') return EXPLORE_LABELS.busRoutes
   if (state.mode === 'venue-detail') return 'Venue details'
   return 'Find a venue'
 }
 
-function getExplorePanelAnnouncement(state: ExploreState, buildingName?: string): string | null {
+function getExplorePanelAnnouncement(
+  state: ExploreState,
+  buildingName?: string,
+  communityMode = false,
+): string | null {
+  if (communityMode) return 'Community Waypoints opened.'
   if (state.mode === 'bus-routes') return null
   if (state.mode === 'venue-detail' && buildingName) return `Building details opened for ${buildingName}.`
   if (state.mode === 'venue-detail' && state.selectedVenue) {
@@ -71,12 +87,15 @@ export function ExploreContent({
   onRestore,
   status,
   selectedRouteId = null,
+  routeStopFocusRequest = null,
+  onRouteStopFocusHandled,
   onRouteSelect,
   onQueryChange,
   onNavigateToVenue,
   onNavigateToBuilding,
   onSelectBuildingPart,
   onSearchFocus,
+  community,
   focus: {
     panelHeadingRef,
     searchInputRef,
@@ -101,12 +120,14 @@ export function ExploreContent({
     ? buildingIndex.byId.get(state.selectedBuildingId) ?? null
     : null
   const minimized = sheetDetent === 'collapsed'
-  const explorePanelHeading = getExplorePanelHeading(state)
-  const explorePanelAnnouncement = getExplorePanelAnnouncement(state, selectedBuilding?.name)
+  const communityMode = community?.active ?? false
+  const explorePanelHeading = getExplorePanelHeading(state, communityMode)
+  const explorePanelAnnouncement = getExplorePanelAnnouncement(state, selectedBuilding?.name, communityMode)
   const explorePanelStatus = status?.kind === 'success' ? null : status ?? null
-  const showVenueSearch = state.mode === 'neutral' || state.mode === 'venue-search'
-  const showExploreSegments = showVenueSearch || state.mode === 'bus-routes'
-  const contentClassName = `explore-content explore-content-${state.mode}${
+  const showVenueSearch = !communityMode && (state.mode === 'neutral' || state.mode === 'venue-search')
+  const showExploreSegments = showVenueSearch || state.mode === 'bus-routes' || communityMode
+  const contentMode = communityMode ? 'community' : state.mode
+  const contentClassName = `explore-content explore-content-${contentMode}${
     showVenueSearch ? ' explore-content-venue-search' : ''
   }`
 
@@ -124,16 +145,23 @@ export function ExploreContent({
               options={[
                 { value: 'venue', label: EXPLORE_LABELS.venue, focusId: 'explore-venue-segment' },
                 { value: 'bus-routes', label: EXPLORE_LABELS.busRoutes, focusId: 'explore-bus-routes-segment' },
+                ...(community ? [{ value: 'community', label: 'Community', focusId: 'explore-community-segment' }] : []),
               ]}
-              value={showVenueSearch ? 'venue' : 'bus-routes'}
+              value={communityMode ? 'community' : showVenueSearch ? 'venue' : 'bus-routes'}
               onValueChange={(mode, event) => {
-                if (mode === 'venue') onSelectVenueSearch()
-                else onSelectBusRoutes(event)
+                if (mode === 'community') {
+                  community?.onModeChange(true)
+                  community?.onOpen()
+                } else {
+                  community?.onModeChange(false)
+                  if (mode === 'venue') onSelectVenueSearch()
+                  else onSelectBusRoutes(event)
+                }
               }}
             />
           )}
-          {state.mode === 'venue-detail' && !minimized && (
-            <GhostBackButton label={getVenueDetailReturnLabel(state)} onClick={onBack} />
+          {!communityMode && state.mode === 'venue-detail' && !minimized && (
+            <BackButton mode="inline" label={getVenueDetailReturnLabel(state)} onClick={onBack} />
           )}
           <h2
             id="explore-content-heading"
@@ -145,7 +173,7 @@ export function ExploreContent({
           </h2>
         </div>
 
-        {(state.mode === 'venue-search' || state.mode === 'neutral') && (
+        {!communityMode && (state.mode === 'venue-search' || state.mode === 'neutral') && (
           <VenueSearch
             query={state.query}
             venues={venues}
@@ -163,7 +191,7 @@ export function ExploreContent({
           />
         )}
 
-        {state.mode === 'venue-detail' && state.selectedVenue && (
+        {!communityMode && state.mode === 'venue-detail' && state.selectedVenue && (
           <VenueDetails
             venue={state.selectedVenue}
             transitIndex={transitIndex}
@@ -173,7 +201,7 @@ export function ExploreContent({
           />
         )}
 
-        {state.mode === 'venue-detail' && !state.selectedVenue && selectedBuilding && (
+        {!communityMode && state.mode === 'venue-detail' && !state.selectedVenue && selectedBuilding && (
           <BuildingDetails
             key={selectedBuilding.id}
             building={selectedBuilding}
@@ -187,7 +215,7 @@ export function ExploreContent({
           />
         )}
 
-        {state.mode === 'bus-routes' && (
+        {!communityMode && state.mode === 'bus-routes' && (
           <div
             id="explore-content-panel"
             className="navigation-panel-content explore-content-panel"
@@ -197,9 +225,16 @@ export function ExploreContent({
               networkIndex={transitIndex}
               selectedRouteId={selectedRouteId}
               onRouteSelect={onRouteSelect}
+              routeStopFocusRequest={routeStopFocusRequest}
+              onRouteStopFocusHandled={onRouteStopFocusHandled}
               firstRouteCardRef={firstRouteCardRef}
               onFocusStop={onFocusStop}
             />
+          </div>
+        )}
+        {communityMode && community && (
+          <div id="explore-content-panel" className="navigation-panel-content explore-content-panel explore-content-community-panel">
+            {community.content}
           </div>
         )}
         {explorePanelStatus && (

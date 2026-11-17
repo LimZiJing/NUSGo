@@ -45,6 +45,24 @@
   display: grid;
   gap: 8px;
 }
+
+.explore-content-community {
+  display: flex;
+  flex-direction: column;
+  min-height: 0;
+}
+
+.explore-content-community .explore-content-header {
+  flex: 0 0 auto;
+}
+
+.explore-content-community-panel {
+  display: flex;
+  flex: 1 1 0;
+  flex-direction: column;
+  min-height: 0;
+  overflow: hidden;
+}
 .explore-content-detail {
   align-content: start;
 }
@@ -116,6 +134,7 @@
   max-height: none;
 }
 
+/* Rich search results keep their feature-owned card surface while sharing Button states. */
 .explore-content .explore-content-result {
   display: grid;
   gap: 2px;
@@ -265,7 +284,7 @@
 }
 
 .explore-content-detail .venue-detail-action:not([aria-disabled='true']):hover {
-  filter: brightness(0.85);
+  background-color: var(--surface-control-hover);
 }
 
 .explore-content-detail .venue-detail-nusmods img {
@@ -434,11 +453,7 @@
 .explore-content .nearby-stop-row:focus-visible {
   background: var(--surface-subtle);
 }
-@media (max-width: 768px) {
-  .navigation-panel.explore-sheet {
-    background: var(--surface-raised);
-  }
-
+@media (width <= 640px), (width <= 768px) and (height > 420px) {
   .navigation-panel .explore-mode-selector {
     margin-top: 8px;
   }
@@ -481,6 +496,12 @@
     display: flex;
     flex: 1 1 0;
     flex-direction: column;
+    min-height: 0;
+    overflow: hidden;
+  }
+
+  .explore-content-community-panel {
+    flex: 1 1 0;
     min-height: 0;
     overflow: hidden;
   }
@@ -596,7 +617,7 @@
 
 }
 
-@media (min-width: 769px) {
+@media (width > 768px), (width > 640px) and (height <= 420px) {
   .navigation-column .explore-content {
     display: grid;
     align-content: start;
@@ -614,6 +635,12 @@
   .navigation-column .explore-content.explore-content-bus-routes {
     display: flex;
     align-content: stretch;
+    flex-direction: column;
+    overflow: hidden;
+  }
+
+  .navigation-column .explore-content.explore-content-community {
+    display: flex;
     flex-direction: column;
     overflow: hidden;
   }

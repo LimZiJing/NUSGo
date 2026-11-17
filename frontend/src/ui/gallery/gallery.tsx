@@ -1,9 +1,12 @@
 import { useEffect, useState, type ReactNode } from 'react'
 import { getRouteContrastTextColor } from '../../domain/transit/route-color'
+import { BackButton } from '../back-button'
+import { GALLERY_THEMES } from '../themes/catalog'
+import type { Theme } from '../theme'
 import { Button, IconButton, type ButtonVariant, type ControlSize, type IconButtonVariant } from '../button'
 import { Chip } from '../chip'
 import { DisclosureHeader } from '../disclosure-header'
-import { CloseIcon, NavigationIcon, SearchIcon } from '../icons'
+import { CloseIcon, CupSodaIcon, NavigationIcon, SearchIcon } from '../icons'
 import { MenuItem } from '../menu-item'
 import { Pill } from '../pill'
 import { Select } from '../select'
@@ -15,17 +18,8 @@ type SampleState = (typeof STATES)[number]
 const VARIANTS: readonly ButtonVariant[] = ['primary', 'secondary', 'ghost']
 const ICON_VARIANTS: readonly IconButtonVariant[] = [...VARIANTS, 'plain']
 const SIZES: readonly ControlSize[] = ['sm', 'lg']
-/* The app theme type covers Light and Dark only; the gallery sets data-theme directly to review
-   every palette in the shared theme stylesheets. */
-const THEMES = ['light', 'dark', 'matcha', 'sakura', 'nus'] as const
-type GalleryTheme = (typeof THEMES)[number]
-const THEME_NAMES: Readonly<Record<GalleryTheme, string>> = {
-  light: 'Light',
-  dark: 'Dark',
-  matcha: 'Matcha',
-  sakura: 'Sakura',
-  nus: 'NUS',
-}
+/* Each panel uses the real theme mechanism and the same catalog as Settings. */
+const THEMES = GALLERY_THEMES.map(({ id }) => id)
 const SAMPLE_ROUTE_COLOUR = '#fb0101'
 
 const noop = () => {}
@@ -82,14 +76,16 @@ const variantSizeRows = <Variant extends IconButtonVariant = ButtonVariant>(
     render: (state: SampleState) => render(variant, size, state),
   })))
 
-export function GalleryPanel({ theme }: { readonly theme: GalleryTheme }) {
+export function GalleryPanel({ theme }: { readonly theme: Theme }) {
   useEffect(() => {
     document.documentElement.dataset.theme = theme
   }, [theme])
 
+  const themeName = GALLERY_THEMES.find(({ id }) => id === theme)?.label ?? theme
+
   return (
     <main className="gallery" aria-label={`${theme} theme controls`}>
-      <h1>{THEME_NAMES[theme]}</h1>
+      <h1>{themeName}</h1>
       <StateGrid
         title="Button"
         rows={variantSizeRows((variant, size, state) => (
@@ -104,6 +100,29 @@ export function GalleryPanel({ theme }: { readonly theme: GalleryTheme }) {
           />
         ))}
       />
+      <section className="gallery-section" aria-label="BackButton">
+        <h2>BackButton</h2>
+        <div className="gallery-back-buttons">
+          <div>
+            <span className="gallery-heading">header</span>
+            <BackButton mode="header" label="Back to previous view" title="Back" onClick={noop} />
+          </div>
+          <div>
+            <span className="gallery-heading">inline</span>
+            <BackButton mode="inline" label="Back to stops" onClick={noop} />
+          </div>
+          <div>
+            <span className="gallery-heading">label-only</span>
+            <BackButton mode="label-only" label="Back to categories" onClick={noop} />
+          </div>
+        </div>
+      </section>
+      <section className="gallery-section" aria-label="Open Button">
+        <h2>Open Button</h2>
+        <div className="gallery-open-control">
+          <Button label="Show options" icon={<SearchIcon />} expanded onClick={noop} />
+        </div>
+      </section>
       <StateGrid
         title="IconButton"
         rows={variantSizeRows((variant, size, state) => (
@@ -158,6 +177,19 @@ export function GalleryPanel({ theme }: { readonly theme: GalleryTheme }) {
             render: (state: SampleState) => (
               <Chip
                 label="Pending"
+                size={size}
+                disabled={state === 'disabled'}
+                pressed={state === 'selected' ? true : state === 'default' ? false : undefined}
+                onClick={noop}
+              />
+            ),
+          })),
+          ...SIZES.map((size) => ({
+            label: `with icon / ${size}`,
+            render: (state: SampleState) => (
+              <Chip
+                label="Drinks"
+                leading={<CupSodaIcon size={15} />}
                 size={size}
                 disabled={state === 'disabled'}
                 pressed={state === 'selected' ? true : state === 'default' ? false : undefined}

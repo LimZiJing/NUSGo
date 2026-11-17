@@ -246,8 +246,8 @@ function captureOriginalPaint(map: Map): readonly OriginalPaint[] {
 
 /**
  * Recolours the basemap in place so the route, stop and label layers added on
- * top of it survive a theme change. Dark darkens it; every other theme gets the
- * quiet version of the style's own colours.
+ * top of it survive a theme change. Dark tones dim the map; light tones quiet
+ * the style's own colours.
  */
 export function applyBasemapTheme(map: Map, theme: BasemapTheme): void {
   let originals = originalPaintByMap.get(map)
@@ -256,14 +256,15 @@ export function applyBasemapTheme(map: Map, theme: BasemapTheme): void {
     originalPaintByMap.set(map, originals)
   }
 
-  const recolour = theme === 'dark' ? toDarkColor : toQuietColor
+  const isDark = theme !== 'light'
+  const recolour = isDark ? toDarkColor : toQuietColor
   for (const { layerId, property, value } of originals) {
     if (!map.getLayer(layerId)) continue
     if (property in DARK_RASTER_PAINT) {
       map.setPaintProperty(
         layerId,
         property,
-        theme === 'dark'
+        isDark
           ? DARK_RASTER_PAINT[property as keyof typeof DARK_RASTER_PAINT]
           : value,
       )

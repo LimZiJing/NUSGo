@@ -12,6 +12,7 @@ import {
 } from '../domain/trip/endpoints'
 import type { TripEndpoint, TripEndpointRole, TripRequest } from '../domain/trip/types'
 import type { PersonalWaypoint } from '../domain/waypoints/personal/personal-waypoint'
+import type { CommunityWaypoint } from '@nusgo/shared/waypoints/community'
 import { reconcilePersonalWaypointEndpoints } from '../domain/trip/personal-waypoint-endpoints'
 import type { VenueSearchResult } from '../domain/venue/search'
 import type { BuildingIndex } from '../domain/venue/building-index'
@@ -147,7 +148,7 @@ export interface NavigationSession {
   setViewportInsets(insets: MapViewportInsets): void
   setPresentationBottomInset(bottom: number | null): void
   setVisibleCenterZoom(enabled: boolean): void
-  setPersonalWaypointPlacement(
+  setWaypointPlacement(
     coordinate: MapCoordinate | null,
     editable: boolean,
     onChange: (coordinate: MapCoordinate) => void,
@@ -158,7 +159,12 @@ export interface NavigationSession {
     onSelect: (waypointId: string, trigger: HTMLButtonElement) => void,
     selectedWaypointId?: string | null,
   ): void
+  setCommunityWaypoints(
+    waypoints: readonly CommunityWaypoint[],
+    onSelect: (waypointId: string, trigger: HTMLButtonElement) => void,
+  ): void
   focusPersonalWaypoint(waypoint: PersonalWaypoint, occlusion?: MapViewportInsets): void
+  focusCommunityWaypoint(waypoint: CommunityWaypoint): void
   /** Reads the exact camera position so a temporary workflow can return to it unchanged. */
   captureCamera(): MapCameraSnapshot
   /** Returns to a captured camera position. */
@@ -1072,15 +1078,20 @@ export function createNavigationSession(
       dependencies.map.setVisibleCenterZoom(enabled)
     },
 
-    setPersonalWaypointPlacement(coordinate, editable, onChange) {
+    setWaypointPlacement(coordinate, editable, onChange) {
       if (disposed) return
       personalWaypointPlacementChange = coordinate && editable ? onChange : null
-      dependencies.map.setPersonalWaypointPlacement(coordinate, editable, onChange)
+      dependencies.map.setWaypointPlacement(coordinate, editable, onChange)
     },
 
     setPersonalWaypoints(waypoints, visible, onSelect, selectedWaypointId) {
       if (disposed) return
       dependencies.map.setPersonalWaypoints(waypoints, visible, onSelect, selectedWaypointId)
+    },
+
+    setCommunityWaypoints(waypoints, onSelect) {
+      if (disposed) return
+      dependencies.map.setCommunityWaypoints(waypoints, onSelect)
     },
 
     focusPersonalWaypoint(waypoint, occlusion) {
@@ -1096,6 +1107,11 @@ export function createNavigationSession(
     restoreCamera(snapshot) {
       if (disposed) return
       dependencies.map.restoreCamera(snapshot)
+    },
+
+    focusCommunityWaypoint(waypoint) {
+      if (disposed) return
+      dependencies.map.focusCommunityWaypoint(waypoint)
     },
 
     panToCoordinate(coordinate) {

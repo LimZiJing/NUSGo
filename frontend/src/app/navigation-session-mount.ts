@@ -3,6 +3,7 @@ import type { LocationTracker } from './contracts/location'
 import type { MapSession, MapSessionOptions } from './contracts/map'
 import type { MapViewportInsets } from './contracts/map'
 import type { ShuttleVehiclePosition } from '@nusgo/shared'
+import type { CommunityWaypoint } from '@nusgo/shared/waypoints/community'
 import type { JourneyPlanningClient } from '../infrastructure/pathfinding/client.ts'
 import type {
   NavigationSession,
@@ -138,10 +139,10 @@ export interface NavigationSessionCommands {
   readonly setViewportInsets: (insets: MapViewportInsets) => void
   readonly setPresentationBottomInset: (bottom: number | null) => void
   readonly setVisibleCenterZoom: (enabled: boolean) => void
-  readonly setPersonalWaypointPlacement: (
-    coordinate: Parameters<NavigationSession['setPersonalWaypointPlacement']>[0],
+  readonly setWaypointPlacement: (
+    coordinate: Parameters<NavigationSession['setWaypointPlacement']>[0],
     editable: boolean,
-    onChange: Parameters<NavigationSession['setPersonalWaypointPlacement']>[2],
+    onChange: Parameters<NavigationSession['setWaypointPlacement']>[2],
   ) => void
   readonly setPersonalWaypoints: (
     waypoints: Parameters<NavigationSession['setPersonalWaypoints']>[0],
@@ -149,10 +150,15 @@ export interface NavigationSessionCommands {
     onSelect: Parameters<NavigationSession['setPersonalWaypoints']>[2],
     selectedWaypointId?: Parameters<NavigationSession['setPersonalWaypoints']>[3],
   ) => void
+  readonly setCommunityWaypoints: (
+    waypoints: readonly CommunityWaypoint[],
+    onSelect: (waypointId: string, trigger: HTMLButtonElement) => void,
+  ) => void
   readonly focusPersonalWaypoint: (
     waypoint: Parameters<NavigationSession['focusPersonalWaypoint']>[0],
     occlusion?: Parameters<NavigationSession['focusPersonalWaypoint']>[1],
   ) => void
+  readonly focusCommunityWaypoint: (waypoint: CommunityWaypoint) => void
   readonly captureCamera: () => Parameters<NavigationSession['restoreCamera']>[0]
   readonly restoreCamera: (snapshot: Parameters<NavigationSession['restoreCamera']>[0]) => void
   readonly panToCoordinate: (
@@ -210,13 +216,17 @@ function createNavigationSessionCommands(
     setViewportInsets: (insets) => session?.setViewportInsets(insets),
     setPresentationBottomInset: (bottom) => session?.setPresentationBottomInset(bottom),
     setVisibleCenterZoom: (enabled) => session?.setVisibleCenterZoom(enabled),
-    setPersonalWaypointPlacement: (coordinate, editable, onChange) => (
-      session?.setPersonalWaypointPlacement(coordinate, editable, onChange)
+    setWaypointPlacement: (coordinate, editable, onChange) => (
+      session?.setWaypointPlacement(coordinate, editable, onChange)
     ),
     setPersonalWaypoints: (waypoints, visible, onSelect, selectedWaypointId) => (
       session?.setPersonalWaypoints(waypoints, visible, onSelect, selectedWaypointId)
     ),
+    setCommunityWaypoints: (waypoints, onSelect) => (
+      session?.setCommunityWaypoints(waypoints, onSelect)
+    ),
     focusPersonalWaypoint: (waypoint, occlusion) => session?.focusPersonalWaypoint(waypoint, occlusion),
+    focusCommunityWaypoint: (waypoint) => session?.focusCommunityWaypoint(waypoint),
     captureCamera: () => session?.captureCamera() ?? { center: [0, 0], zoom: 0, bearing: 0, pitch: 0 },
     restoreCamera: (snapshot) => session?.restoreCamera(snapshot),
     panToCoordinate: (coordinate) => session?.panToCoordinate(coordinate),

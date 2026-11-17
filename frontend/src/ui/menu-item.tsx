@@ -17,7 +17,7 @@ export function MenuItem({ label, onClick, icon, disabled, className, ref }: Men
       ref={ref}
       className={joinClassNames('menu-item', className)}
       type="button"
-      data-hover-filter="none"
+      data-hover-treatment="custom"
       disabled={disabled}
       onClick={onClick}
     >

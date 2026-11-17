@@ -207,3 +207,14 @@ describe('backend live-data settings', () => {
     assert.throws(() => loadBackendConfig({ LIVE_DATA_MIN_FIRST_SNAPSHOT_STOPS: '2.5' }), /LIVE_DATA_MIN_FIRST_SNAPSHOT_STOPS/)
   })
 })
+describe('Community Waypoint submission configuration', () => {
+  it('keeps the private GitHub credential optional and backend-only', () => {
+    assert.equal(loadBackendConfig({}, 'C:/nusgo/backend').communityWaypointGithubToken, null)
+    assert.equal(
+      loadBackendConfig({
+        COMMUNITY_WAYPOINT_GITHUB_TOKEN: '  server-only-token  ',
+      }, 'C:/nusgo/backend').communityWaypointGithubToken,
+      'server-only-token',
+    )
+  })
+})

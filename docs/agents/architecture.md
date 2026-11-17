@@ -16,6 +16,7 @@ Use these ownership seams to keep domain behavior, user workflows, presentation,
 - `frontend/src/domain` owns frontend-only location and trip models, lookup indexes, domain transformations, and the Personal Waypoint storage contract.
 - `frontend/src/features` owns product workflows and their feature-specific styles: Explore, Stops, Plan, Settings, the global More menu, and Personal Waypoints under `waypoints/personal`.
 - `frontend/src/ui` owns reusable React primitives, layouts, shared presentation styles, and cross-feature desktop/mobile presentation seams.
+- Rainroom-specific metadata, styles, assets, and decorative effects live in `frontend/src/ui/themes/rainroom`. The UI theme catalog registers theme metadata for shared consumers; map presentation reads generic `--map-*` properties from the active theme stylesheet instead of branching on theme names.
 - `frontend/src/infrastructure` owns browser-side network clients, static-data loading, MapLibre, map lifecycle, markers, layers, popups, and other browser side effects. Provider authentication and polling belong to the backend.
 - frontend/src/infrastructure/pathfinding/client.ts owns the browser request to Express. It sends endpoint references and an optional development clock, then validates the complete response contract, including every candidate, Path, leg, and geometry. It does not resolve canonical data or call Valhalla.
 - Vite builds and serves frontend assets. Its development `/api` proxy only forwards requests to Express; API handlers, provider calls, and polling belong to the backend.

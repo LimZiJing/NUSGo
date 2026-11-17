@@ -1,5 +1,6 @@
 import { useState } from 'react'
 import type { IconProps } from '../../../../ui/icons'
+import { Button } from '../../../../ui/button'
 import type { PersonalWaypointDraft } from '../../../../domain/waypoints/personal/create-personal-waypoint'
 import {
   DEFAULT_PERSONAL_WAYPOINT_MARKER_COLOR,
@@ -43,29 +44,25 @@ export function PersonalWaypointAppearanceFields({
   const markerIconLabel = PERSONAL_WAYPOINT_MARKER_ICON_OPTIONS.find(({ value }) => value === markerIcon)?.label ?? markerIcon
   const MarkerIcon = markerIcons[markerIcon]
 
-  return <section className="personal-waypoint-section personal-waypoint-appearance" aria-labelledby="personal-waypoint-appearance-label">
-    <button
+  return <section className="personal-waypoint-appearance" aria-labelledby="personal-waypoint-appearance-label">
+    <Button
       className="personal-waypoint-appearance-trigger"
       type="button"
-      aria-label={`Appearance, ${markerColorLabel} marker, ${markerIconLabel} icon`}
-      aria-expanded={isExpanded}
-      aria-controls="personal-waypoint-appearance-options"
+      ariaLabel={`Marker style, ${markerColorLabel} marker, ${markerIconLabel} icon`}
+      expanded={isExpanded}
+      controls="personal-waypoint-appearance-options"
       onClick={() => setIsExpanded((expanded) => !expanded)}
     >
-      <span id="personal-waypoint-appearance-label" className="personal-waypoint-section-heading personal-waypoint-appearance-title">Appearance</span>
-      {/* The preview is anchored to this section: it sits in the heading, beside the chevron, and
-          takes the selected colour so the heading shows the current choice. */}
-      <span className="personal-waypoint-appearance-heading-end">
-        <span
-          className="personal-waypoint-marker-preview"
-          data-color={markerColor}
-          aria-hidden="true"
-        >
-          <MarkerIcon className="personal-waypoint-marker-preview-icon" size={14} />
-        </span>
-        <ChevronDownIcon className="personal-waypoint-appearance-chevron" size={18} aria-hidden />
+      <span id="personal-waypoint-appearance-label" className="personal-waypoint-appearance-title">Marker style</span>
+      <span
+        className="personal-waypoint-marker-preview"
+        data-color={markerColor}
+        aria-hidden="true"
+      >
+        <MarkerIcon className="personal-waypoint-marker-preview-icon" size={14} />
       </span>
-    </button>
+      <ChevronDownIcon className="personal-waypoint-appearance-chevron" size={18} aria-hidden />
+    </Button>
 
     <div id="personal-waypoint-appearance-options" className="personal-waypoint-appearance-options" hidden={!isExpanded}>
       <fieldset className="personal-waypoint-choice-group">

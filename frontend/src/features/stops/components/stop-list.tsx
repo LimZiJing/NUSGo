@@ -25,7 +25,7 @@ export function StopList({
   readonly onSelectStopList: (list: 'nearby' | 'favourites') => void
   readonly onToggleFavorite: (stopId: string) => void
   readonly onToggleExpanded: (stopId: string) => void
-  readonly onSelectRoute: (routeId: string) => void
+  readonly onSelectRoute: (routeId: string, stopId: string) => void
   readonly onDismissLocationNotice: () => void
 }) {
   return (

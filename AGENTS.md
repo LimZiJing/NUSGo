@@ -59,7 +59,7 @@ Skills are reusable guidance, not application dependencies. Review their instruc
 
 ## Astryx guidance scope
 
-This project is a Vite/React app with NUSGo-owned controls and theme tokens. The generated Astryx block below is reference material for explicit Astryx evaluation tasks. Follow this guide, `docs/ui/controls.md`, and `docs/agents/coding-standards.md` for ordinary NUSGo implementation. Do not apply Astryx's template, layout, styling, or theme rules to existing screens unless a task specifically authorizes that migration.
+This project is a Vite/React app with NUSGo-owned controls and theme tokens. The generated Astryx block below is reference material for explicit Astryx evaluation tasks. Follow this guide, `docs/ui/controls.md`, and `docs/agents/coding-standards.md` for ordinary NUSGo implementation. Do not apply Astryx's template, layout, styling, or theme rules to existing screens unless a task specifically authorizes that migration. The Astryx `reset.css` import shown below is intentionally not used by NUSGo; `frontend/src/ui/styles/shared/index.css` imports `astryx.css`, while NUSGo's `base.css` remains authoritative.
 
 <!-- ASTRYX:START -->
 Astryx v0.7.16 · 174 components

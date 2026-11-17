@@ -376,7 +376,6 @@ describe('desktop shared navigation shell', () => {
       displayLabel: 'Water cooler at UTown',
       category: 'water_cooler',
       coordinate: { longitude: 103.78, latitude: 1.29 },
-      source: 'NUS Campus Facilities',
       updatedAt: '2026-10-26',
     }
     appHarness.communityWaypoints = [waypoint]
@@ -457,7 +456,6 @@ describe('desktop shared navigation shell', () => {
       displayLabel: 'Water cooler at UTown',
       category: 'water_cooler',
       coordinate: { longitude: 103.78, latitude: 1.29 },
-      source: 'NUS Campus Facilities',
       updatedAt: '2026-10-26',
     }
     appHarness.communityWaypoints = [waypoint]
@@ -474,7 +472,7 @@ describe('desktop shared navigation shell', () => {
     act(() => onSelect?.(waypoint.id, trigger))
 
     expect(await screen.findByRole('heading', { name: waypoint.displayLabel })).toBeTruthy()
-    expect(screen.getByText('NUS Campus Facilities')).toBeTruthy()
+    expect(screen.queryByText('NUS Campus Facilities')).toBeNull()
     expect(appHarness.commands.focusCommunityWaypoint).not.toHaveBeenCalled()
     await user.click(screen.getByRole('button', { name: 'Community Waypoints' }))
     await waitFor(() => expect(document.activeElement).toBe(trigger))

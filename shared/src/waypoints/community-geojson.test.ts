@@ -9,7 +9,6 @@ import {
 const requiredProperties = {
   id: 'cw-550e8400-e29b-41d4-a716-446655440000',
   category: 'water_cooler',
-  source: 'Checked on site',
   updatedAt: '2026-11-08',
 }
 
@@ -50,7 +49,6 @@ describe('parseCommunityWaypointsGeoJson', () => {
           properties: {
             id: 'cw-550e8400-e29b-41d4-a716-446655440000',
             category: 'water_cooler',
-            source: 'Checked on site',
             updatedAt: '2026-11-08',
             building: 'Central Library',
             floor: 2,
@@ -66,7 +64,6 @@ describe('parseCommunityWaypointsGeoJson', () => {
         displayLabel: 'Water cooler · Central Library · Floor 2',
         category: 'water_cooler',
         coordinate: { longitude: 103.7844, latitude: 1.2933 },
-        source: 'Checked on site',
         updatedAt: '2026-11-08',
         building: 'Central Library',
         floor: 2,
@@ -97,7 +94,6 @@ describe('parseCommunityWaypointsGeoJson', () => {
       displayLabel: 'Water cooler',
       category: 'water_cooler',
       coordinate: { longitude: 103.7844, latitude: 1.2933 },
-      source: requiredProperties.source,
       updatedAt: requiredProperties.updatedAt,
     }
     const missing = parseCommunityWaypointsGeoJson(collectionWith({}))
@@ -158,6 +154,11 @@ describe('parseCommunityWaypointsGeoJson', () => {
       .toThrow(CommunityWaypointGeoJsonValidationError)
   })
 
+  it('rejects a source property in public properties', () => {
+    expect(() => parseCommunityWaypointsGeoJson(collectionWith({ source: 'public_source' })))
+      .toThrow(CommunityWaypointGeoJsonValidationError)
+  })
+
   it('rejects the retired accessibility note field in public properties', () => {
     expect(() => parseCommunityWaypointsGeoJson(collectionWith({ accessibilityNote: 'Step-free route' })))
       .toThrow(CommunityWaypointGeoJsonValidationError)
@@ -197,15 +198,11 @@ describe('parseCommunityWaypointsGeoJson', () => {
     expect(parseCommunityWaypointsGeoJson(collectionWith({
       building: '  Central Library  ',
       details: '  Near the study area  ',
-      source: '  Checked on site  ',
     }))[0]).toMatchObject({
       displayLabel: 'Water cooler · Central Library',
       details: 'Near the study area',
-      source: 'Checked on site',
     })
 
-    expect(() => parseCommunityWaypointsGeoJson(collectionWith({ source: 'x'.repeat(161) })))
-      .toThrow(CommunityWaypointGeoJsonValidationError)
     expect(() => parseCommunityWaypointsGeoJson(collectionWith({ building: 'x'.repeat(81) })))
       .toThrow(CommunityWaypointGeoJsonValidationError)
     expect(() => parseCommunityWaypointsGeoJson(collectionWith({ details: 'x'.repeat(501) })))

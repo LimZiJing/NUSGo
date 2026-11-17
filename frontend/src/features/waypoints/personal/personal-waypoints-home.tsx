@@ -4,6 +4,7 @@ import type { PersonalWaypointCategoryOption } from '../../../domain/waypoints/p
 import type { PersonalWaypoint } from '../../../domain/waypoints/personal/personal-waypoint'
 import { useLayoutEffect, useRef, useState } from 'react'
 import type { Ref } from 'react'
+import { BackButton } from '../../../ui/back-button'
 import { Button } from '../../../ui/button'
 import { PersonalWaypointCategoryVisibility } from './components/personal-waypoint-category-visibility'
 import { PersonalWaypointList } from './components/personal-waypoint-list'
@@ -126,9 +127,9 @@ export function PersonalWaypointsHome({
       <>
         {activeCategory
           ? <div className="personal-waypoint-category-back">
-            <Button
+            <BackButton
+              mode="label-only"
               label="Back to categories"
-              variant="ghost"
               onClick={onBackToCategories}
               ref={categoryBackButtonRef}
             />

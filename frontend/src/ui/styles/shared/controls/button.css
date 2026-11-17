@@ -1,10 +1,8 @@
-/* Button, IconButton, and MenuItem primitives. See docs/ui/controls.md for the spec.
-   Primitives set data-hover-filter="none" to opt out of the global hover filter in base.css,
-   so their hover darkening applies only on devices that can hover. */
+/* Button, IconButton, and MenuItem primitives. See docs/ui/controls.md for the spec. */
+
 .button {
   display: inline-flex;
   align-items: center;
-  justify-content: center;
   gap: var(--space-2);
   min-height: var(--control-height-sm);
   box-sizing: border-box;
@@ -15,6 +13,11 @@
   background: var(--surface-control);
   font: 500 var(--font-size-control)/1.2 var(--sans);
   cursor: pointer;
+}
+
+.button[data-content-layout='label'],
+.button.icon-button {
+  justify-content: center;
 }
 
 .button[data-size='lg'] {
@@ -37,15 +40,32 @@
   background: transparent;
 }
 
-.button[aria-pressed='true'] {
-  border-color: var(--accent);
-  color: var(--text-primary);
-  background: var(--accent-soft);
+/* Inline back links keep their compact arrow-and-label geometry. */
+.button[data-back-button-mode='inline'] {
+  min-height: 0;
+  gap: var(--space-1);
+  padding: 3px;
+  border: 0;
 }
 
-/* A pressed ghost button is an icon toggle (such as a favourite star): the icon shows the state,
-   so it draws no box. Hover and focus tints still apply. */
-.button[data-variant='ghost'][aria-pressed='true'],
+.button[data-back-button-mode='inline'] svg {
+  flex-basis: 17px;
+  width: 17px;
+  height: 17px;
+}
+
+.button[aria-pressed='true'] {
+  border-color: var(--control-border);
+  color: var(--text-primary);
+  background: var(--accent-selected);
+}
+
+.button[aria-pressed='true']:not([data-variant='plain']) svg {
+  color: var(--accent-hover);
+}
+
+/* Plain icon buttons keep their transparent surface in every state. */
+
 .button[data-variant='plain'] {
   border-color: transparent;
   color: var(--accent);
@@ -80,7 +100,7 @@
   outline-offset: var(--focus-ring-offset);
 }
 
-.button[data-variant='ghost']:focus-visible {
+.button[data-variant='ghost']:not([aria-pressed='true']):focus-visible {
   background: var(--accent-soft);
 }
 
@@ -105,7 +125,7 @@
   cursor: not-allowed;
 }
 
-/* Ghost controls have no surface to darken, so hover and disabled keep them borderless. */
+/* Ghost controls tint on hover and focus; disabled ghost and plain controls stay transparent. */
 .button[data-variant='ghost']:disabled,
 .button[data-variant='plain']:disabled {
   border-color: transparent;
@@ -148,15 +168,19 @@
 }
 
 @media (hover: hover) {
-  .button:not(:disabled):not([aria-pressed='true']):not([data-variant='ghost']):not([data-variant='plain']):hover {
-    filter: brightness(0.85);
+  .button[data-variant='primary']:not(:disabled):not([aria-pressed='true']):not([aria-expanded='true']):hover {
+    background-color: var(--accent-hover);
+  }
+
+  .button[data-variant='secondary']:not(:disabled):not([aria-pressed='true']):not([aria-expanded='true']):hover {
+    background-color: var(--surface-control-hover);
   }
 
   .button[data-variant='plain']:not(:disabled):hover svg {
     opacity: 0.7;
   }
 
-  .button[data-variant='ghost']:not(:disabled):hover,
+  .button[data-variant='ghost']:not(:disabled):not([aria-pressed='true']):hover,
   .menu-item:not(:disabled):hover {
     background: var(--accent-soft);
   }

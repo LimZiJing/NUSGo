@@ -2,7 +2,7 @@ import type { TransitIndex } from '../../../domain/transit'
 import type { TripEndpoint, TripEndpointRole, TripRequest } from '../../../domain/trip/types'
 import type { VenueLocationMap } from '@nusgo/shared/venue/types'
 import type { BuildingIndex } from '../../../domain/venue/building-index'
-import { IconButton } from '../../../ui/button'
+import { Button, IconButton } from '../../../ui/button'
 import { ArrowDownUpIcon, ArrowRightIcon, CircleDotIcon, LocateIcon, MapPinIcon, RefreshIcon } from '../../../ui/icons'
 import { EndpointKindIcon } from './plan-endpoint-display'
 import { getEndpointLabel } from './plan-endpoint-labels'
@@ -60,11 +60,11 @@ export function PlanTripCard({
     const label = endpoint ? getEndpointLabel(endpoint, venues, networkIndex, buildings) : null
     const roleLabel = ROLE_LABELS[role]
     return (
-      <button
+      <Button
         type="button"
         className="plan-trip-line-main"
         onClick={() => onOpenSearch(role)}
-        aria-label={label
+        ariaLabel={label
           ? `${roleLabel}: ${label}. Change ${roleLabel.toLocaleLowerCase()}`
           : `Choose ${roleLabel.toLocaleLowerCase()}`}
       >
@@ -81,7 +81,7 @@ export function PlanTripCard({
             <span className="plan-trip-line-placeholder">{PROMPTS[role]}</span>
           )}
         </span>
-      </button>
+      </Button>
     )
   }
 

@@ -122,6 +122,14 @@ function renderSearch(props: Partial<Parameters<typeof PlanLocationSearch>[0]> =
 afterEach(cleanup)
 
 describe('PlanLocationSearch results', () => {
+  it('renders result filters as shared selectable chips', () => {
+    const markup = renderSearch()
+
+    expect(markup).toContain('class="chip plan-search-chip"')
+    expect(markup).toContain('aria-pressed="true"')
+    expect(markup).toContain('data-selected="true"')
+  })
+
   it('lists a building by name with an accessible building label, apart from the stop of the same name', () => {
     const markup = renderSearch({ buildings, searchQuery: 'Library' })
 

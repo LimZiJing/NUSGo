@@ -1,4 +1,4 @@
-import type { KeyboardEventHandler, ReactNode, Ref } from 'react'
+import type { ButtonHTMLAttributes, KeyboardEventHandler, MouseEventHandler, ReactNode, Ref } from 'react'
 import { joinClassNames } from './class-names'
 
 export type ControlSize = 'sm' | 'lg'
@@ -6,9 +6,24 @@ export type ButtonVariant = 'primary' | 'secondary' | 'ghost'
 /** `plain` is icon-only: no box at rest, hover or when pressed, for toggles such as a favourite star. */
 export type IconButtonVariant = ButtonVariant | 'plain'
 
-interface ButtonProps {
-  readonly label: string
-  readonly onClick: () => void
+type NativeButtonProps = Omit<
+  ButtonHTMLAttributes<HTMLButtonElement>,
+  | 'children'
+  | 'type'
+  | 'onClick'
+  | 'onKeyDown'
+  | 'className'
+  | 'disabled'
+  | 'title'
+  | 'aria-label'
+  | 'aria-pressed'
+  | 'aria-expanded'
+  | 'aria-controls'
+  | 'aria-busy'
+  | 'aria-describedby'
+  | 'aria-keyshortcuts'
+>
+interface ButtonOptions extends NativeButtonProps {
   readonly variant?: ButtonVariant
   readonly size?: ControlSize
   readonly icon?: ReactNode
@@ -30,6 +45,16 @@ interface ButtonProps {
   readonly className?: string
   readonly ref?: Ref<HTMLButtonElement>
 }
+
+type ButtonProps = ButtonOptions
+  & (
+    | { readonly label: string; readonly children?: never }
+    | { readonly label?: never; readonly children: ReactNode }
+  )
+  & (
+    | { readonly type?: 'button' | 'reset'; readonly onClick: MouseEventHandler<HTMLButtonElement> }
+    | { readonly type: 'submit'; readonly onClick?: MouseEventHandler<HTMLButtonElement> }
+  )
 
 interface IconButtonProps {
   readonly label: string
@@ -57,7 +82,9 @@ interface IconButtonProps {
 
 export function Button({
   label,
+  children,
   onClick,
+  type = 'button',
   variant = 'secondary',
   size = 'sm',
   icon,
@@ -74,15 +101,18 @@ export function Button({
   ariaKeyShortcuts,
   className,
   ref,
+  ...nativeProps
 }: ButtonProps) {
   return (
     <button
+      {...nativeProps}
       ref={ref}
       className={joinClassNames('button', className)}
-      type="button"
+      type={type}
       data-variant={variant}
       data-size={size}
-      data-hover-filter="none"
+      data-content-layout={children == null ? 'label' : 'custom'}
+      data-hover-treatment="custom"
       disabled={disabled}
       aria-pressed={pressed}
       aria-label={ariaLabel}
@@ -95,9 +125,11 @@ export function Button({
       onClick={onClick}
       onKeyDown={onKeyDown}
     >
-      {icon}
-      <span>{label}</span>
-      {trailingIcon}
+      {children ?? <>
+        {icon}
+        <span>{label}</span>
+        {trailingIcon}
+      </>}
     </button>
   )
 }
@@ -128,7 +160,7 @@ export function IconButton({
       type="button"
       data-variant={variant}
       data-size={size}
-      data-hover-filter="none"
+      data-hover-treatment="custom"
       disabled={disabled}
       aria-pressed={pressed}
       aria-label={label}

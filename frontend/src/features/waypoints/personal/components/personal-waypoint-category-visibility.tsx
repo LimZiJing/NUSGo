@@ -47,17 +47,17 @@ export function PersonalWaypointCategoryVisibility({
     const placeLabel = waypointCount === 1 ? 'place' : 'places'
     const visible = !draftHidden.has(category)
     return <div className="personal-waypoint-category-option" key={category}>
-      <button
+      <Button
         className="personal-waypoint-category-link"
         type="button"
-        aria-label={`Open ${category}, ${waypointCount} ${placeLabel}`}
+        ariaLabel={`Open ${category}, ${waypointCount} ${placeLabel}`}
         onClick={() => onOpenCategory(category)}
       >
         <span className="personal-waypoint-category-dot" aria-hidden="true" />
         <span className="personal-waypoint-category-name">{category}</span>
         <small>{waypointCount} {placeLabel}</small>
         <ChevronRightIcon aria-hidden="true" />
-      </button>
+      </Button>
       <label className="personal-waypoint-category-toggle">
         <input
           type="checkbox"
@@ -71,13 +71,13 @@ export function PersonalWaypointCategoryVisibility({
 
   return <section className="personal-waypoint-visibility" aria-label="Map categories">
     <h2 className="personal-waypoint-visibility-heading">
-      <button
+      <Button
         id="personal-waypoint-visibility-heading"
         className="personal-waypoint-visibility-trigger"
         ref={triggerRef}
         type="button"
-        aria-expanded={pickerOpen}
-        aria-controls="personal-waypoint-category-picker"
+        expanded={pickerOpen}
+        controls="personal-waypoint-category-picker"
         onClick={onTogglePicker}
       >
         <span className="personal-waypoint-visibility-summary">
@@ -88,7 +88,7 @@ export function PersonalWaypointCategoryVisibility({
           </span>
         </span>
         <ChevronDownIcon aria-hidden="true" />
-      </button>
+      </Button>
     </h2>
     <div className="personal-waypoint-category-picker" id="personal-waypoint-category-picker" hidden={!pickerOpen}>
       <div className="personal-waypoint-category-search">

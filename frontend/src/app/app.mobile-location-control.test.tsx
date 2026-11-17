@@ -100,14 +100,31 @@ describe('mobile location control integration', () => {
     expect(screen.queryByRole('button', { name: 'Recenter map' })).toBeNull()
   })
 
-  it('hides the combined control while Plan is expanded', async () => {
+  it('keeps the location control visible until the Plan sheet covers the map', async () => {
     const user = userEvent.setup()
     mockMobileViewport()
 
     render(<App />)
     await user.click(screen.getByRole('button', { name: 'Plan' }))
 
+    const sheet = document.querySelector('.plan-sheet')
+    expect(sheet?.getAttribute('data-detent')).toBe('partial')
+    expect(screen.getByRole('button', { name: 'Show my location' })).toBeTruthy()
+
+    const handle = screen.getByRole('button', { name: 'Expand Plan trip panel' })
+    await user.click(handle)
+    expect(sheet?.getAttribute('data-detent')).toBe('full')
     expect(screen.queryByRole('button', { name: 'Show my location' })).toBeNull()
+
+    await user.click(screen.getByRole('button', { name: 'Reduce Plan trip panel' }))
+    expect(sheet?.getAttribute('data-detent')).toBe('partial')
+    expect(screen.getByRole('button', { name: 'Show my location' })).toBeTruthy()
+
+    handle.focus()
+    await user.keyboard('{ArrowDown}')
+    expect(sheet?.getAttribute('data-detent')).toBe('collapsed')
+    expect(screen.getByRole('button', { name: 'Show my location' })).toBeTruthy()
+
     const actions = document.querySelector('.map-control-actions')
     expect(actions?.querySelector('.map-control-action-slot')).toBeTruthy()
     expect(actions?.querySelector('.live-bus-toggle')).toBeTruthy()

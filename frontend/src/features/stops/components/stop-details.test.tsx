@@ -56,6 +56,36 @@ describe('StopDetails Back button', () => {
 })
 
 describe('StopDetails live status pill', () => {
+  it('passes the originating stop ID when an internal route pill is selected', async () => {
+    const user = userEvent.setup()
+    const onSelectRoute = vi.fn()
+    render(
+      <StopDetails
+        stop={{
+          ...stop,
+          departures: [{
+            routeId: 'A1',
+            routeName: 'A1',
+            routeColor: '#0b7258',
+            load: 'unknown',
+            timings: ['Arr', '8m', '17m'],
+          }],
+        }}
+        favorite={false}
+        liveArrivalMessage={null}
+        onBackToStops={vi.fn()}
+        onSelectOppositeStop={vi.fn()}
+        onSelectRoute={onSelectRoute}
+        onNavigateToStop={vi.fn()}
+        onToggleFavorite={vi.fn()}
+      />,
+    )
+
+    await user.click(screen.getByRole('button', { name: 'View A1 route details' }))
+
+    expect(onSelectRoute).toHaveBeenCalledExactlyOnceWith('A1', 'SR7')
+  })
+
   it('shows no pill when there are no live times', () => {
     renderStopDetails()
 

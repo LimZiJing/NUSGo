@@ -2,6 +2,7 @@
 
 import { cleanup, render, screen, within } from '@testing-library/react'
 import { afterEach, describe, expect, it } from 'vitest'
+import { GALLERY_THEMES } from '../themes/catalog'
 import { Gallery, GalleryPanel } from './gallery'
 
 afterEach(() => {
@@ -24,13 +25,24 @@ describe('controls gallery', () => {
     )
   })
 
-  it('shows IconButton, MenuItem, Chip and Pill samples', () => {
+  it('shows BackButton, IconButton, MenuItem, Chip and Pill samples', () => {
     render(<GalleryPanel theme="dark" />)
 
+    expect(
+      within(screen.getByRole('region', { name: 'Open Button' }))
+        .getByRole('button', { name: 'Show options' })
+        .getAttribute('aria-expanded'),
+    ).toBe('true')
+
+    const backButtons = within(screen.getByRole('region', { name: 'BackButton' }))
+    expect(backButtons.getByRole('button', { name: 'Back to previous view' }).querySelector('svg')).not.toBeNull()
+    expect(backButtons.getByRole('button', { name: 'Back to stops' }).querySelector('svg')).not.toBeNull()
+    expect(backButtons.getByRole('button', { name: 'Back to categories' }).querySelector('svg')).toBeNull()
     expect(within(screen.getByRole('region', { name: 'IconButton' })).getAllByRole('button', { name: 'Search' }))
       .toHaveLength(4 * 2 * 6)
     expect(within(screen.getByRole('region', { name: 'MenuItem' })).getAllByRole('button')).toHaveLength(6)
-    expect(within(screen.getByRole('region', { name: 'Chip' })).getAllByRole('button')).toHaveLength(4 * 6)
+    /* Three Chip families (accent, with icon, route colour) times two sizes times six states. */
+    expect(within(screen.getByRole('region', { name: 'Chip' })).getAllByRole('button')).toHaveLength(3 * 2 * 6)
     const pills = screen.getByRole('region', { name: 'Pill' })
     expect(within(pills).getByText('Neutral').getAttribute('data-tone')).toBe('neutral')
     expect(within(pills).getByText('Success').getAttribute('data-tone')).toBe('success')
@@ -47,21 +59,19 @@ describe('controls gallery', () => {
   it('renders a frame for each theme on the gallery page', () => {
     const { container } = render(<Gallery />)
 
-    expect(Array.from(container.querySelectorAll('iframe')).map((frame) => frame.getAttribute('src'))).toEqual([
-      expect.stringContaining('frame=light'),
-      expect.stringContaining('frame=dark'),
-      expect.stringContaining('frame=matcha'),
-      expect.stringContaining('frame=sakura'),
-      expect.stringContaining('frame=nus'),
-    ])
+    expect(Array.from(container.querySelectorAll('iframe')).map((frame) => frame.getAttribute('src')))
+      .toEqual(GALLERY_THEMES.map(({ id }) => expect.stringContaining(`frame=${id}`)))
   })
 
-  it.each(['matcha', 'sakura', 'nus'] as const)('applies the %s theme through data-theme', (theme) => {
-    render(<GalleryPanel theme={theme} />)
+  it.each(GALLERY_THEMES.filter(({ category }) => category === 'other'))(
+    'applies the $label theme through data-theme',
+    ({ id }) => {
+      render(<GalleryPanel theme={id} />)
 
-    expect(document.documentElement.dataset.theme).toBe(theme)
-    expect(screen.getByRole('main', { name: `${theme} theme controls` })).toBeTruthy()
-  })
+      expect(document.documentElement.dataset.theme).toBe(id)
+      expect(screen.getByRole('main', { name: `${id} theme controls` })).toBeTruthy()
+    },
+  )
 
   it('renders a single themed panel when a frame is requested', () => {
     window.history.replaceState(null, '', '/?gallery&frame=dark')

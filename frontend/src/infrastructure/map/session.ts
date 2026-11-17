@@ -14,6 +14,7 @@ import type { TripEndpoint, TripEndpointRole, TripRequest } from '../../domain/t
 import type { Path } from '@nusgo/shared/routing/path'
 import type { DeviceLocationFix } from '../../domain/location/types'
 import type { PersonalWaypoint } from '../../domain/waypoints/personal/personal-waypoint'
+import type { CommunityWaypoint } from '@nusgo/shared/waypoints/community'
 import { getBusPathLegStopIds } from './path-stops'
 import type { VenueLocation } from '@nusgo/shared/venue/types'
 import { applyBasemapPresentation } from './basemap'
@@ -31,6 +32,7 @@ import { BUILDING_PART_HIGHLIGHT_COLOR, createVenueMarker, type VenueMarker } fr
 import { createPathLayers, type JourneyRouteLayers } from './path-layers'
 import { createCurrentLocationMarker, type CurrentLocationMarker } from './current-location-marker'
 import { createPersonalWaypointMarkers, type PersonalWaypointMarkers } from './personal-waypoint-markers'
+import { createCommunityWaypointMarkers, type CommunityWaypointMarkers } from './community-waypoint-markers'
 import type { TransitIndex } from '../../domain/transit'
 import type { BuildingEntry, BuildingIndex } from '../../domain/venue/building-index'
 import type { VenueLocationMap } from '@nusgo/shared/venue/types'
@@ -83,14 +85,15 @@ export function createMapSession(options: MapSessionOptions): MapSession {
   const lifecycle = createMapLifecycle(options)
   const map = lifecycle.map
   const personalWaypointMarkers: PersonalWaypointMarkers = createPersonalWaypointMarkers(map)
+  const communityWaypointMarkers: CommunityWaypointMarkers = createCommunityWaypointMarkers(map)
   const stopBasemapThemeWatch = watchBasemapTheme(map, () => {
     transitRouteLayers?.refreshTheme()
     shuttleStopMarkers?.refreshTheme()
   })
   let selectedVenueMarker: VenueMarker | null = null
-  let personalWaypointMarker: Marker | null = null
-  let personalWaypointDragHandler: (() => void) | null = null
-  let onPersonalWaypointDrag: (coordinate: MapCoordinate) => void = () => undefined
+  let waypointPlacementMarker: Marker | null = null
+  let waypointPlacementDragHandler: (() => void) | null = null
+  let onWaypointPlacementDrag: (coordinate: MapCoordinate) => void = () => undefined
   let endpointMarkers: TripEndpointMarkers | null = null
   let shuttleStopMarkers: ShuttleStopMarkers | null = null
   let transitRouteLayers: TransitRouteLayers | null = null
@@ -650,36 +653,36 @@ export function createMapSession(options: MapSessionOptions): MapSession {
       lifecycle.setVisibleCenterZoom(enabled)
     },
 
-    setPersonalWaypointPlacement(coordinate, editable, onDrag) {
+    setWaypointPlacement(coordinate, editable, onDrag) {
       if (disposed) return
       lifecycle.setWaypointPlacementActive(Boolean(coordinate && editable))
-      onPersonalWaypointDrag = onDrag
+      onWaypointPlacementDrag = onDrag
       if (!coordinate) {
-        if (personalWaypointMarker && personalWaypointDragHandler) {
-          personalWaypointMarker.off('dragend', personalWaypointDragHandler)
+        if (waypointPlacementMarker && waypointPlacementDragHandler) {
+          waypointPlacementMarker.off('dragend', waypointPlacementDragHandler)
         }
-        personalWaypointMarker?.remove()
-        personalWaypointMarker = null
-        personalWaypointDragHandler = null
+        waypointPlacementMarker?.remove()
+        waypointPlacementMarker = null
+        waypointPlacementDragHandler = null
         return
       }
 
-      if (!personalWaypointMarker) {
+      if (!waypointPlacementMarker) {
         const element = document.createElement('div')
-        element.className = 'personal-waypoint-placement-marker'
+        element.className = 'waypoint-placement-marker'
         element.setAttribute('aria-hidden', 'true')
-        personalWaypointMarker = new Marker({ anchor: 'bottom', element, draggable: editable })
+        waypointPlacementMarker = new Marker({ anchor: 'bottom', element, draggable: editable })
           .setLngLat([coordinate[0], coordinate[1]])
           .addTo(map)
-        personalWaypointDragHandler = () => {
-          if (!personalWaypointMarker) return
-          const point = personalWaypointMarker.getLngLat()
-          onPersonalWaypointDrag([point.lng, point.lat])
+        waypointPlacementDragHandler = () => {
+          if (!waypointPlacementMarker) return
+          const point = waypointPlacementMarker.getLngLat()
+          onWaypointPlacementDrag([point.lng, point.lat])
         }
-        personalWaypointMarker.on('dragend', personalWaypointDragHandler)
+        waypointPlacementMarker.on('dragend', waypointPlacementDragHandler)
       } else {
-        personalWaypointMarker.setLngLat([coordinate[0], coordinate[1]])
-        personalWaypointMarker.setDraggable(editable)
+        waypointPlacementMarker.setLngLat([coordinate[0], coordinate[1]])
+        waypointPlacementMarker.setDraggable(editable)
       }
     },
 
@@ -688,10 +691,27 @@ export function createMapSession(options: MapSessionOptions): MapSession {
       personalWaypointMarkers.setWaypoints(waypoints, visible, onSelect)
     },
 
+    setCommunityWaypoints(waypoints, onSelect) {
+      if (disposed) return
+      communityWaypointMarkers.setWaypoints(waypoints, onSelect)
+    },
+
     focusPersonalWaypoint(waypoint: PersonalWaypoint) {
       if (disposed) return
       pendingCameraFit = null
       personalWaypointMarkers.focusWaypoint(waypoint)
+      map.flyTo({
+        center: [waypoint.coordinate.longitude, waypoint.coordinate.latitude],
+        zoom: Math.max(map.getZoom(), 16),
+        duration: 500,
+        offset: getFitOffset(),
+        essential: true,
+      })
+    },
+
+    focusCommunityWaypoint(waypoint: CommunityWaypoint) {
+      if (disposed) return
+      pendingCameraFit = null
       map.flyTo({
         center: [waypoint.coordinate.longitude, waypoint.coordinate.latitude],
         zoom: Math.max(map.getZoom(), 16),
@@ -819,11 +839,12 @@ export function createMapSession(options: MapSessionOptions): MapSession {
       pendingCameraFit = null
       clearVenueMarker()
       personalWaypointMarkers.dispose()
-      if (personalWaypointMarker && personalWaypointDragHandler) {
-        personalWaypointMarker.off('dragend', personalWaypointDragHandler)
+      communityWaypointMarkers.dispose()
+      if (waypointPlacementMarker && waypointPlacementDragHandler) {
+        waypointPlacementMarker.off('dragend', waypointPlacementDragHandler)
       }
-      personalWaypointMarker?.remove()
-      personalWaypointMarker = null
+      waypointPlacementMarker?.remove()
+      waypointPlacementMarker = null
       clearEndpointMarkers()
       clearTransitData()
       currentPath = null

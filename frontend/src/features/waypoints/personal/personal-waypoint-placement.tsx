@@ -1,10 +1,10 @@
 import { useEffect, useRef, useState, type FormEvent, type KeyboardEvent } from 'react'
 import { Button } from '@astryxdesign/core/Button'
 import { TextInput } from '@astryxdesign/core/TextInput'
-import { getIsMobileViewport } from '../../../app/navigation/navigation-state'
 import { parseCoordinateInput } from '../../../domain/waypoints/parse-coordinate-input'
 import type { WaypointCoordinate } from '@nusgo/shared/waypoints/waypoint'
 import { MapPinIcon } from '../../../ui/icons'
+import { getIsMobileViewport } from '../../../ui/mobile/mobile-viewport'
 
 function formatSelectedCoordinate(coordinate: WaypointCoordinate): string {
   const latitude = `${Math.abs(coordinate.latitude).toFixed(6)}° ${coordinate.latitude < 0 ? 'S' : 'N'}`
@@ -122,7 +122,7 @@ export function PersonalWaypointPlacement({
               <TextInput
                 ref={inputRef}
                 id="personal-waypoint-coordinate-input"
-                label="Latitude and longitude"
+                label="Selected location"
                 isLabelHidden
                 type="text"
                 inputMode="decimal"
@@ -136,7 +136,6 @@ export function PersonalWaypointPlacement({
                 status={error ? { type: 'error' } : undefined}
                 containerClassName="personal-waypoint-coordinate-astryx-field"
                 controlClassName="personal-waypoint-coordinate-astryx-control"
-                aria-labelledby="personal-waypoint-selected-location-label"
                 aria-description="Latitude, then longitude, in decimal degrees"
                 aria-describedby={error ? 'personal-waypoint-coordinate-error' : undefined}
                 onChange={(value) => { setTyped(value); setError(null) }}

@@ -6,9 +6,9 @@ import type {
 } from '@nusgo/shared'
 import type { VenueLocationMap } from '@nusgo/shared/venue/types'
 import type { WaypointCoordinate } from '@nusgo/shared/waypoints/waypoint'
-import { getIsMobileViewport } from '../../../../app/navigation/navigation-state'
 import { createBuildingFloorLookup } from '../../../../domain/venue/building-floors'
 import { findNearestBuilding, type BuildingIndex } from '../../../../domain/venue/building-index'
+import { getIsMobileViewport } from '../../../../ui/mobile/mobile-viewport'
 import {
   createSubmission,
   getSubmissionErrorMessage,
@@ -244,7 +244,11 @@ export function CommunityWaypointSubmissionForm({
         ? formRef.current?.querySelector<HTMLElement>('#community-submission-other-floor')
           ?? formRef.current?.querySelector<HTMLElement>('#community-submission-floor input[name="floor"]:checked')
           ?? formRef.current?.querySelector<HTMLElement>('#community-submission-floor input[name="floor"]')
-        : formRef.current?.querySelector<HTMLElement>(`[name="${field}"]`)
+        : field === 'grayscalePricePerPage'
+          ? formRef.current?.querySelector<HTMLElement>('#community-submission-grayscale-price')
+          : field === 'colourPricePerPage'
+            ? formRef.current?.querySelector<HTMLElement>('#community-submission-colour-price')
+            : formRef.current?.querySelector<HTMLElement>(`[name="${field}"]`)
     if (!getIsMobileViewport() || !(target instanceof HTMLInputElement || target instanceof HTMLTextAreaElement)) {
       target?.focus()
     }

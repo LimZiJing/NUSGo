@@ -395,7 +395,7 @@ describe('desktop shared navigation shell', () => {
 
     expect(await screen.findByText(/^Correction for/)).toBeTruthy()
     expect(screen.queryByLabelText(/Waypoint name/)).toBeNull()
-    await user.type(screen.getByLabelText('What needs correcting?'), 'It has moved to the next floor.')
+    await user.type(screen.getByLabelText(/What needs correcting\?/), 'It has moved to the next floor.')
     await user.click(screen.getByRole('button', { name: 'Send suggestion' }))
 
     expect(await screen.findByRole('heading', { name: 'Correction received' })).toBeTruthy()
@@ -1460,7 +1460,7 @@ describe('More surface', () => {
 
     await user.click(screen.getByRole('button', { name: 'Adjust on map' }))
     act(() => appHarness.onMapMovingChange?.(true))
-    expect((screen.getByRole('button', { name: 'Use map centre' }) as HTMLButtonElement).disabled).toBe(true)
+    expect(screen.getByRole('button', { name: 'Use map centre' }).getAttribute('aria-disabled')).toBe('true')
     act(() => {
       appHarness.onMapCenterChange?.([105, 2])
       appHarness.onMapMovingChange?.(false)

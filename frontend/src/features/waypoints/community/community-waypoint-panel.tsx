@@ -139,10 +139,6 @@ function WaypointDetails({
           )}
           <dl className="community-waypoint-metadata">
             <div>
-              <dt>Source</dt>
-              <dd>{waypoint.source}</dd>
-            </div>
-            <div>
               <dt>Last updated</dt>
               <dd><time dateTime={waypoint.updatedAt}>{waypoint.updatedAt}</time></dd>
             </div>

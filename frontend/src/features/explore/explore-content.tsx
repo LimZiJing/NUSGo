@@ -122,8 +122,9 @@ export function ExploreContent({
               className="explore-mode-selector"
               label="Explore mode"
               options={[
-                { value: 'venue', label: EXPLORE_LABELS.venue, focusId: 'explore-venue-segment' },
+                // Bus routes leads, matching the view Explore opens on.
                 { value: 'bus-routes', label: EXPLORE_LABELS.busRoutes, focusId: 'explore-bus-routes-segment' },
+                { value: 'venue', label: EXPLORE_LABELS.venue, focusId: 'explore-venue-segment' },
               ]}
               value={showVenueSearch ? 'venue' : 'bus-routes'}
               onValueChange={(mode, event) => {

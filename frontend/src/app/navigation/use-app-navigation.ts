@@ -205,9 +205,12 @@ export function useAppNavigation({
       }
       if (switchingView && currentNavigation.activeView === 'explore' && exploreState.mode === 'bus-routes') {
         commands.suspendMobileRoutes()
-      } else if (switchingView && view === 'explore' && exploreState.mode === 'bus-routes') {
-        commands.enterMobileRoutes()
       }
+    }
+    // Explore opens on Bus routes, so entering it must start the route session on every viewport.
+    // Without it a route chip click is a no-op on desktop, where nothing else starts one.
+    if (switchingView && view === 'explore' && exploreState.mode === 'bus-routes') {
+      commands.enterMobileRoutes()
     }
     if (view === 'stops' && stopsList === 'nearby' && locationStatus === 'disabled') {
       commands.enableLocationTracking()

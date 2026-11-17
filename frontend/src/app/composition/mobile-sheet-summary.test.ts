@@ -92,7 +92,10 @@ describe('mobile sheet summaries', () => {
     it('describes the current Explore context', () => {
       const initial = createInitialExploreState()
 
-      expect(getExploreSheetSummary(initial, null)).toBe('Explore · Search venues')
+      // Explore opens on Bus routes.
+      expect(getExploreSheetSummary(initial, null)).toBe('Explore · Bus routes')
+      expect(getExploreSheetSummary({ ...initial, mode: 'venue-search' }, null))
+        .toBe('Explore · Search venues')
       expect(getExploreSheetSummary({ ...initial, mode: 'bus-routes' }, null))
         .toBe('Explore · Bus routes')
       expect(getExploreSheetSummary({ ...initial, mode: 'bus-routes' }, { id: 'A1', name: 'A1' }))

@@ -16,6 +16,7 @@ const appHarness = vi.hoisted(() => {
     navigateToEndpoint: vi.fn(),
     locateUser: vi.fn(),
     suspendMobileRoutes: vi.fn(),
+    enterMobileRoutes: vi.fn(),
     setPersonalWaypoints: vi.fn(),
     setPersonalWaypointPlacement: vi.fn(),
     setVisibleCenterZoom: vi.fn(),
@@ -351,15 +352,50 @@ describe('desktop shared navigation shell', () => {
     expect(document.getElementById('plan-panel')?.hasAttribute('inert')).toBe(true)
   })
 
-  it('switches to the unified Explore tab from the shared navigation', async () => {
+  it('switches to the unified Explore tab opening on Bus routes', async () => {
     const user = userEvent.setup()
     render(<App />)
 
     await user.click(screen.getByRole('button', { name: 'Explore' }))
 
-    expect(screen.getByRole('region', { name: 'Find a venue' })).toBeTruthy()
+    expect(screen.getByRole('region', { name: 'Bus routes' })).toBeTruthy()
     expect(screen.getByRole('button', { name: 'Bus routes' })).toBeTruthy()
+    expect(screen.getByRole('button', { name: 'Find venue' })).toBeTruthy()
     expect(document.getElementById('stops-panel')?.hasAttribute('hidden')).toBe(true)
+  })
+
+  it('starts the route session when desktop Explore opens on Bus routes', async () => {
+    const user = userEvent.setup()
+    render(<App />)
+
+    // Explore opens on Bus routes, and a route chip only works while a route session is active.
+    // Nothing else starts one on desktop, so entering the tab must.
+    await user.click(screen.getByRole('button', { name: 'Explore' }))
+
+    expect(appHarness.commands.enterMobileRoutes).toHaveBeenCalled()
+  })
+
+  it('preserves a manual Explore view when switching top-level tabs on desktop', async () => {
+    const user = userEvent.setup()
+    // A view the rider chose earlier in the session; the initial view is Bus routes.
+    appHarness.state = {
+      ...createInitialNavigationSessionState(),
+      transitIndex: createTransitIndex(createValidTransitNetwork()),
+      exploreState: {
+        ...createInitialNavigationSessionState().exploreState,
+        mode: 'venue-search',
+      },
+    }
+    render(<App />)
+
+    await user.click(screen.getByRole('button', { name: 'Explore' }))
+    expect(screen.getByRole('searchbox', { name: 'Find a venue' })).toBeTruthy()
+
+    await user.click(screen.getByRole('button', { name: 'Stops' }))
+    await user.click(screen.getByRole('button', { name: 'Explore' }))
+
+    expect(screen.getByRole('searchbox', { name: 'Find a venue' })).toBeTruthy()
+    expect(screen.getByRole('button', { name: 'Find venue' }).getAttribute('aria-pressed')).toBe('true')
   })
 
   it('requests location on initial desktop Stops activation', async () => {
@@ -394,7 +430,8 @@ describe('desktop shared navigation shell', () => {
     await waitFor(() => expect(screen.getByRole('heading', { name: 'Stop A, bus stop' })).toBeTruthy())
     expect(screen.getByRole('button', { name: 'Stops' }).getAttribute('aria-current')).toBe('page')
 
-    await user.click(screen.getByRole('button', { name: 'Back to Find venue' }))
+    // Explore opens on Bus routes, so that is the view this stop returns to.
+    await user.click(screen.getByRole('button', { name: 'Back to bus routes' }))
     await waitFor(() => expect(document.activeElement).toBe(mapMarker))
     expect(screen.getByRole('button', { name: 'Explore' }).getAttribute('aria-current')).toBe('page')
     mapMarker.remove()

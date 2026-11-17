@@ -26,6 +26,8 @@ The app has three workflow tabs (Explore, Stops, Plan) over one shared map. Stop
 
 ## Explore
 
+- **Segments:** the segmented control lists **Bus routes** on the left and **Find venue** on the right. Explore opens on Bus routes, so the route list is available as soon as someone enters the tab.
+- **Selection:** after the rider picks an Explore view, that choice is kept when they switch top-level tabs or cross the mobile/desktop breakpoint. Only a fresh app session starts on Bus routes again.
 - **Find venue:** search by venue code or room name. Results are ranked, and buildings are listed ahead of rooms. Choosing a venue flies to it and shows a selected marker, with no duplicate popup.
 - **Venue details:** the venue code is the heading, followed by the room name, floor and building. Floors are integers: negative for basements, zero for ground, positive above. One formatter produces the label. The panel also has a Navigate action, a NUSMods link and up to three NUS bus stops within 250 m. Coordinates stay internal and are never shown.
 - **Navigate:** sets the destination. If there is an active location fix, it also replaces the origin with a frozen Current location. Without one, the origin is kept and no permission is requested. On mobile it opens the partial Plan sheet.

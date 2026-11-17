@@ -369,7 +369,8 @@ describe('mobile Stops tab state', () => {
     expect(screen.getByRole('button', { name: 'Stops' }).getAttribute('aria-current')).toBe('page')
     expect(screen.getByRole('region', { name: 'Stops' }).getAttribute('data-detent')).toBe('partial')
 
-    await user.click(screen.getByRole('button', { name: 'Back to Find venue' }))
+    // Explore opens on Bus routes, so that is the view this stop returns to.
+    await user.click(screen.getByRole('button', { name: 'Back to bus routes' }))
     await waitFor(() => expect(document.activeElement).toBe(mapMarker))
     mapMarker.remove()
   })

@@ -335,7 +335,12 @@ export function BusRouteList({
         </div>
       ) : (
         <p className="explore-bus-route-list-selection-status" role="status" aria-live="polite">
-          {!network ? 'Loading bus routes…' : 'Bus route data is unavailable.'}
+          {!network
+            ? 'Loading bus routes…'
+            : routes.length === 0
+              ? 'Bus route data is unavailable.'
+              // Explore now opens here, so having routes but no chosen one is the normal first view.
+              : 'Choose a bus route to see its stops.'}
         </p>
       )}
       <p className="visually-hidden" role="status" aria-live="polite">

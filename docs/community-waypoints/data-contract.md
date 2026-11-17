@@ -26,7 +26,6 @@ Keep fields flat in `properties` so they remain ordinary columns in GIS tools. `
 | `id` | Yes | Stable opaque ID in lower-case `cw-<UUID>` form. The parser normalizes UUID hex to lower case. Never reuse an ID, including after removal. IDs must be unique in the collection. |
 | `category` | Yes | One active controlled value: `water_cooler`, `printing`, `toilet`, or `vending_machine`. |
 | `geometry` | Yes | GeoJSON `Point`; coordinates must be within the supported Singapore box. |
-| `source` | Yes | Short public description of how the place was verified, 1–160 characters after trimming. Do not put a private issue link or raw evidence reference here. |
 | `updatedAt` | Yes | Valid calendar date in `YYYY-MM-DD` form. It means the last reviewed update, not the creation date. |
 | `building` | No | Reviewed building name as plain text, 1–80 characters. It is not a venue ID or link. |
 | `floor` | No | Signed integer using the glossary meaning: below ground is negative, ground is zero, and above ground is positive. |
@@ -46,19 +45,19 @@ The app derives `CommunityWaypoint.displayLabel` from the category label and any
 
 Submission issues keep the existing schema version 1 envelope and `NUSGO_SUBMISSION_JSON_V1_START` / `NUSGO_SUBMISSION_JSON_V1_END` markers. The private review repository should update its version 1 submission schema to accept optional `suggestedDetails` fields before the updated public endpoint is deployed.
 
-Never publish reporter identity, private submission URLs, review notes, photo IDs, or photo URLs. Photo intake is disabled for the text-only launch; photos are not collected and do not belong in Community Waypoint properties. Public source wording must be clean and must not disclose private submission contents.
+Never publish reporter identity, private submission URLs, review notes, photo IDs, or photo URLs. Photo intake is disabled for the text-only launch; photos are not collected and do not belong in Community Waypoint properties.
 
-## Provenance and review metadata
+## Review metadata
 
-`source` and `updatedAt` are the public provenance record: they say how and when the published waypoint was last verified. A public waypoint exists only after a maintainer accepts and publishes a reviewed change. Pending, rejected, duplicate, or outdated submissions are not Community Waypoints and never appear in this dataset.
+`updatedAt` is the public review date. Reviewer identity, evidence summaries, and decisions remain in the private submission issue. A public waypoint exists only after a maintainer accepts and publishes a reviewed change. Pending, rejected, duplicate, or outdated submissions are not Community Waypoints and never appear in this dataset.
 
-Keep moderation metadata in the private submission issue only. That private record can hold the submission kind and correction/removal target, review-state label, reviewer notes and decision, decision date, and opaque private evidence IDs. Keep the private issue link and those review fields out of public GeoJSON, public pull requests, and public provenance text. The private queue workflow and its operating policy are defined separately under #214.
+Keep moderation metadata in the private submission issue only. That private record can hold the submission kind and correction/removal target, review-state label, reviewer notes and decision, decision date, and opaque private evidence IDs. Keep the private issue link and those review fields out of public GeoJSON and public pull requests. The private queue workflow and its operating policy are defined separately under #214.
 
 ## Validation behavior
 
 `parseCommunityWaypointsGeoJson(input)` accepts `unknown` and returns a complete readonly Community Waypoint list. It throws `CommunityWaypointGeoJsonValidationError` with the failing path and reason if the collection, any feature, coordinate, property, category, date, ID, or value is invalid. A bad feature rejects the whole dataset; the parser never silently drops it or returns a partial list.
 
-The allowlist for `properties` is `id`, `category`, `source`, `updatedAt`, `building`, `floor`, `details`, `services`, `colour`, `grayscalePriceCentsPerPage`, `colourPriceCentsPerPage`, `items`, and `prep`. The parser validates each controlled value, rejects duplicates and incompatible category fields, and prevents private moderation fields from being carried into the public dataset.
+The allowlist for `properties` is `id`, `category`, `updatedAt`, `building`, `floor`, `details`, `services`, `colour`, `grayscalePriceCentsPerPage`, `colourPriceCentsPerPage`, `items`, and `prep`. The parser validates each controlled value, rejects duplicates and incompatible category fields, and prevents private moderation fields from being carried into the public dataset.
 
 ## GIS import and export settings
 
@@ -80,7 +79,7 @@ RFC 7946 requires WGS 84 coordinates in longitude/latitude order. Keep the coord
 
 ### Round-trip evidence
 
-After each GIS export, parse the output with `parseCommunityWaypointsGeoJson` and compare the four fixture IDs, categories, source text, dates, optional values, floor numbers, and coordinates. Confirm the app derives labels from the remaining fields. Any new public property or changed ID is a failure.
+After each GIS export, parse the output with `parseCommunityWaypointsGeoJson` and compare the four fixture IDs, categories, dates, optional values, floor numbers, and coordinates. Confirm the app derives labels from the remaining fields. Any new public property or changed ID is a failure.
 
 | Tool | Result |
 | --- | --- |

@@ -31,6 +31,7 @@ Keep fields flat in `properties` so they remain ordinary columns in GIS tools. `
 | `building` | No | Reviewed building name as plain text, 1–80 characters. It is not a venue ID or link. |
 | `floor` | No | Signed integer using the glossary meaning: below ground is negative, ground is zero, and above ground is positive. |
 | `details` | No | Maintainer-written public display text, 1–500 characters. Include only a fact verified during review. Never copy submitter explanations or other private issue text into this field. |
+| `bidet` | No | Boolean indicating whether a bidet is available; Toilet waypoints only. Omit it when availability has not been verified. |
 | `services` | No | Non-empty array of unique `print` and/or `photocopy` values; printing only. |
 | `colour` | No | Boolean for whether colour service is available; printing only. |
 | `grayscalePriceCentsPerPage` | No | Non-negative integer SGD cents per page; printing only. |
@@ -58,7 +59,7 @@ Keep moderation metadata in the private submission issue only. That private reco
 
 `parseCommunityWaypointsGeoJson(input)` accepts `unknown` and returns a complete readonly Community Waypoint list. It throws `CommunityWaypointGeoJsonValidationError` with the failing path and reason if the collection, any feature, coordinate, property, category, date, ID, or value is invalid. A bad feature rejects the whole dataset; the parser never silently drops it or returns a partial list.
 
-The allowlist for `properties` is `id`, `category`, `source`, `updatedAt`, `building`, `floor`, `details`, `services`, `colour`, `grayscalePriceCentsPerPage`, `colourPriceCentsPerPage`, `items`, and `prep`. The parser validates each controlled value, rejects duplicates and incompatible category fields, and prevents private moderation fields from being carried into the public dataset.
+The allowlist for `properties` is `id`, `category`, `source`, `updatedAt`, `building`, `floor`, `details`, `services`, `colour`, `grayscalePriceCentsPerPage`, `colourPriceCentsPerPage`, `items`, `prep`, and `bidet`. The parser validates each controlled value, rejects duplicates and incompatible category fields, and prevents private moderation fields from being carried into the public dataset.
 
 ## GIS import and export settings
 

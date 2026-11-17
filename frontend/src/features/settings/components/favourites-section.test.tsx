@@ -89,7 +89,7 @@ describe('Favourites settings', () => {
     expect(onClearFavorites).toHaveBeenCalledOnce()
   })
 
-  it('explains how to add favourites when the list is empty', () => {
+  it('shows a compact empty state when the list is empty', () => {
     render(
       <FavouritesSection
         stops={[]}
@@ -99,7 +99,7 @@ describe('Favourites settings', () => {
       />,
     )
 
-    expect(screen.getByText('Star a stop in Stops to add it to your favourites.')).toBeTruthy()
+    expect(screen.getByText('No favourites yet.')).toBeTruthy()
     expect(screen.queryByRole('button', { name: 'Edit list' })).toBeNull()
     expect(screen.queryByRole('button', { name: 'Clear all' })).toBeNull()
     expect(screen.queryByRole('button', { name: 'Manage in Stops' })).toBeNull()
@@ -121,6 +121,6 @@ describe('Favourites settings', () => {
     expect(document.activeElement).toBe(screen.getByRole('heading', { name: 'Favourite stops 1' }))
 
     await user.click(screen.getByRole('button', { name: 'Remove COM3 (Opp COM2) from favourites' }))
-    expect(document.activeElement).toBe(screen.getByText('Star a stop in Stops to add it to your favourites.'))
+    expect(document.activeElement).toBe(screen.getByText('No favourites yet.'))
   })
 })

@@ -9,7 +9,6 @@ const toiletWaypoint: CommunityWaypoint = {
   displayLabel: 'Toilet at UTown',
   category: 'toilet',
   coordinate,
-  source: 'Checked on site',
   updatedAt: '2026-11-17',
   bidet: true,
 }

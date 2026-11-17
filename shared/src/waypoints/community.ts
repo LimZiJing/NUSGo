@@ -34,7 +34,6 @@ export const COMMUNITY_WAYPOINT_READABLE_CATEGORIES = [
 ] as const
 
 export const COMMUNITY_WAYPOINT_TEXT_LIMITS = {
-  source: 160,
   building: 80,
   details: 500,
 } as const
@@ -72,7 +71,6 @@ export interface CommunityWaypoint extends Omit<Waypoint, 'name'> {
   readonly category: CommunityWaypointCategory
   /** Derived app display label; this is not a public GeoJSON property. */
   readonly displayLabel: string
-  readonly source: string
   readonly updatedAt: string
   readonly building?: string
   readonly floor?: number

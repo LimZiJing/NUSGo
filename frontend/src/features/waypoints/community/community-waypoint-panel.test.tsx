@@ -14,7 +14,6 @@ const waypoints: readonly CommunityWaypoint[] = [
     displayLabel: 'Water cooler · Stephen Riady Centre · Floor 1',
     category: 'water_cooler',
     coordinate: { longitude: 103.78, latitude: 1.29 },
-    source: 'NUS Campus Facilities',
     updatedAt: '2026-10-26',
     building: 'Stephen Riady Centre',
     floor: 1,
@@ -25,7 +24,6 @@ const waypoints: readonly CommunityWaypoint[] = [
     displayLabel: 'Printing / photocopying',
     category: 'printing',
     coordinate: { longitude: 103.77, latitude: 1.30 },
-    source: 'NUS Campus Facilities',
     updatedAt: '2026-10-25',
   },
 ]
@@ -86,7 +84,6 @@ describe('CommunityWaypointPanel', () => {
         displayLabel: 'Toilet at UTown',
         category: 'toilet',
         coordinate: { longitude: 103.78, latitude: 1.29 },
-        source: 'Checked on site',
         updatedAt: '2026-11-17',
         bidet,
       }
@@ -100,6 +97,7 @@ describe('CommunityWaypointPanel', () => {
       const detailPanel = await screen.findByRole('region', { name: toiletWaypoint.displayLabel })
       expect(within(detailPanel).getByText('Bidet')).toBeTruthy()
       expect(within(detailPanel).getByText(label)).toBeTruthy()
+      expect(within(detailPanel).queryByText('Source')).toBeNull()
     },
   )
 
@@ -209,7 +207,7 @@ describe('CommunityWaypointPanel', () => {
     expect(screen.getByText('Floor 1')).toBeTruthy()
     expect(screen.getByText('Beside the east stairwell.')).toBeTruthy()
     expect(screen.queryByText('Accessibility')).toBeNull()
-    expect(screen.getByText('NUS Campus Facilities')).toBeTruthy()
+    expect(screen.queryByText('NUS Campus Facilities')).toBeNull()
     expect(screen.getByText('2026-10-26').tagName).toBe('TIME')
 
     await user.click(screen.getByRole('button', { name: 'Suggest a correction' }))

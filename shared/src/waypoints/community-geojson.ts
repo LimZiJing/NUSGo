@@ -20,7 +20,6 @@ const GEOMETRY_MEMBERS = new Set(['type', 'coordinates', 'bbox'])
 const PROPERTY_MEMBERS = new Set([
   'id',
   'category',
-  'source',
   'updatedAt',
   'building',
   'floor',
@@ -199,12 +198,6 @@ function parseFeature(input: unknown, index: number): CommunityWaypoint {
     invalid(`${location}.properties.category`, 'must be a supported Community Waypoint category')
   }
 
-  const source = readString(
-    properties,
-    'source',
-    `${location}.properties`,
-    COMMUNITY_WAYPOINT_TEXT_LIMITS.source,
-  )
   const updatedAt = readString(properties, 'updatedAt', `${location}.properties`)
   if (!isValidDateOnly(updatedAt)) {
     invalid(`${location}.properties.updatedAt`, 'must be a valid YYYY-MM-DD date')
@@ -281,7 +274,6 @@ function parseFeature(input: unknown, index: number): CommunityWaypoint {
     displayLabel,
     category,
     coordinate,
-    source,
     updatedAt,
     ...(building === undefined ? {} : { building }),
     ...(floor === undefined ? {} : { floor }),

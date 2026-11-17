@@ -18,7 +18,6 @@ const waypoint: CommunityWaypoint = {
   displayLabel: 'Water cooler at UTown',
   category: 'water_cooler',
   coordinate,
-  source: 'NUS Campus Facilities',
   updatedAt: '2026-10-26',
   building: 'Stephen Riady Centre',
   floor: 1,

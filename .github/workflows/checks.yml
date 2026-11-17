@@ -1,9 +1,9 @@
 name: checks
 
 on:
+  # Every pull request, not only those targeting main: a stacked pull request needs the same
+  # checks on its own head, and its base is another feature branch until the stack merges.
   pull_request:
-    branches:
-      - main
 
 permissions:
   contents: read

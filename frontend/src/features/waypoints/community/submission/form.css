@@ -170,6 +170,7 @@
   color: var(--text-secondary);
   background: var(--surface-card);
   font-size: var(--font-size-sm);
+  font-weight: 500;
   scroll-snap-align: start;
   white-space: nowrap;
 }
@@ -179,7 +180,7 @@
   color: var(--text-primary);
   background: var(--accent-soft);
   box-shadow: inset 0 0 0 1px var(--accent);
-  font-weight: 700;
+  font-weight: 600;
 }
 
 .community-waypoint-floor-option:focus-visible {

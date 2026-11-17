@@ -566,7 +566,7 @@
   white-space: nowrap;
 }
 
-.community-waypoint-submission-coordinate-content > .button {
+.community-waypoint-submission-coordinate-content > .community-waypoint-adjust-location-action {
   flex: 0 0 auto;
   margin-left: auto;
 }

@@ -22,8 +22,8 @@ import {
 } from './navigation-session-mount'
 import { useNavigationSession } from './use-navigation-session'
 import { deriveExplorePanelStatus } from './explore-panel-status'
+import { getIsMobileViewport } from '../ui/mobile/mobile-viewport'
 import {
-  getIsMobileViewport,
   subscribeToMobileViewport,
   type MobileSheetDetent,
 } from './navigation/navigation-state'

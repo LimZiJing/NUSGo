@@ -5,7 +5,6 @@ import type {
 import type { NavigationView } from '../../ui/navigation-view'
 import { MOBILE_LAYOUT_MEDIA_QUERY } from '../../domain/layout-breakpoint'
 
-export { getIsMobileViewport } from '../../ui/mobile/mobile-viewport'
 export type { MobileSheetDetent } from '../../ui/mobile/mobile-sheet/mobile-sheet-detent'
 export type { NavigationView } from '../../ui/navigation-view'
 

@@ -32,8 +32,11 @@ interface CapWindow {
  * Caps how many notifications one subscription may receive per hour.
  *
  * The cap is per subscription rather than per subscriber, matching the store's identity model:
- * an endpoint is the only handle the server holds, and it holds nothing personal. History lives
- * here rather than in the subscription record, so it is forgotten when a subscription is removed.
+ * an endpoint is the only handle the server holds, and it holds nothing personal. Issue #502
+ * asks for a per-user limit; this is the agreed scope of it. Someone who enables the same topic
+ * in two browsers receives the allowance once per endpoint, and a literal per-person cap would
+ * need a new anonymous identifier in the registration contract. History lives here rather than
+ * in the subscription record, so it is forgotten when a subscription is removed.
  *
  * An in-flight reservation occupies capacity until delivery succeeds or fails. Failed sends
  * return the allowance without letting overlapping requests exceed the limit.

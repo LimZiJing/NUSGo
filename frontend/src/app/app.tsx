@@ -186,6 +186,10 @@ function App() {
   }, [themePreference])
 
   const state = useNavigationSession(session)
+  const currentLocationFix = state.location.status === 'tracking' && state.location.latestFix &&
+    isValidLocationCoordinates(state.location.latestFix.longitude, state.location.latestFix.latitude)
+    ? state.location.latestFix
+    : null
   if (
     morePage === 'community-submission' && communitySubmissionWaypoint === null &&
     communitySubmissionLocationStatus === 'locating'
@@ -1176,6 +1180,11 @@ function App() {
         {morePage === 'placing' && <PersonalWaypointPlacement
           coordinate={personalWaypoints.draft.coordinate}
           onUseMapCentre={mapCenter && !isMapMoving ? () => updatePersonalWaypointDraft({ coordinate: mapCenter }) : undefined}
+          onUseCurrentLocation={currentLocationFix
+            ? () => updatePersonalWaypointDraft({
+              coordinate: { latitude: currentLocationFix.latitude, longitude: currentLocationFix.longitude },
+            })
+            : undefined}
           onApplyCoordinate={applyTypedWaypointCoordinate}
           onContinue={() => setMorePage(placementReturnPage ?? 'creating')}
           onCancel={cancelWaypointPlacement}
@@ -1187,6 +1196,16 @@ function App() {
               setCommunitySubmissionCoordinate(mapCenter)
               setCommunitySubmissionLocationStatus('ready')
               setCommunitySubmissionLocationAccuracy(null)
+            }
+            : undefined}
+          onUseCurrentLocation={currentLocationFix
+            ? () => {
+              setCommunitySubmissionCoordinate({
+                latitude: currentLocationFix.latitude,
+                longitude: currentLocationFix.longitude,
+              })
+              setCommunitySubmissionLocationStatus('ready')
+              setCommunitySubmissionLocationAccuracy(currentLocationFix.accuracy)
             }
             : undefined}
           onApplyCoordinate={applyTypedCommunityWaypointCoordinate}

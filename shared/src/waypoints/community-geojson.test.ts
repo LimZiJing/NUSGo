@@ -101,10 +101,23 @@ describe('parseCommunityWaypointsGeoJson', () => {
       building: null,
       floor: null,
       details: null,
+      bidet: null,
     }))
 
     expect(missing[0]).toEqual(expected)
     expect(nulls[0]).toEqual(expected)
+  })
+
+  it('accepts bidet availability only for Toilet waypoints', () => {
+    expect(parseCommunityWaypointsGeoJson(collectionWith({
+      category: 'toilet', bidet: false,
+    }))[0]).toMatchObject({ category: 'toilet', bidet: false })
+    expect(() => parseCommunityWaypointsGeoJson(collectionWith({
+      category: 'printing', bidet: true,
+    }))).toThrow('toilet details are only allowed for toilet waypoints')
+    expect(() => parseCommunityWaypointsGeoJson(collectionWith({
+      category: 'toilet', bidet: 'yes',
+    }))).toThrow(CommunityWaypointGeoJsonValidationError)
   })
 
   it('rejects unsupported collection, feature, and geometry shapes', () => {
@@ -264,7 +277,7 @@ describe('parseCommunityWaypointsGeoJson', () => {
     })
     expect(parsed[0]?.displayLabel).toBe('Water cooler · Central Library · Floor 1')
     expect(parsed[0]?.details).toBe('Near the main entrance')
-    expect(parsed[2]).toMatchObject({ floor: -1 })
+    expect(parsed[2]).toMatchObject({ floor: -1, bidet: true })
     expect(parsed[2]?.displayLabel).toBe('Toilet · Basement 1')
     expect(parsed[3]?.displayLabel).toBe('Vending machine · Faculty Building · Ground floor')
     expect(parsed[3]?.details).toBe('Next to the service counter')

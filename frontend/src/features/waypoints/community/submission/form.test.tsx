@@ -32,6 +32,14 @@ const printingWaypoint: CommunityWaypoint = {
   grayscalePriceCentsPerPage: 10,
 }
 
+const toiletWaypoint: CommunityWaypoint = {
+  ...waypoint,
+  id: 'cw-toilet-001',
+  displayLabel: 'Toilet at UTown',
+  category: 'toilet',
+  bidet: true,
+}
+
 function renderForm(overrides: Partial<Parameters<typeof CommunityWaypointSubmissionForm>[0]> = {}) {
   /* onSubmit is returned separately as a typed mock: reading it back off `props`
      widens it to the plain callback type, which hides `.mock` from the compiler. */
@@ -432,6 +440,54 @@ describe('CommunityWaypointSubmissionForm', () => {
     expect(onSubmit).toHaveBeenCalledWith(expect.objectContaining({
       suggestedDetails: expect.objectContaining({ category: 'printing', colour: null }),
     }), expect.any(AbortSignal))
+  })
+
+  it('leaves bidet unanswered until chosen and sends a Toilet Yes or No answer', async () => {
+    const user = userEvent.setup()
+    const { onSubmit } = renderForm()
+
+    await user.click(screen.getByRole('radio', { name: 'Toilet' }))
+    await user.click(screen.getByText('More details'))
+    for (const name of ['Yes', 'No', 'Not sure']) {
+      expect(screen.getByRole('button', { name }).getAttribute('aria-pressed'), name).toBe('false')
+    }
+
+    await user.click(screen.getByRole('button', { name: 'No' }))
+    await user.click(screen.getByRole('button', { name: 'Send suggestion' }))
+
+    expect(onSubmit).toHaveBeenCalledWith(expect.objectContaining({
+      category: 'toilet',
+      suggestedDetails: { category: 'toilet', bidet: false },
+    }), expect.any(AbortSignal))
+  })
+
+  it('prefills the published bidet answer and lets a correction clear it', async () => {
+    const user = userEvent.setup()
+    const { onSubmit } = renderForm({ waypoint: toiletWaypoint })
+
+    expect(screen.getByRole('button', { name: 'Yes' }).getAttribute('aria-pressed')).toBe('true')
+    await user.click(screen.getByRole('button', { name: 'Not sure' }))
+    await user.type(screen.getByLabelText('What needs correcting?'), 'I could not confirm it.')
+    await user.click(screen.getByRole('button', { name: 'Send suggestion' }))
+
+    expect(onSubmit).toHaveBeenCalledWith(expect.objectContaining({
+      kind: 'correction',
+      category: 'toilet',
+      suggestedDetails: { category: 'toilet', bidet: null },
+    }), expect.any(AbortSignal))
+  })
+
+  it('restores the published Toilet answer after switching categories', async () => {
+    const user = userEvent.setup()
+    renderForm({ waypoint: toiletWaypoint })
+
+    await user.click(screen.getByRole('button', { name: 'No' }))
+    const category = screen.getByRole('combobox', { name: 'Category' })
+    await user.selectOptions(category, 'printing')
+    expect(screen.queryByText('Bidet available')).toBeNull()
+    await user.selectOptions(category, 'toilet')
+
+    expect(screen.getByRole('button', { name: 'Yes' }).getAttribute('aria-pressed')).toBe('true')
   })
 
   it('counts filled answers in the collapsed disclosure summary', async () => {

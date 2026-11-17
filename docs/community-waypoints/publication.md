@@ -6,7 +6,7 @@ The checked-in `frontend/public/data/community-waypoints.geojson` file is the pu
 
 1. A maintainer runs the publish workflow in the private submissions repository. It builds the complete candidate from the approved issues and opens a draft PR against `main`.
 2. Review the full diff in `frontend/public/data/community-waypoints.geojson`. Check for duplicates, confirm each location and category, and verify that corrections preserve their existing IDs and removals delete the intended feature.
-3. Confirm the review date in `updatedAt`. Labels derive from category, building, and floor. Review any unverified `suggestedDetails` in the private issue and publish only facts that have been checked. Printing and vending values use the controlled fields in the [public data contract](data-contract.md). A maintainer may also add optional, verified `details` text for display in the waypoint detail view.
+3. Confirm the review date in `updatedAt`. Labels derive from category, building, and floor. Review any unverified `suggestedDetails` in the private issue and publish only facts that have been checked. Printing and vending values, plus Toilet bidet availability, use the controlled fields in the [public data contract](data-contract.md). A maintainer may also add optional, verified `details` text for display in the waypoint detail view.
 4. Keep private review information out of the public PR. It must not include private issue links, submitted explanations, reviewer notes, reporter details, or evidence references. Write `details` from verified facts; do not copy raw text from a private issue. Never publish the unverified submission object itself.
 5. Validate the complete file and review its diff:
 

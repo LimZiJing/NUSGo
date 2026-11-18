@@ -71,27 +71,25 @@ describe('private submission issue creation', () => {
     assert.deepEqual(issue.labels, ['kind:new-place', 'review:new'])
     assert.match(issue.body, /## Summary/)
     assert.match(issue.body, /\| Category \| Water cooler \|/)
-    assert.match(issue.body, /\| Location \| Latitude 1\.29, longitude 103\.78/)
+    assert.match(issue.body, /\| Location \| 1\.290000° N, 103\.780000° E/)
     assert.match(issue.body, /\[open map\]\(https:\/\/www\.openstreetmap\.org/)
     assert.doesNotMatch(issue.body, /\| (?:Building|Floor) \|/)
-    assert.match(issue.body, /## Submitted details \(unverified\)/)
+    assert.match(issue.body, /## Details/)
     assert.match(issue.body, /\*\*Category:\*\* Water cooler/)
-    assert.match(issue.body, /\*\*Coordinates \(latitude, longitude\):\*\* 1\.29, 103\.78/)
-    assert.match(issue.body, /\*\*Submitter explanation \(unverified\):\*\*/)
+    assert.match(issue.body, /\*\*Coordinates:\*\* 1\.290000° N, 103\.780000° E/)
+    assert.match(issue.body, /\*\*Submitter explanation:\*\*/)
     assert.doesNotMatch(issue.body, /Accessibility note|Other details|Proposed details/)
-    assert.match(issue.body, /<summary>Raw submission JSON — unverified/)
+    assert.match(issue.body, /<summary>Submission data/)
     assert.deepEqual(readRawSubmissionJson(issue.body), { schemaVersion: 1, submission })
     assert.doesNotMatch(issue.body, /N\/A|No change proposed/)
-    assert.match(issue.body, /Photo evidence is disabled at launch/)
-    assert.doesNotMatch(issue.body, /Photo retention and orphan cleanup/)
-    assert.match(issue.body, /## Maintainer review/)
+    assert.doesNotMatch(issue.body, /\[ \]|Anonymous NUSGo submission|unverified|Maintainer review|Photo evidence is disabled/)
     assert.doesNotMatch(issue.body, /\*\*Reporter (name|email)/i)
     const markdownNote = parseCommunityWaypointSubmission({
       ...validNewPlace,
       explanation: 'Water ~~station~~',
     })
     const markdownIssue = createPrivateSubmissionIssueDraft(markdownNote)
-    assert.match(markdownIssue.body, /Submitter explanation \(unverified\):\*\* Water \\~\\~station\\~\\~/)
+    assert.match(markdownIssue.body, /Submitter explanation:\*\* Water \\~\\~station\\~\\~/)
     assert.deepEqual(readRawSubmissionJson(markdownIssue.body), { schemaVersion: 1, submission: markdownNote })
   })
 
@@ -122,7 +120,7 @@ describe('private submission issue creation', () => {
       building: 'West Hall\n| Added row | injected @here',
     })
     const issue = createPrivateSubmissionIssueDraft(submission)
-    const summary = issue.body.split('## Submitted details')[0]
+    const summary = issue.body.split('## Details')[0]
 
     assert.equal((summary.match(/^\| /gm) ?? []).length, 6)
     assert.ok(summary.includes('West Hall \\| Added row \\| injected @​here'))
@@ -154,10 +152,10 @@ describe('private submission issue creation', () => {
     const removalIssue = createPrivateSubmissionIssueDraft(removal)
     assert.equal(correctionIssue.title, '[Correction] cw-123e4567-e89b-42d3-a456-426614174000')
     assert.match(correctionIssue.body, /\| Report \| Correction \|/)
-    assert.match(correctionIssue.body, /\*\*Requested change \(unverified\):\*\*/)
+    assert.match(correctionIssue.body, /\*\*Requested change:\*\*/)
     assert.doesNotMatch(correctionIssue.body, /No change proposed/)
     assert.equal(removalIssue.title, '[Removal] cw-123e4567-e89b-42d3-a456-426614174000')
-    assert.match(removalIssue.body, /\*\*Removal reason \(unverified\):\*\*/)
+    assert.match(removalIssue.body, /\*\*Removal reason:\*\*/)
     assert.deepEqual(correctionIssue.labels, ['kind:correction', 'review:new'])
     assert.deepEqual(removalIssue.labels, ['kind:removal', 'review:new'])
 
@@ -193,7 +191,7 @@ describe('private submission issue creation', () => {
     assert.match(issue.body, /\*\*Colour price per page:\*\* S\$0\.20/)
   })
 
-  it('marks Toilet bidet answers as unverified and preserves Yes, No, and Not sure', () => {
+  it('formats Toilet bidet availability clearly and preserves Yes, No, and Not provided', () => {
     for (const [bidet, label] of [[true, 'Yes'], [false, 'No'], [null, 'Not provided']] as const) {
       const submission = parseCommunityWaypointSubmission({
         ...validNewPlace,
@@ -202,7 +200,7 @@ describe('private submission issue creation', () => {
       })
       const issue = createPrivateSubmissionIssueDraft(submission)
       assert.ok(issue.body.includes('| More details | Bidet available: ' + label + ' |'))
-      assert.ok(issue.body.includes('### More details (unverified)'))
+      assert.ok(issue.body.includes('### More details'))
       assert.ok(issue.body.includes('**Bidet available:** ' + label))
       assert.deepEqual(readRawSubmissionJson(issue.body), { schemaVersion: 1, submission })
     }
@@ -225,7 +223,7 @@ describe('private submission issue creation', () => {
       })
       assert.ok(submission.kind === 'correction' && submission.suggestedDetails)
       const cleared = createPrivateSubmissionIssueDraft(submission)
-      assert.ok(cleared.body.split('## Submitted details')[0].includes(label + ': None \\(cleared\\)'))
+      assert.ok(cleared.body.split('## Details')[0].includes(label + ': None \\(cleared\\)'))
       assert.ok(cleared.body.includes('**' + label + ':** None \\(cleared\\)'))
       if (category === 'printing') {
         assert.ok(cleared.body.includes('Grayscale price per page: Not provided'))
@@ -234,12 +232,12 @@ describe('private submission issue creation', () => {
       // Formatting also handles incomplete historical review data without treating it as a removal.
       Reflect.deleteProperty(submission.suggestedDetails, field)
       const absent = createPrivateSubmissionIssueDraft(submission)
-      assert.ok(absent.body.split('## Submitted details')[0].includes(label + ': Not provided'))
+      assert.ok(absent.body.split('## Details')[0].includes(label + ': Not provided'))
       assert.ok(absent.body.includes('**' + label + ':** Not provided'))
 
       Reflect.set(submission.suggestedDetails, field, null)
       const unspecified = createPrivateSubmissionIssueDraft(submission)
-      assert.ok(unspecified.body.split('## Submitted details')[0].includes(label + ': Not provided'))
+      assert.ok(unspecified.body.split('## Details')[0].includes(label + ': Not provided'))
       assert.ok(unspecified.body.includes('**' + label + ':** Not provided'))
     })
   }

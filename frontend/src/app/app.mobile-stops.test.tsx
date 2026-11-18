@@ -283,11 +283,11 @@ describe('mobile Stops tab state', () => {
 
     await user.click(screen.getByRole('button', { name: 'More' }))
     await user.click(screen.getByRole('button', { name: 'Settings' }))
-    await user.click(screen.getByText('Appearance'))
+    await user.click(screen.getByRole('button', { name: 'Appearance' }))
     await user.click(screen.getByRole('radio', { name: '12 minutes shown as 12m' }))
     expect(localStorage.getItem('navus:minute-format:v1')).toBe('m')
 
-    await user.click(screen.getByRole('button', { name: 'Back to previous view' }))
+    await user.click(screen.getByRole('button', { name: 'Back to Settings' }))
     await user.click(screen.getByRole('button', { name: 'Back to previous view' }))
     await waitFor(() => expect(screen.getByText('5m')).toBeTruthy())
 
@@ -369,7 +369,8 @@ describe('mobile Stops tab state', () => {
     expect(screen.getByRole('button', { name: 'Stops' }).getAttribute('aria-current')).toBe('page')
     expect(screen.getByRole('region', { name: 'Stops' }).getAttribute('data-detent')).toBe('partial')
 
-    await user.click(screen.getByRole('button', { name: 'Back to Find venue' }))
+    // Explore opens on Bus routes, so that is the view this stop returns to.
+    await user.click(screen.getByRole('button', { name: 'Back to bus routes' }))
     await waitFor(() => expect(document.activeElement).toBe(mapMarker))
     mapMarker.remove()
   })

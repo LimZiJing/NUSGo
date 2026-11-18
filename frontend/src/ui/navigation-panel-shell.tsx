@@ -20,6 +20,8 @@ interface NavigationPanelShellProps {
   readonly detent: MobileSheetDetent
   /** Overrides how much of the screen the partial detent covers; omit for the shared 50%. */
   readonly partialExtent?: MobileSheetPartialExtent
+  /** Pins the sheet to its full detent, for screens that must not be swiped away. */
+  readonly isDetentLocked?: boolean
   readonly enabled?: boolean
   readonly active?: boolean
   readonly portalContainer?: HTMLElement | null
@@ -41,6 +43,7 @@ export function NavigationPanelShell({
   controlsId,
   detent,
   partialExtent,
+  isDetentLocked = false,
   enabled = true,
   active = true,
   portalContainer,
@@ -98,6 +101,7 @@ export function NavigationPanelShell({
         portalContainer={portalContainer ?? null}
         detent={detent}
         partialExtent={partialExtent}
+        isDetentLocked={isDetentLocked}
         onDetentChange={onDetentChange}
         onButtonRef={assignHandleRef}
         onPanelRef={assignPanelRef}

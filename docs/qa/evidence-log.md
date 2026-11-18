@@ -2,6 +2,20 @@
 
 This is a dated record of past browser passes, not a standing checklist. The reusable checklist is [manual-smoke-check.md](manual-smoke-check.md).
 
+## Explore default Bus routes (#647) — 2026-11-17
+
+Application revision `ff1e3fe6`; the built local-rehearsal bundle served as static files on loopback, driven through the shared preview browser (Chromium, Windows build 26100) at an actual 390 × 844 and 1280 × 800. Express was not running, so arrivals, service hours and public-bus requests failed with `net::ERR_CONNECTION_REFUSED`; that is expected here and does not affect Explore rendering, which uses the static shuttle network.
+
+- At both sizes the segmented control showed **Bus routes** left of **Find venue**, and Explore opened on Bus routes with A1's 13 ordered stops. Before this change the same first entry showed the venue search field.
+- On desktop, entering Explore and clicking route D2 selected it and rendered its stop timeline. This exercised the new rule that entering Explore starts the route session on every viewport, because nothing else starts one on desktop.
+- With Find venue selected, switching to Stops and back to Explore kept Find venue selected and focus on its segment, rather than reverting to Bus routes.
+- Resizing from 390 × 844 to 1280 × 800 kept the chosen view; the panel moved from the mobile sheet to the persistent desktop column.
+- With routes available but none chosen, the panel read "Choose a bus route to see its stops" on desktop instead of claiming route data was unavailable.
+
+The basemap rendered from OpenFreeMap tiles. Map sprite and font fallbacks logged the usual missing-image warnings. No application error was raised by these interactions. This pass covers the Explore panel, route chips and tab/breakpoint persistence; it does not verify live arrivals, device geolocation or assistive-technology output. It predates Community becoming a third Explore segment, which this pass did not exercise.
+
+`CONTEXT.md` reviewed; the Explore vocabulary already describes Find venue and Bus routes as segmented Explore choices, so no update was needed.
+
 ## Landscape side-panel follow-up — 2026-11-11 (#551)
 
 Application HEAD `fc0f00b34241a9371e98cb26c26e42e81979bdc9`; Codex In-app Browser, Chromium-based with exact version unavailable; local rehearsal at `http://localhost:4173/`.

@@ -1020,6 +1020,44 @@ describe('More surface', () => {
     expect(sheet?.getAttribute('data-open')).toBe('false')
   })
 
+  it('renames a category by keyboard and keeps the pending edit when Escape cancels the rename', async () => {
+    localStorage.setItem('navus:personal-waypoints:v1', JSON.stringify({ version: 1, waypoints: [{
+      id: '00000000-0000-4000-8000-000000000021',
+      name: 'Quiet bench',
+      category: 'Rest spot',
+      coordinate: { longitude: 103.78, latitude: 1.29 },
+      markerColor: 'blue',
+      markerIcon: 'dot',
+      createdAt: '2026-10-26T00:00:00.000Z',
+      updatedAt: '2026-10-26T00:00:00.000Z',
+    }] }))
+    const user = userEvent.setup()
+    render(<App />)
+
+    await user.click(screen.getByRole('button', { name: 'More' }))
+    await user.click(screen.getByRole('button', { name: 'My waypoints' }))
+    await chooseWaypointListCommand(user, 'Edit list')
+
+    // Stage one rename, so losing the edit session would lose visible work.
+    await user.click(screen.getByRole('button', { name: 'Rename Rest spot category' }))
+    const firstInput = screen.getByRole('textbox', { name: 'Rename Rest spot category' })
+    await user.clear(firstInput)
+    await user.type(firstInput, 'Break spot{Enter}')
+    expect(screen.getByRole('button', { name: 'Confirm' })).toBeTruthy()
+
+    // A rename owns Escape. The application also listens for Escape on `window` in the capture
+    // phase, so without the header's opt-out this keypress stepped the whole panel back to the More
+    // menu and silently discarded the staged rename.
+    await user.click(screen.getByRole('button', { name: 'Rename Break spot category' }))
+    await user.keyboard('{Escape}')
+
+    expect(screen.queryByRole('textbox', { name: 'Rename Break spot category' })).toBeNull()
+    expect(document.querySelector('.more-panel-surface')?.getAttribute('data-page')).toBe('waypoints')
+    // The earlier staged rename survived, and nothing was written.
+    expect(screen.getByRole('button', { name: 'Confirm' })).toBeTruthy()
+    expect(JSON.parse(localStorage.getItem('navus:personal-waypoints:v1') ?? '{}').waypoints[0].category).toBe('Rest spot')
+  })
+
   it('closes only the waypoints page on Escape from the collection options trigger', async () => {
     localStorage.setItem('navus:personal-waypoints:v1', JSON.stringify({ version: 1, waypoints: [{
       id: '00000000-0000-4000-8000-000000000021',

@@ -79,7 +79,20 @@ export function DisclosureHeader({
   }
 
   return (
-    <div className="disclosure-header">
+    <div
+      className="disclosure-header"
+      // Renaming owns Escape, so the panel behind it stays put. The application listens for Escape
+      // on `window` in the capture phase, which runs before this handler; without the opt-out it
+      // would step the whole More panel back and throw away the pending edit instead of cancelling
+      // the rename. The same contract as the overflow menu and the confirm dialog.
+      data-owns-escape={renaming ? 'true' : undefined}
+      onKeyDown={(event) => {
+        if (event.key !== 'Escape' || !renaming) return
+        event.preventDefault()
+        event.stopPropagation()
+        cancelRename()
+      }}
+    >
       {renaming ? (
         <div className="disclosure-header-rename">
           <input
@@ -90,15 +103,9 @@ export function DisclosureHeader({
             maxLength={MAX_RENAME_LENGTH}
             onChange={(event) => setDraft(event.target.value)}
             onKeyDown={(event) => {
-              if (event.key === 'Enter') {
-                event.preventDefault()
-                commitRename()
-              } else if (event.key === 'Escape') {
-                event.preventDefault()
-                // The heading owns Escape while renaming, so the panel behind it stays put.
-                event.stopPropagation()
-                cancelRename()
-              }
+              if (event.key !== 'Enter') return
+              event.preventDefault()
+              commitRename()
             }}
           />
           <IconButton label={`Save ${label} category name`} icon={<CheckIcon />} variant="plain" onClick={commitRename} />

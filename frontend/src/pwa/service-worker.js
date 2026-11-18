@@ -28,6 +28,8 @@ self.addEventListener('message', (event) => {
 // Push payloads are untrusted input from the server, so each field is bounded and only
 // app-relative deep links are allowed. A malformed payload shows nothing rather than a
 // notification with attacker-controlled text or a redirect.
+const PUSH_TOPICS = new Set(['service-updates', 'alight-reminders'])
+
 function parsePushPayload(data) {
   if (!data || typeof data !== 'object') return null
 
@@ -39,7 +41,7 @@ function parsePushPayload(data) {
   const title = bounded(data.title, 80)
   const body = bounded(data.body, 160)
   const tag = bounded(data.tag, 128)
-  const topic = data.topic === 'service-updates' ? data.topic : null
+  const topic = PUSH_TOPICS.has(data.topic) ? data.topic : null
   const url = typeof data.url === 'string' && /^\?[A-Za-z0-9._%=&-]*$/.test(data.url) ? data.url : null
   if (!title || !body || !tag || !topic || url === null) return null
 

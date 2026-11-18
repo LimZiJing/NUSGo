@@ -60,6 +60,8 @@ This document defines the domain and product vocabulary used by NUSGo. It contai
 - **Favourites**: The Stops list of bus stops saved by the person in their browser.
 - **Venue details**: The selected venue's identity and confirmed location information, with actions such as navigation.
 - **Stop details**: The selected bus stop's identity, services, and available arrival information.
+- **Alight reminder**: A one-shot push notification for one route at one stop. It is registered against a browser push endpoint with a lead time, expires two hours after registration, and is removed once a notification is delivered or the rider cancels it. It is distinct from service-update notifications and adds no location tracking.
+- **Lead time**: The remaining live-arrival estimate at which an Alight reminder fires, chosen by the rider from one, two or three minutes and two by default. It is a window entering the live estimate, not a clock time or a promise.
 
 ## Interface controls
 

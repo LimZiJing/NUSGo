@@ -13,6 +13,9 @@ const pushNotifications: PushNotificationService = {
   readPreference: () => null,
   enable: async () => ({ preference: null, permission: 'denied' }),
   disable: async () => null,
+  readReminder: () => null,
+  enableReminder: async () => ({ preference: null, permission: 'denied' }),
+  disableReminder: async () => null,
 }
 
 describe('Settings sections', () => {

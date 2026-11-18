@@ -32,12 +32,13 @@ export const DEFAULT_MAX_PUSH_SUBSCRIPTIONS = 5_000
 /**
  * In-memory subscription store behind a small interface.
  *
- * The read model is deliberately narrow — endpoint, keys and topic only — so a later feature
- * (alight reminders in #503) can add its own topic and delivery rules without changing this
- * contract or learning anything personal about a subscriber.
+ * The read model is deliberately narrow — endpoint, keys and topic only — so a feature such as
+ * alight reminders (#503) adds its own topic, its own registry and its own delivery rules without
+ * changing this contract or learning anything personal about a subscriber.
  *
- * The interface is what #503 should build on. A second implementation can persist the same
- * records elsewhere; nothing above this seam depends on where the records live.
+ * The interface is what #503 builds alongside: a reminder keeps its watch and lead time in the
+ * separate reminder registry, because a browser holds one endpoint and this store keeps one
+ * record per endpoint. No second implementation is needed for reminders.
  */
 export function createPushSubscriptionStore(
   options: PushSubscriptionStoreOptions = {},

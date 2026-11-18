@@ -3,7 +3,7 @@
  * Keep this module free of Node and browser APIs so both runtimes can import it.
  */
 
-export const PUSH_NOTIFICATION_TOPICS = ['service-updates'] as const
+export const PUSH_NOTIFICATION_TOPICS = ['service-updates', 'alight-reminders'] as const
 
 export type PushNotificationTopic = (typeof PUSH_NOTIFICATION_TOPICS)[number]
 
@@ -26,11 +26,36 @@ export function buildStopDeepLink(stopId: string): string {
 }
 
 /**
- * Deep link that opens the Stops view without selecting a stop.
+ * Builds the approximate arrival reminder a rider asked for when they registered the watch.
  *
- * Service announcements can apply to every service, and NUSGo has no canonical route-to-stop
- * mapping to pick a representative stop, so the link must not name an unrelated stop.
+ * Title and body are kept inside the shared bounds so the same payload passes
+ * `parsePushNotificationPayload` on the service worker side, and the tag is per stop and route so
+ * a reminder replaces an earlier one for the same watch instead of stacking up.
  */
+export function createAlightReminderPayload(
+  stopName: string,
+  stopId: string,
+  routeId: string,
+  minutesUntilArrival: number,
+): PushNotificationPayload {
+  const minutes = Math.max(1, Math.round(minutesUntilArrival))
+  return {
+    title: bound('Bus ' + routeId + ' is due soon', PUSH_NOTIFICATION_TITLE_MAX_LENGTH),
+    // A long stop name must not push the body past the bound, or the service worker drops it.
+    body: bound('About ' + minutes + ' min to ' + stopName, PUSH_NOTIFICATION_BODY_MAX_LENGTH),
+    url: buildStopDeepLink(stopId),
+    topic: 'alight-reminders',
+    tag: 'reminder:' + encodeURIComponent(stopId) + ':' + encodeURIComponent(routeId),
+  }
+}
+
+/** Trims to `maxLength`, ending with an ellipsis so the cut is visible rather than silent. */
+function bound(text: string, maxLength: number): string {
+  if (text.length <= maxLength) return text
+  return text.slice(0, maxLength - 1).trimEnd() + '…'
+}
+
+/** Opens Stops for a service notice that does not name a particular stop. */
 export function buildStopsViewDeepLink(): string {
   return '?view=stops'
 }

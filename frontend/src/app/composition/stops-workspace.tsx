@@ -4,8 +4,10 @@ import type { TransitIndex } from '../../domain/transit'
 import type { MinuteFormat } from '../../domain/trip/minute-format'
 import type { PublicBusArrivalSnapshot } from '../../domain/transit/public-bus-arrivals'
 import type { ShuttleArrivalSnapshot } from '../../domain/transit/arrivals'
+import type { PushNotificationService } from '../../domain/push/push-notifications'
 import type { StopsArrivalLoader } from '../../features/stops/hooks/use-stops-arrivals'
 import type { StopsServiceWindowsLoader } from '../../features/stops/hooks/use-stops-service-windows'
+import { useAlightReminder } from '../../features/stops/hooks/use-alight-reminder'
 import { useStopsWorkflow } from '../../features/stops/hooks/use-stops-workflow'
 import type { StopsWorkflow } from '../../features/stops/hooks/use-stops-workflow'
 import { StopsContent } from '../../features/stops/stops-content'
@@ -41,6 +43,8 @@ interface StopsWorkspaceProps {
   readonly loadArrivals: StopsArrivalLoader<ShuttleArrivalSnapshot>
   readonly loadPublicArrivals: StopsArrivalLoader<PublicBusArrivalSnapshot>
   readonly loadServiceWindows: StopsServiceWindowsLoader
+  /** Push capability from app composition; reminders are opt-in and never turn on location. */
+  readonly pushNotifications: PushNotificationService
   readonly requestLocation: (() => void) | null
   readonly locateFromControl: () => void
   readonly enableLocationTracking: () => void
@@ -68,6 +72,7 @@ const StopsWorkspaceView = forwardRef<StopsWorkspaceController, StopsWorkspacePr
   loadArrivals,
   loadPublicArrivals,
   loadServiceWindows,
+  pushNotifications,
   requestLocation,
   locateFromControl,
   enableLocationTracking,
@@ -106,6 +111,7 @@ const StopsWorkspaceView = forwardRef<StopsWorkspaceController, StopsWorkspacePr
   ])
 
   const focusedStopId = workflow.state.focusedStopId
+  const reminder = useAlightReminder(pushNotifications, focusedStopId)
   const selectedStopList = workflow.state.list
   const stopListCount = workflow.stopListEntries.length
   const selectedStopName = workflow.selectedStop?.longName ?? null
@@ -145,6 +151,7 @@ const StopsWorkspaceView = forwardRef<StopsWorkspaceController, StopsWorkspacePr
     >
       <StopsContent
         selectedStop={workflow.selectedStop}
+        reminder={reminder}
         backLabel={backLabel}
         onBackToStops={() => onBackToStops(workflow.backToStops)}
         onSelectOppositeStop={onSelectOppositeStop}

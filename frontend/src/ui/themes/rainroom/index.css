@@ -20,6 +20,25 @@
     --rainroom-moss: var(--rainroom-swatch-moss);
     --rainroom-pine: var(--rainroom-swatch-pine);
 
+    /* The shared pin family and journey endpoints are defined per theme in
+       `ui/styles/shared/themes/`, and every other theme supplies them. This block was added when the
+       endpoint tokens landed, because a theme without them painted pins with an unresolved colour
+       rather than falling back: the shared rules read these tokens with no `var()` default. */
+    --map-pin-fill-neutral: #3a3d48;
+    --map-pin-glyph-ink: #152a40;
+    --map-pin-glyph-paper: #f4f0e5;
+    --map-pin-glyph-on-neutral: #f4f0e5;
+    --map-pin-halo: rgb(232 180 102 / 30%);
+    --map-pin-shadow: rgb(0 0 0 / 45%);
+    /* Journey endpoints: a grey origin circle and a red destination pin whose centre stays dark.
+       Rainroom's map surface is #0c1924, so these clear the 3:1 graphic-object contrast the token
+       test asks for (origin 10.1:1, destination 4.8:1, centre 5.0:1, edge 3.6:1). */
+    --map-endpoint-origin-fill: #c4c4b7;
+    --map-endpoint-origin-edge: #0c1924;
+    --map-endpoint-destination-edge: #fff;
+    --map-endpoint-destination-fill: #f43f3f;
+    --map-endpoint-destination-centre: #0b1220;
+
     --surface: #0c1924;
     --surface-raised: #122330;
     --surface-muted: #1a2d3a;

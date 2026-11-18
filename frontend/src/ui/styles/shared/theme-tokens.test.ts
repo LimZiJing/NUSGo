@@ -362,7 +362,9 @@ describe('control token contrast', () => {
 })
 
 describe('journey endpoint tokens', () => {
-  const themes = ['light', 'dark', 'matcha', 'sakura', 'nus'] as const
+  // Driven from the catalog rather than a hardcoded list, which is how Rainroom came to define none
+  // of these tokens while every check here passed: it is not a file in `themes/`.
+  const themes = catalogThemes
   const endpointTokens = [
     '--map-endpoint-origin-fill',
     '--map-endpoint-origin-edge',
@@ -372,18 +374,19 @@ describe('journey endpoint tokens', () => {
   ] as const
 
   it('defines the grey origin and red destination roles in every theme', () => {
-    for (const themeName of themes) {
-      const tokenNames = readCustomPropertyNames(readStyleFile(`themes/${themeName}.css`))
+    for (const theme of themes) {
+      const tokenNames = readCustomPropertyNames(readStyleFile(theme.path))
 
       for (const token of endpointTokens) {
-        expect(tokenNames, `${themeName}: ${token}`).toContain(token)
+        expect(tokenNames, `${theme.id}: ${token}`).toContain(token)
       }
     }
   })
 
   it('keeps the origin circle and destination pin visible against each theme surface', () => {
-    for (const themeName of themes) {
-      const styles = readStyleFile(`themes/${themeName}.css`)
+    for (const theme of themes) {
+      const themeName = theme.id
+      const styles = readStyleFile(theme.path)
       const ratioOf = (foreground: string, background: string) => contrastRatio(
         resolveColour(styles, foreground),
         resolveColour(styles, background),

@@ -1,4 +1,4 @@
-import type { ReactNode, Ref } from 'react'
+import { useLayoutEffect, useRef, type ReactNode, type Ref } from 'react'
 import { BackButton } from './back-button'
 
 export type MorePanelPage =
@@ -17,6 +17,8 @@ export type MorePanelPage =
 interface MorePanelSurfaceProps {
   readonly page: MorePanelPage
   readonly title: string
+  readonly backButtonLabel?: string
+  readonly scrollResetKey?: string | null
   readonly statusMessage: string | null
   readonly statusRevision: number
   readonly headerAction?: ReactNode
@@ -28,6 +30,8 @@ interface MorePanelSurfaceProps {
 export function MorePanelSurface({
   page,
   title,
+  backButtonLabel = 'Back to previous view',
+  scrollResetKey,
   statusMessage,
   statusRevision,
   headerAction,
@@ -36,6 +40,11 @@ export function MorePanelSurface({
   children,
 }: MorePanelSurfaceProps) {
   const isMenu = page === 'menu'
+  const contentScrollRef = useRef<HTMLDivElement>(null)
+
+  useLayoutEffect(() => {
+    contentScrollRef.current?.scrollTo?.({ top: 0, behavior: 'instant' })
+  }, [page, scrollResetKey])
 
   return (
     <div className={`more-panel-body${isMenu ? ' more-panel-body-menu' : ''}`}>
@@ -48,15 +57,15 @@ export function MorePanelSurface({
       <header className="more-panel-header">
         <BackButton
           mode="header"
-          label="Back to previous view"
-          title="Back"
+          label={backButtonLabel}
+          title={backButtonLabel === 'Back to previous view' ? 'Back' : backButtonLabel}
           ref={initialFocusRef}
           onClick={onClose}
         />
         <h2 id="more-panel-heading">{title}</h2>
         {headerAction}
       </header>
-      <div className="more-panel-content-scroll" id="more-panel-scroll">
+      <div className="more-panel-content-scroll" id="more-panel-scroll" ref={contentScrollRef}>
         {children}
       </div>
     </div>

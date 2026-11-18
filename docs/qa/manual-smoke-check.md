@@ -65,7 +65,7 @@ Run it against a local production build (`npm run build` followed by `npm run pr
 
 ## Settings, Stops and Plan additions
 
-- [ ] Settings opens from the map gear. Appearance, Favourites, About and Waypoints expand independently, Back restores the previous tab, and each theme (System, Light, Dark, NUS, Matcha, Sakura) applies immediately.
+- [ ] Settings opens from More to the vertical category list. Open Appearance, Favourites, About and Waypoints; confirm Back returns to categories, then More and the previous view. Search by section names and related terms; confirm Escape clears the query before a second Escape returns to More. At desktop and 390 × 844, confirm categories scroll vertically without visible scrollbars or page-level overflow. On mobile, confirm Settings stays fixed at full height without a drag handle. Check each theme (System, Light, Dark, NUS, Matcha, Sakura, Rainroom) and minute format, including persistence after reload.
 - [ ] In Settings → Waypoints → Community waypoints, use Download approved community waypoints and confirm it is the checked-in file with no `source` or private fields and with `updatedAt` retained. Check the button at desktop and mobile sizes and under a prefixed preview base path such as `/NUSGo/`.
 - [ ] In Stops, Nearby opens timing rows only for stops within 250 m of the map centre, and the centre marker is the glowing dot.
 - [ ] In Stops, with live data unavailable, one list-wide "Live times unavailable" notice shows and scheduled internal rows remain.

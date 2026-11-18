@@ -143,7 +143,6 @@ export function AboutSection({
         <div className="settings-about-card">
           <AboutCardRow className="settings-about-feedback">
             <h4>Feedback</h4>
-            <p className="settings-about-meta">Report a bug or share an idea.</p>
             <a
               className="settings-about-action"
               href="https://github.com/LimZiJing/NUSGo/issues/new"

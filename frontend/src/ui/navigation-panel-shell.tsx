@@ -17,6 +17,7 @@ interface NavigationPanelShellProps {
   readonly summary?: string
   readonly controlsId: string
   readonly detent: MobileSheetDetent
+  readonly isDetentLocked?: boolean
   readonly enabled?: boolean
   readonly active?: boolean
   readonly portalContainer?: HTMLElement | null
@@ -37,6 +38,7 @@ export function NavigationPanelShell({
   summary,
   controlsId,
   detent,
+  isDetentLocked = false,
   enabled = true,
   active = true,
   portalContainer,
@@ -93,6 +95,7 @@ export function NavigationPanelShell({
         active={active}
         portalContainer={portalContainer ?? null}
         detent={detent}
+        isDetentLocked={isDetentLocked}
         onDetentChange={onDetentChange}
         onButtonRef={assignHandleRef}
         onPanelRef={assignPanelRef}

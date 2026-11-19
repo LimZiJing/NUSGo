@@ -1131,6 +1131,10 @@ describe('More surface', () => {
     // phase, so without the header's opt-out this keypress stepped the whole panel back to the More
     // menu and silently discarded the staged rename.
     await user.click(screen.getByRole('button', { name: 'Rename Break spot category' }))
+    // The field must hold focus synchronously. Escape is handled by the application on `window` in
+    // the capture phase, so a keypress made while `document.activeElement` is `body` reaches that
+    // handler instead of the header and closes the whole panel, discarding the pending edit.
+    expect(document.activeElement).toBe(screen.getByRole('textbox', { name: 'Rename Break spot category' }))
     await user.keyboard('{Escape}')
 
     expect(screen.queryByRole('textbox', { name: 'Rename Break spot category' })).toBeNull()

@@ -1,4 +1,4 @@
-import { useRef, useState } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import { CheckIcon, CloseIcon, EditIcon } from './icons'
 import { IconButton } from './button'
 import { DisclosureChevron } from './disclosure-chevron'
@@ -52,14 +52,22 @@ export function DisclosureHeader({
   const startRename = (): void => {
     setDraft(label)
     setAnnouncement('')
-    // Focus and selection happen after the field is in the DOM.
-    requestAnimationFrame(() => {
-      const input = inputRef.current
-      if (!input) return
-      input.focus()
-      input.select()
-    })
   }
+
+  // Focus the field as soon as it is in the DOM. This has to be an effect rather than a
+  // `requestAnimationFrame` inside `startRename`: with the frame, there is a window after the click
+  // where the trigger has already unmounted and the field does not yet hold focus, so
+  // `document.activeElement` is `body`. A keypress in that window — a fast typist's first character,
+  // or Escape — reaches `window` instead of the header, and the application's capture-phase Escape
+  // handler steps the whole panel back and discards the pending edit. Effects run before the browser
+  // paints, so the field is focused the moment anyone can see it.
+  useEffect(() => {
+    if (!renaming) return
+    const input = inputRef.current
+    if (!input) return
+    input.focus()
+    input.select()
+  }, [renaming])
 
   const cancelRename = (): void => {
     setDraft(null)

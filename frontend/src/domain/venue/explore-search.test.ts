@@ -2,11 +2,11 @@ import { readFileSync } from 'node:fs'
 import { describe, expect, it } from 'vitest'
 import type { Building, BuildingCatalogue } from '@nusgo/shared/venue/buildings'
 import type { TransitStop } from '@nusgo/shared/transit/types'
-import type { VenueLocationMap } from '@nusgo/shared/venue/types'
-import { mergeVenueAndEateryMaps, validateEateryLocationMap, validateVenueLocationMap } from '@nusgo/shared/venue/validation'
+import type { VenueMap } from '@nusgo/shared/venue/types'
+import { composeVenueData, validateBuildingCatalogue, validateFoodLocationMap, validateVenueSourceMap } from '@nusgo/shared/venue/validation'
 import { buildBuildingIndex } from './building-index'
 import { linkVenuesToBuildings } from './building-links'
-import { searchEateries, searchExplore, type ExploreSearchResult } from './explore-search'
+import { searchExplore, type ExploreSearchResult } from './explore-search'
 
 function building(overrides: Partial<Building> & Pick<Building, 'id' | 'name'>): Building {
   return {
@@ -20,19 +20,26 @@ function building(overrides: Partial<Building> & Pick<Building, 'id' | 'name'>):
   }
 }
 
-const room = (roomName: string) => ({ roomName, location: { x: 103.77, y: 1.29 } })
-const buildings = buildBuildingIndex([
-  building({ id: 'com1', name: 'COM1', aliases: ['COM 1', 'Computing 1'], roomCodePrefixes: ['COM1'] }),
-  building({ id: 'lt-17', name: 'LT 17', aliases: ['LT17'], roomCodePrefixes: ['LT17'] }),
-  building({ id: 'saga-1', name: 'Saga College', groupKey: 'saga' }),
-  building({ id: 'saga-2', name: 'Saga College', groupKey: 'saga' }),
-])
-const venues: VenueLocationMap = {
-  'COM1-0210': room('Seminar Room 10'),
-  LT17: room('Lecture Theatre 17'),
-  'Y-CR3': room('Yale classroom'),
-  Pinnacle: room('Pinnacle'),
+const venues: VenueMap = {
+  'COM1-0210': { kind: 'room', roomName: 'Seminar Room 10', location: { x: 103.77, y: 1.29 }, buildingId: 'com1' },
+  'Y-CR3': { kind: 'room', roomName: 'Yale classroom', location: { x: 103.77, y: 1.29 } },
+  Pinnacle: { kind: 'room', roomName: 'Pinnacle', location: { x: 103.77, y: 1.29 } },
+  'the-terrace-canteen': {
+    kind: 'food',
+    name: 'The Terrace',
+    foodType: 'canteen',
+    location: { x: 103.77, y: 1.29 },
+  },
 }
+const catalogue: BuildingCatalogue = {
+  version: 1,
+  source: { name: 'Test catalogue', url: 'https://example.test', fetchedOn: '2026-11-19', licenceNote: 'Test data' },
+  buildings: [
+    building({ id: 'com1', name: 'COM1', aliases: ['COM 1', 'Computing 1'], roomCodePrefixes: ['COM1'] }),
+    building({ id: 'lt-17', name: 'LT 17', aliases: ['LT17'], roomCodePrefixes: ['LT17'] }),
+  ],
+}
+const buildings = buildBuildingIndex(catalogue.buildings)
 const links = linkVenuesToBuildings(venues, buildings)
 const search = (query: string) => searchExplore({ venues, buildings, links }, query)
 
@@ -42,26 +49,32 @@ describe('searchExplore', () => {
   })
 
   it('lists a matching building before the rooms inside it', () => {
-    const results = search('com1')
-
-    expect(results.map(label)).toEqual(['building:com1', 'venue:COM1-0210'])
+    expect(search('com1').map(label)).toEqual(['building:com1', 'venue:COM1-0210'])
   })
 
-  it('shows a whole-building venue once, as the building, and still finds it by its room name', () => {
-    const byCode = search('lt17')
-    const byRoomName = search('lecture theatre 17')
-
-    for (const results of [byCode, byRoomName]) {
-      expect(results).toHaveLength(1)
-      expect(results[0]).toMatchObject({ kind: 'building', entry: { id: 'lt-17' } })
-    }
+  it('searches Room and Food by their code or public name', () => {
+    expect(search('the terrace')).toEqual([{
+      kind: 'venue',
+      result: { code: 'the-terrace-canteen', venue: venues['the-terrace-canteen'] },
+    }])
+    expect(search('the-terrace-canteen').map(label)).toEqual(['venue:the-terrace-canteen'])
+    expect(search('seminar room 10').map(label)).toEqual(['venue:COM1-0210'])
   })
 
-  it('shows a repeated-name group once', () => {
-    const results = search('saga')
+  it('keeps Foods out of room building-prefix links', () => {
+    const foodOnly = composeVenueData(
+      validateVenueSourceMap({}),
+      validateFoodLocationMap({
+        'COM1-cafe': { name: 'Computing Cafe', foodType: 'drinks & snacks', location: { x: 103.77, y: 1.29 } },
+      }),
+      catalogue,
+    ).venues
+    const foodLinks = linkVenuesToBuildings(foodOnly, buildings)
 
-    expect(results).toHaveLength(1)
-    expect(results[0]).toMatchObject({ kind: 'building', entry: { id: 'saga', parts: [{ id: 'saga-1' }, { id: 'saga-2' }] } })
+    expect(foodOnly['COM1-cafe']).toMatchObject({ kind: 'food' })
+    expect(foodOnly['COM1-cafe']).not.toHaveProperty('buildingId')
+    expect(foodLinks.buildingByVenueCode.has('COM1-cafe')).toBe(false)
+    expect(foodLinks.roomCountByBuildingId.get('com1')).toBeUndefined()
   })
 
   it('keeps venues without a catalogue building searchable as venues', () => {
@@ -88,8 +101,7 @@ describe('searchExplore with bus stops', () => {
     stop('BS-COM1', 'Computing Gate', 'COM1'),
   ]
 
-  it('ranks by match priority across stops, buildings and rooms before kind', () => {
-    // Exact: stop short name and building name. Prefix: room code. Partial: stop long name.
+  it('ranks by match priority across stops, buildings, Rooms and Food before kind', () => {
     expect(searchExplore(withStops(rankingStops), 'com1').map(label)).toEqual([
       'stop:BS-COM1',
       'building:com1',
@@ -100,7 +112,6 @@ describe('searchExplore with bus stops', () => {
 
   it('matches a stop by ID, long name or short name, ignoring case', () => {
     const sources = withStops([stop('KR-MRT', 'Kent Ridge MRT Station', 'KR MRT')])
-
     for (const query of ['kr-mrt', 'KENT RIDGE', '  kr mrt  ']) {
       expect(searchExplore(sources, query)).toEqual([{ kind: 'stop', stop: sources.stops[0] }])
     }
@@ -112,28 +123,25 @@ describe('searchExplore with bus stops', () => {
 
   it('returns a same-named stop and venue as separate results, stop first', () => {
     const results = searchExplore(withStops([stop('PINNACLE-BUS', 'Pinnacle')]), 'pinnacle')
-
     expect(results).toEqual([
       { kind: 'stop', stop: stop('PINNACLE-BUS', 'Pinnacle') },
       { kind: 'venue', result: { code: 'Pinnacle', venue: venues.Pinnacle } },
     ])
   })
 
-  it('still returns a venue without coordinates', () => {
-    const venuesWithoutCoordinates: VenueLocationMap = { ...venues, 'HID-01': { roomName: 'Hidden Room' } }
+  it('returns a Room without coordinates', () => {
+    const venuesWithoutCoordinates: VenueMap = { ...venues, 'HID-01': { kind: 'room', roomName: 'Hidden Room' } }
     const results = searchExplore(
       { venues: venuesWithoutCoordinates, buildings, links: linkVenuesToBuildings(venuesWithoutCoordinates, buildings) },
       'hidden',
     )
-
-    expect(results).toEqual([{ kind: 'venue', result: { code: 'HID-01', venue: { roomName: 'Hidden Room' } } }])
+    expect(results).toEqual([{ kind: 'venue', result: { code: 'HID-01', venue: { kind: 'room', roomName: 'Hidden Room' } } }])
   })
 
   it('limits the combined list and breaks ties deterministically', () => {
     const gates = Array.from({ length: 10 }, (_, index) => stop(`G-${String(index + 1).padStart(2, '0')}`, `Gate ${index + 1}`))
     const forward = searchExplore(withStops(gates), 'gate')
     const reversed = searchExplore(withStops([...gates].reverse()), 'gate')
-
     expect(forward).toHaveLength(8)
     expect(forward.map(label).slice(0, 3)).toEqual(['stop:G-01', 'stop:G-02', 'stop:G-03'])
     expect(reversed).toEqual(forward)
@@ -141,63 +149,33 @@ describe('searchExplore with bus stops', () => {
   })
 })
 
-describe('searchEateries', () => {
-  const eateries: VenueLocationMap = {
-    'yih-central-square': { roomName: 'YIH (Central Square)', displayName: 'YIH (Central Square)', category: 'canteen' },
-    'frontier-canteen': { roomName: 'Frontier', displayName: 'Frontier', category: 'canteen' },
-    'wild-skew': { roomName: 'Wild Skew', displayName: 'Wild Skew', category: 'restaurant' },
-    'starbucks-cde': { roomName: 'Starbucks (CDE)', displayName: 'Starbucks (CDE)', category: 'drinks & snacks' },
-  }
-
-  it('lists every matching destination by display name and filters by category and query', () => {
-    expect(searchEateries(eateries, 'canteen', '').map(({ code }) => code)).toEqual([
-      'frontier-canteen',
-      'yih-central-square',
-    ])
-    expect(searchEateries(eateries, 'drinks & snacks', 'CDE')).toEqual([
-      { code: 'starbucks-cde', venue: eateries['starbucks-cde'] },
-    ])
-    expect(searchEateries(eateries, 'restaurant', '').map(({ code }) => code)).toEqual(['wild-skew'])
-    expect(searchEateries(eateries, 'canteen', 'starbucks')).toEqual([])
-  })
-})
-
 describe('searchExplore with the real data', () => {
-  const realVenues = mergeVenueAndEateryMaps(
-    validateVenueLocationMap(JSON.parse(readFileSync('public/data/venues.json', 'utf8'))),
-    validateEateryLocationMap(JSON.parse(readFileSync('public/data/eateries.json', 'utf8'))),
+  const catalogue = validateBuildingCatalogue(JSON.parse(readFileSync('public/data/buildings.json', 'utf8')))
+  const venueData = composeVenueData(
+    validateVenueSourceMap(JSON.parse(readFileSync('public/data/venues.json', 'utf8'))),
+    validateFoodLocationMap(JSON.parse(readFileSync('public/data/food.json', 'utf8'))),
+    catalogue,
   )
-  const catalogue = JSON.parse(readFileSync('public/data/buildings.json', 'utf8')) as BuildingCatalogue
-  const realBuildings = buildBuildingIndex(catalogue.buildings)
+  const realVenues = venueData.venues
+  const realBuildings = buildBuildingIndex(catalogue.buildings, catalogue.source, venueData.wholeBuildingVenueAliases)
   const sources = { venues: realVenues, buildings: realBuildings, links: linkVenuesToBuildings(realVenues, realBuildings) }
 
-  it('shows the Frontier buildings and the distinct Frontier canteen, not the old room record', () => {
-    const results = searchExplore(sources, 'frontier')
-
-    expect(results.map(label)).toEqual(['building:frontier', 'venue:frontier-canteen'])
+  it('shows the Frontier buildings and distinct Frontier canteen, not the old room record', () => {
+    expect(searchExplore(sources, 'frontier').map(label)).toEqual(['building:frontier', 'venue:frontier-canteen'])
   })
 
-  it('keeps the Frontier canteen available as an eatery without linking it to a building', () => {
-    const frontier = searchEateries(realVenues, 'canteen', 'frontier')
-
-    expect(frontier).toHaveLength(1)
-    expect(frontier[0]).toMatchObject({ code: 'frontier-canteen', venue: { category: 'canteen', displayName: 'Frontier' } })
-    expect(linkVenuesToBuildings(realVenues, realBuildings).buildingByVenueCode.has('frontier-canteen')).toBe(false)
+  it('shows whole-building identities once and keeps their NUSMods alias', () => {
+    for (const code of ['LT17', 'Frontier']) {
+      expect(realVenues[code]).toBeUndefined()
+      expect(sources.links.wholeBuildingVenueCodes.has(code)).toBe(true)
+    }
+    expect(sources.links.nusmodsVenueCodeByBuildingId.get('frontier')).toBe('Frontier')
   })
 
-  it('keeps a reused whole-building venue linked while searching it as an eatery', () => {
-    const venuesWithFrontierEatery = mergeVenueAndEateryMaps(
-      validateVenueLocationMap({ Frontier: { roomName: 'Frontier', floor: 4 } }),
-      validateEateryLocationMap({
-        Frontier: { name: 'Frontier Canteen', category: 'canteen', location: { x: 103.78, y: 1.29 } },
-      }),
-    )
-    const links = linkVenuesToBuildings(venuesWithFrontierEatery, realBuildings)
-    const results = searchExplore({ venues: venuesWithFrontierEatery, buildings: realBuildings, links }, 'frontier')
-
-    expect(links.wholeBuildingVenueCodes.has('Frontier')).toBe(true)
-    expect(links.nusmodsVenueCodeByBuildingId.get('frontier')).toBe('Frontier')
-    expect(results.map(label)).toEqual(['building:frontier', 'venue:Frontier'])
+  it('searches Food by its public name with typed food detail', () => {
+    expect(searchExplore(sources, 'the terrace').map((result) => result.kind === 'venue' ? result.result : result)).toEqual([
+      { code: 'the-terrace-canteen', venue: { kind: 'food', name: 'The Terrace', foodType: 'canteen', location: { x: 103.77458, y: 1.29458 } } },
+    ])
   })
 
   it('shows Cendana, Saga and Elm College once each', () => {
@@ -210,7 +188,7 @@ describe('searchExplore with the real data', () => {
     }
   })
 
-  it('keeps Pinnacle and LAW_SR3 as venues because they have no catalogue building', () => {
+  it('keeps Pinnacle and LAW_SR3 as Rooms because they have no catalogue building', () => {
     expect(searchExplore(sources, 'pinnacle').map((result) => result.kind)).toContain('venue')
     expect(searchExplore(sources, 'law_sr3')).toEqual([
       { kind: 'venue', result: { code: 'LAW_SR3', venue: realVenues.LAW_SR3 } },

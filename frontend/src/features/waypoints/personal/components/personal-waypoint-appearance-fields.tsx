@@ -1,4 +1,5 @@
 import { useState } from 'react'
+import { RadioList, RadioListItem } from '@astryxdesign/core/RadioList'
 import type { IconProps } from '../../../../ui/icons'
 import { Button } from '../../../../ui/button'
 import type { PersonalWaypointDraft } from '../../../../domain/waypoints/personal/create-personal-waypoint'
@@ -30,6 +31,14 @@ const markerIcons = {
   favorite: FavoriteWaypointIcon,
 } as const
 
+/**
+ * Marker style: a collapsed row that opens colour and icon pickers.
+ *
+ * Both pickers are Astryx `RadioList`s. The options are icon-only, so each item passes `aria-label`
+ * to name its radio and renders its swatch or glyph as `startContent`; the visible label string is
+ * kept empty so the row is the graphic alone. Astryx hides the label from assistive technology when
+ * `aria-label` is present, which is what lets a swatch be a radio without announcing a redundant word.
+ */
 export function PersonalWaypointAppearanceFields({
   draft,
   onChange,
@@ -65,46 +74,50 @@ export function PersonalWaypointAppearanceFields({
     </Button>
 
     <div id="personal-waypoint-appearance-options" className="personal-waypoint-appearance-options" hidden={!isExpanded}>
-      <fieldset className="personal-waypoint-choice-group">
-        <legend>Colour</legend>
-        <div className="personal-waypoint-color-options">
-          {PERSONAL_WAYPOINT_MARKER_COLOR_OPTIONS.map(({ value, label }) => (
-            <label className="personal-waypoint-color-option" key={value}>
-              <input
-                type="radio"
-                name="personal-waypoint-marker-color"
-                value={value}
-                checked={markerColor === value}
-                aria-label={label}
-                onChange={() => onChange({ markerColor: value })}
-              />
+      <RadioList
+        label="Colour"
+        value={markerColor}
+        orientation="horizontal"
+        htmlName="personal-waypoint-marker-color"
+        controlClassName="personal-waypoint-color-options personal-waypoint-astryx-radio-list"
+        onChange={(value) => onChange({ markerColor: value as typeof markerColor })}
+      >
+        {PERSONAL_WAYPOINT_MARKER_COLOR_OPTIONS.map(({ value, label }) => (
+          <RadioListItem
+            key={value}
+            label=""
+            value={value}
+            aria-label={label}
+            className="personal-waypoint-color-option"
+            startContent={
               <span className="personal-waypoint-color-swatch" data-color={value} aria-hidden="true">
                 <CheckIcon className="personal-waypoint-color-check" size={18} />
               </span>
-            </label>
-          ))}
-        </div>
-      </fieldset>
+            }
+          />
+        ))}
+      </RadioList>
 
-      <fieldset className="personal-waypoint-choice-group">
-        <legend>Icon</legend>
-        <div className="personal-waypoint-icon-options">
-          {PERSONAL_WAYPOINT_MARKER_ICON_OPTIONS.map(({ value, label }) => {
-            const Icon = markerIcons[value]
-            return <label className="personal-waypoint-icon-option" key={value}>
-              <input
-                type="radio"
-                name="personal-waypoint-marker-icon"
-                value={value}
-                checked={markerIcon === value}
-                aria-label={label}
-                onChange={() => onChange({ markerIcon: value })}
-              />
-              <Icon className="personal-waypoint-choice-icon" size={17} />
-            </label>
-          })}
-        </div>
-      </fieldset>
+      <RadioList
+        label="Icon"
+        value={markerIcon}
+        orientation="horizontal"
+        htmlName="personal-waypoint-marker-icon"
+        controlClassName="personal-waypoint-icon-options personal-waypoint-astryx-radio-list"
+        onChange={(value) => onChange({ markerIcon: value as typeof markerIcon })}
+      >
+        {PERSONAL_WAYPOINT_MARKER_ICON_OPTIONS.map(({ value, label }) => {
+          const Icon = markerIcons[value]
+          return <RadioListItem
+            key={value}
+            label=""
+            value={value}
+            aria-label={label}
+            className="personal-waypoint-icon-option"
+            startContent={<Icon className="personal-waypoint-choice-icon" size={17} />}
+          />
+        })}
+      </RadioList>
     </div>
   </section>
 }

@@ -490,6 +490,94 @@
   transform: none;
 }
 
+/* Astryx fields used by the Add/Edit waypoint form.
+   Astryx renders its own <label for> and names the control from it, so the floating-label
+   treatment is applied to that label rather than to a second one written in the JSX. The label is
+   absolutely positioned inside the field, and floats up when the control has focus or a value. */
+.personal-waypoint-astryx-field { min-width: 0; }
+.personal-waypoint-astryx-field > label {
+  position: absolute;
+  z-index: 1;
+  top: calc(var(--personal-waypoint-control-height) / 2);
+  left: var(--space-4);
+  max-width: calc(100% - 24px);
+  overflow: hidden;
+  color: var(--text-secondary);
+  font-size: var(--font-size-control);
+  font-weight: 500;
+  line-height: 1.2;
+  pointer-events: none;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  transform: translateY(-50%);
+  transition: color 120ms ease, font-size 120ms ease, top 120ms ease, transform 120ms ease;
+}
+.personal-waypoint-astryx-field:focus-within > label,
+.personal-waypoint-astryx-field:has(.personal-waypoint-field-control:not(:placeholder-shown)) > label {
+  top: var(--space-2);
+  font-size: var(--font-size-xs);
+  font-weight: 600;
+  line-height: 1;
+  transform: none;
+}
+/* The note is taller, so its label rests lower when the field is empty. */
+.personal-waypoint-note-astryx-field > label { top: var(--space-5); }
+.personal-waypoint-note-astryx-field:focus-within > label,
+.personal-waypoint-note-astryx-field:has(.personal-waypoint-field-control:not(:placeholder-shown)) > label {
+  top: var(--space-2);
+}
+
+/* Astryx applies `controlClassName` to the wrapper it composes around the control, so the shared
+   `.personal-waypoint-field-control` box lands on that wrapper and the real <input> sits inside it.
+   The wrapper therefore keeps the border, fill and padding; the inner control is stripped back so
+   there is exactly one box rather than a box inside a box. */
+.personal-waypoint-astryx-field .astryx-text-input input,
+.personal-waypoint-astryx-field .astryx-text-area textarea {
+  width: 100%;
+  padding: 0;
+  border: 0;
+  outline: 0;
+  color: inherit;
+  background: transparent;
+  font: inherit;
+  box-shadow: none;
+}
+.personal-waypoint-astryx-field .astryx-text-area,
+.personal-waypoint-astryx-field .astryx-text-input {
+  align-items: stretch;
+}
+
+.personal-waypoint-category-astryx-field { position: relative; }
+
+/* The disclosure chevron sits inside the field's trailing edge rather than beside it, so the
+   category row keeps one control box instead of a box with a button hanging off it. The button is a
+   sibling of the Astryx field rather than a descendant, so the wrapping `.personal-waypoint-field`
+   is the positioning context and `:has` picks out the category row. */
+.personal-waypoint-field:has(> .personal-waypoint-category-astryx-field) {
+  position: relative;
+}
+.personal-waypoint-field:has(> .personal-waypoint-category-astryx-field) .personal-waypoint-category-trigger {
+  position: absolute;
+  top: 4px;
+  right: 4px;
+  bottom: 4px;
+  z-index: 1;
+  min-height: 0;
+  height: auto;
+}
+/* Leave room inside the box for the chevron. The padding goes on the inner control, not on the
+   Astryx wrapper that carries `.personal-waypoint-field-control` — that wrapper is what draws the
+   border and fill, and padding there would have to be re-specified along with them. */
+.personal-waypoint-category-astryx-field .astryx-text-input input { padding-right: 0; }
+.personal-waypoint-category-astryx-field .astryx-text-input { padding-right: var(--space-9); }
+
+/* The suggestion list is portalled to the body and positioned from the input's measured rect, so
+   it must be taken out of flow; without this it renders at the end of the document. */
+.personal-waypoint-category-astryx-popup {
+  position: fixed;
+  z-index: 40;
+}
+
 .personal-waypoint-field-error {
   display: flex;
   min-width: 0;
@@ -524,13 +612,13 @@
 }
 .personal-waypoint-category-input-group:has(input[aria-invalid='true']) { border-color: var(--text-error-strong); }
 
+/* The category field used to be one control inside a shared bordered group, so its own box was
+   stripped. It is now a standalone Astryx field like name and note, and draws its own box from
+   `.personal-waypoint-field-control`; only the inner <input> is stripped, further up this file. */
 .personal-waypoint-form .personal-waypoint-category-input {
   min-width: 0;
   min-height: 46px;
   flex: 1 1 auto;
-  padding: var(--space-6) var(--space-4) var(--space-1);
-  border: 0;
-  background: transparent;
 }
 
 .personal-waypoint-form .personal-waypoint-category-input:focus-visible { outline: none; }
@@ -779,10 +867,32 @@
 }
 
 .personal-waypoint-color-options {
+  /* Eight across, sharing whatever width the panel gives, so no colour can be pushed off the edge. */
   display: grid;
-  grid-template-columns: repeat(8, minmax(var(--control-height-lg), 1fr));
+  grid-template-columns: repeat(8, minmax(0, 1fr));
   gap: var(--space-1);
   width: min(100%, 320px);
+}
+
+/* Astryx draws its own radio dot before the item's content. The swatch already shows selection with
+   a tick, so the dot is a second, redundant indicator — and at eight across it pushed the row off
+   the screen. Same treatment as the community form's option lists. */
+.personal-waypoint-astryx-radio-list .astryx-radio-indicator { display: none; }
+.personal-waypoint-astryx-radio-list .personal-waypoint-color-option,
+.personal-waypoint-astryx-radio-list .personal-waypoint-icon-option {
+  display: grid;
+  min-width: 0;
+  place-items: center;
+  padding: 0;
+  border: 0;
+  background: transparent;
+}
+.personal-waypoint-astryx-radio-list .personal-waypoint-color-swatch {
+  display: grid;
+  width: 100%;
+  aspect-ratio: 1;
+  place-items: center;
+  border-radius: 50%;
 }
 
 .personal-waypoint-icon-options {

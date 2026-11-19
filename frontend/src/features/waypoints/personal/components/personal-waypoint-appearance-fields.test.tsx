@@ -48,7 +48,9 @@ describe('PersonalWaypointAppearanceFields', () => {
     expect(markerStyleButton.getAttribute('aria-expanded')).toBe('true')
     expect(screen.getByRole('radio', { name: 'Blue' })).toBeTruthy()
     expect(screen.getByRole('radio', { name: 'General' })).toBeTruthy()
-    expect(screen.getByRole('group', { name: 'Colour' })).toBeTruthy()
+    // Astryx RadioList groups its radios with `radiogroup`, which is what a set of radio buttons
+    // actually is; the previous hand-rolled <fieldset> only announced a generic `group`.
+    expect(screen.getByRole('radiogroup', { name: 'Colour' })).toBeTruthy()
   })
 
   it('reports colour and icon selections and updates the preview', async () => {

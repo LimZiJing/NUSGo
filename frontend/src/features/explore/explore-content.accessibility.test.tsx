@@ -126,23 +126,38 @@ function PanelWithOutsideControls({ children }: { children: ReactNode }) {
 
 afterEach(cleanup)
 
+/** Explore opens on Bus routes, so venue-search tests start from the view a rider picks. */
+const venueSearchState: ExploreState = {
+  ...createInitialExploreState(),
+  mode: 'venue-search',
+}
+
 describe('ExploreContent accessibility workflows', () => {
-  it('opens mobile Explore on Find venue with a labelled segmented selector', () => {
+  it('opens mobile Explore on Bus routes with a labelled segmented selector', () => {
     render(<PanelHarness initialState={createInitialExploreState()} />)
 
-    expect(screen.getByRole('region', { name: 'Find a venue' })).toBeTruthy()
     const exploreControl = screen.getByRole('group', { name: 'Explore mode' })
     expect(exploreControl).toBeTruthy()
-    expect(screen.getByRole('region', { name: 'Find a venue' }).querySelector('.navigation-panel-content')).toBeTruthy()
-    expect(screen.getByRole('button', { name: 'Find venue' }).getAttribute('aria-pressed')).toBe('true')
-    expect(screen.getByRole('button', { name: 'Bus routes' }).getAttribute('aria-pressed')).toBe('false')
-    expect(screen.getByRole('searchbox', { name: 'Find a venue' })).toBeTruthy()
+    expect(screen.getByRole('region', { name: 'Bus routes' })).toBeTruthy()
+    expect(screen.getByRole('button', { name: 'Bus routes' }).getAttribute('aria-pressed')).toBe('true')
+    expect(screen.getByRole('button', { name: 'Find venue' }).getAttribute('aria-pressed')).toBe('false')
+    expect(screen.queryByRole('searchbox', { name: 'Find a venue' })).toBeNull()
     expect(screen.queryByRole('button', { name: 'Explore' })).toBeNull()
+  })
+
+  it('opens venue search when the rider chooses Find venue', async () => {
+    const user = userEvent.setup()
+    render(<PanelHarness initialState={createInitialExploreState()} />)
+
+    await user.click(screen.getByRole('button', { name: 'Find venue' }))
+
+    expect(screen.getByRole('region', { name: 'Find a venue' })).toBeTruthy()
+    expect(screen.getByRole('searchbox', { name: 'Find a venue' })).toBeTruthy()
   })
 
   it('does not handle Escape while its tab is inactive', async () => {
     const user = userEvent.setup()
-    render(<PanelHarness active={false} />)
+    render(<PanelHarness initialState={venueSearchState} active={false} />)
 
     await user.keyboard('{Escape}')
 
@@ -153,7 +168,7 @@ describe('ExploreContent accessibility workflows', () => {
     const user = userEvent.setup()
     const onDismissMapPopup = vi.fn(() => true)
     render(<PanelHarness
-      initialState={createInitialExploreState()}
+      initialState={venueSearchState}
       onDismissMapPopup={onDismissMapPopup}
     />)
 
@@ -238,7 +253,7 @@ describe('ExploreContent accessibility workflows', () => {
   it('preserves visible Explore, map, and other control focus when entering mobile', async () => {
     const { rerender } = render(
       <PanelWithOutsideControls>
-        <PanelHarness mobileSheet={false} />
+        <PanelHarness initialState={venueSearchState} mobileSheet={false} />
       </PanelWithOutsideControls>,
     )
     const mapControl = screen.getByRole('button', { name: 'Map control' })
@@ -248,7 +263,7 @@ describe('ExploreContent accessibility workflows', () => {
     mapControl.focus()
     rerender(
       <PanelWithOutsideControls>
-        <PanelHarness mobileSheet />
+        <PanelHarness initialState={venueSearchState} mobileSheet />
       </PanelWithOutsideControls>,
     )
     await waitFor(() => expect(document.activeElement).toBe(mapControl))
@@ -256,12 +271,12 @@ describe('ExploreContent accessibility workflows', () => {
     exploreSearch.focus()
     rerender(
       <PanelWithOutsideControls>
-        <PanelHarness mobileSheet={false} />
+        <PanelHarness initialState={venueSearchState} mobileSheet={false} />
       </PanelWithOutsideControls>,
     )
     rerender(
       <PanelWithOutsideControls>
-        <PanelHarness mobileSheet />
+        <PanelHarness initialState={venueSearchState} mobileSheet />
       </PanelWithOutsideControls>,
     )
     await waitFor(() => expect(document.activeElement).toBe(exploreSearch))
@@ -269,25 +284,26 @@ describe('ExploreContent accessibility workflows', () => {
     otherControl.focus()
     rerender(
       <PanelWithOutsideControls>
-        <PanelHarness mobileSheet={false} />
+        <PanelHarness initialState={venueSearchState} mobileSheet={false} />
       </PanelWithOutsideControls>,
     )
     rerender(
       <PanelWithOutsideControls>
-        <PanelHarness mobileSheet />
+        <PanelHarness initialState={venueSearchState} mobileSheet />
       </PanelWithOutsideControls>,
     )
     await waitFor(() => expect(document.activeElement).toBe(otherControl))
   })
 
   it('uses labelled native structure for venue search', () => {
-    render(<PanelHarness />)
+    render(<PanelHarness initialState={venueSearchState} />)
     const search = screen.getByRole('searchbox', { name: 'Find a venue' })
 
     expect(search).toBeTruthy()
 
     const panel = screen.getByRole('region', { name: 'Find a venue' })
     expect(panel.getAttribute('aria-labelledby')).toBe('explore-content-heading')
+    expect(panel.querySelector('.navigation-panel-content')).toBeTruthy()
     expect(screen.queryByRole('dialog')).toBeNull()
     expect(screen.getByText('Venue search opened.')).toBeTruthy()
     expect(screen.getByText('Search for a place or browse by category')).toBeTruthy()
@@ -297,7 +313,7 @@ describe('ExploreContent accessibility workflows', () => {
 
   it('preserves query history, operates by keyboard, and focuses venue details', async () => {
     const user = userEvent.setup()
-    render(<PanelHarness />)
+    render(<PanelHarness initialState={venueSearchState} />)
     const search = screen.getByRole('searchbox', { name: 'Find a venue' })
 
     await user.type(search, 'COM1')
@@ -330,7 +346,7 @@ describe('ExploreContent accessibility workflows', () => {
   it('passes the selected venue code to Navigate', async () => {
     const user = userEvent.setup()
     const onNavigateToVenue = vi.fn()
-    render(<PanelHarness onNavigateToVenue={onNavigateToVenue} />)
+    render(<PanelHarness initialState={venueSearchState} onNavigateToVenue={onNavigateToVenue} />)
 
     await user.type(screen.getByRole('searchbox', { name: 'Find a venue' }), 'COM1-0210')
     await user.click(screen.getByRole('button', { name: /COM1-0210/ }))
@@ -362,9 +378,9 @@ describe('ExploreContent accessibility workflows', () => {
     expect(onNavigateToVenue).toHaveBeenCalledWith('yih-central-square')
   })
 
-  it('switches mobile Explore segments and restores focus to the selected segment', async () => {
+  it('preserves query history and restores focus when switching between Explore segments', async () => {
     const user = userEvent.setup()
-    render(<PanelHarness />)
+    render(<PanelHarness initialState={venueSearchState} />)
 
     await user.type(screen.getByRole('searchbox', { name: 'Find a venue' }), 'COM1')
     await user.click(screen.getByRole('button', { name: 'Bus routes' }))
@@ -394,18 +410,19 @@ describe('ExploreContent accessibility workflows', () => {
     expect(screen.getByRole('button', { name: 'Route A1' }).getAttribute('aria-pressed')).toBe('true')
   })
 
-  it('keeps focus on the active segment after switching away from venue search', async () => {
+  it('keeps focus on the Find venue segment after switching away from Bus routes', async () => {
     const user = userEvent.setup()
-    render(<PanelHarness />)
-    const search = screen.getByRole('searchbox', { name: 'Find a venue' })
+    render(<PanelHarness initialState={createInitialExploreState()} />)
 
-    await user.click(screen.getByRole('button', { name: 'Bus routes' }))
-    expect(search.isConnected).toBe(false)
-    await waitFor(() => expect(document.activeElement).toBe(screen.getByRole('button', { name: 'Bus routes' })))
+    await user.click(screen.getByRole('button', { name: 'Find venue' }))
+    const venueSegment = screen.getByRole('button', { name: 'Find venue' })
+    expect(venueSegment.getAttribute('aria-pressed')).toBe('true')
+    expect(screen.getByRole('searchbox', { name: 'Find a venue' })).toBeTruthy()
+    await waitFor(() => expect(document.activeElement).toBe(venueSegment))
   })
 
   it('keeps responsive presentation structure semantic without a modal role', () => {
-    const { container } = render(<PanelHarness />)
+    const { container } = render(<PanelHarness initialState={venueSearchState} />)
     const panel = container.querySelector('.explore-content')
 
     expect(panel).not.toBeNull()

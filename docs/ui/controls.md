@@ -1,6 +1,6 @@
 # Interface controls
 
-This is the specification for NUSGo buttons, chips, and pills. Vocabulary is defined in `CONTEXT.md`; this document owns the variants, sizes, states, tokens, and migration plan. The React primitives live in `frontend/src/ui/`; their styles live in `frontend/src/ui/styles/shared/controls/`.
+This is the specification for NUSGo buttons, chips, and pills. Vocabulary is defined in `CONTEXT.md`; this document owns the variants, sizes, states, tokens, and migration plan. The [Astryx UI inventory](astryx-inventory.md) records compatibility decisions and candidate migration slices. The React primitives live in `frontend/src/ui/`; their styles live in `frontend/src/ui/styles/shared/controls/`.
 
 ## Primitives
 
@@ -127,7 +127,6 @@ The feature control migration is complete: Explore, Plan, Stops, More, Waypoints
 - [x] Map controls (More, Location and Live buses use the Astryx-backed `MapOverlayIconButton` adapter; other map controls keep their existing wrappers; a dead `.location-control-popover button` rule was removed)
 - [x] Sheet (the mobile tab bar items keep a bespoke pill style on the `navigation-tab` class, and the sheet handle keeps its own drag-handle styling and 24px row, because neither is a standard button; only the generic `.main-navigation button` selectors were replaced)
 - [x] Popovers (the endpoint locate button is a plain `IconButton`; search result rows keep their own classes because they are rich multi-line rows)
-- [x] Menus (the Plan trip-actions `Clear all` row is a `MenuItem` and its ellipsis trigger is a plain `IconButton`)
-- [x] Saved lists (selectable row copy uses `Button`; row layout remains in `SavedListRow`)
+- [x] Saved lists (selectable row copy uses `Button`; Personal Waypoint list actions use `MenuItem`; row layout remains in `SavedListRow`)
 
 `InfoPill` keeps its 10px metrics because it is non-interactive. Map popup route labels are non-interactive elements with the `route-chip` class.

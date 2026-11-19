@@ -6,7 +6,10 @@ import { afterEach, describe, expect, it, vi } from 'vitest'
 import type { WaypointCoordinate } from '@nusgo/shared/waypoints/waypoint'
 import { PersonalWaypointPlacement } from './personal-waypoint-placement'
 
-afterEach(cleanup)
+afterEach(() => {
+  cleanup()
+  vi.unstubAllGlobals()
+})
 
 const coordinate: WaypointCoordinate = { longitude: 103.7844, latitude: 1.2933 }
 
@@ -58,6 +61,51 @@ describe('PersonalWaypointPlacement', () => {
     expect(props.onApplyCoordinate).toHaveBeenCalledWith({ latitude: 1.2966, longitude: 103.7764 })
     expect(screen.queryByRole('textbox')).toBeNull()
     expect(document.activeElement).toBe(screen.getByRole('button', { name: 'Edit coordinates' }))
+  })
+
+  it('does not automatically focus the coordinate input on mobile, but allows a tap', async () => {
+    const user = userEvent.setup()
+    vi.stubGlobal('matchMedia', vi.fn((media: string) => ({
+      matches: true,
+      media,
+      onchange: null,
+      addEventListener: vi.fn(),
+      removeEventListener: vi.fn(),
+      addListener: vi.fn(),
+      removeListener: vi.fn(),
+      dispatchEvent: vi.fn(),
+    })))
+    renderPlacement()
+
+    await user.click(screen.getByRole('button', { name: 'Edit coordinates' }))
+    const input = screen.getByRole('textbox', { name: 'Selected location' })
+    expect(document.activeElement).not.toBe(input)
+
+    await user.click(input)
+    expect(document.activeElement).toBe(input)
+  })
+
+  it('shows current-location placement only when requested and explains when unavailable', async () => {
+    const onUseCurrentLocation = vi.fn()
+    const { rerender } = renderPlacement({ showCurrentLocationAction: true })
+    const unavailableButton = screen.getByRole('button', { name: 'Use current location' })
+    expect(unavailableButton.getAttribute('aria-disabled')).toBe('true')
+    expect(unavailableButton.getAttribute('aria-describedby')).toBeTruthy()
+
+    rerender(<PersonalWaypointPlacement
+      coordinate={coordinate}
+      showCurrentLocationAction
+      onUseCurrentLocation={onUseCurrentLocation}
+      onApplyCoordinate={vi.fn()}
+      onContinue={vi.fn()}
+      onCancel={vi.fn()}
+    />)
+    const availableButton = screen.getByRole('button', { name: 'Use current location' })
+    expect(availableButton.getAttribute('aria-disabled')).toBeNull()
+
+    const user = userEvent.setup()
+    await user.click(availableButton)
+    expect(onUseCurrentLocation).toHaveBeenCalledOnce()
   })
 
   it('shows the parser message for invalid input and keeps the previous coordinate', async () => {
@@ -163,9 +211,9 @@ describe('PersonalWaypointPlacement', () => {
 
     expect(props.onApplyCoordinate).toHaveBeenCalledWith({ latitude: 51.5072, longitude: -0.1276 })
     rerender(<PersonalWaypointPlacement {...props} coordinate={{ latitude: 51.5072, longitude: -0.1276 }} />)
-    expect(screen.getByRole('status').textContent).toContain('outside Singapore')
+    expect(screen.getByText(/outside Singapore/, { selector: '.personal-waypoint-coordinate-note' })).toBeTruthy()
 
     rerender(<PersonalWaypointPlacement {...props} coordinate={coordinate} />)
-    expect(screen.getByRole('status').textContent).toBe('')
+    expect(screen.queryByText(/outside Singapore/, { selector: '.personal-waypoint-coordinate-note' })).toBeNull()
   })
 })

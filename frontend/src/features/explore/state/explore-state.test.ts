@@ -19,12 +19,24 @@ function createVenueSearchState() {
 }
 
 describe('exploreReducer', () => {
-  it('starts at the Explore root', () => {
+  it('opens on Bus routes so the route list is ready on entry', () => {
     expect(createInitialExploreState()).toMatchObject({
-      mode: 'neutral',
+      mode: 'bus-routes',
       query: '',
       selectedVenue: null,
       selectedBuildingId: null,
+    })
+  })
+
+  it('keeps a manual Explore view selection so tab and breakpoint changes preserve it', () => {
+    // The chosen view is ordinary session state: nothing in Explore or the navigation reducer
+    // resets it when the top-level tab changes or the layout crosses the mobile breakpoint.
+    const chosen = exploreReducer(createInitialExploreState(), { type: 'select-venue', result: selectedVenue })
+
+    expect(chosen.mode).toBe('venue-detail')
+    expect(exploreReducer(chosen, { type: 'set-query', query: '' })).toMatchObject({
+      mode: 'venue-detail',
+      query: '',
     })
   })
 
@@ -133,7 +145,10 @@ describe('exploreReducer', () => {
   })
 
   it('keeps bus route browsing available when venue data is unavailable', () => {
-    const neutralState = createInitialExploreState()
+    const neutralState = exploreReducer(
+      { ...createInitialExploreState(), mode: 'venue-search' },
+      { type: 'close-to-root' },
+    )
 
     expect(exploreReducer(neutralState, { type: 'open-bus-routes' }).mode).toBe('bus-routes')
   })

@@ -12,6 +12,7 @@ import {
 afterEach(() => {
   cleanup()
   vi.useRealTimers()
+  vi.restoreAllMocks()
 })
 
 const stops: readonly StopsArrivalStopRequest[] = [
@@ -125,6 +126,57 @@ describe('useStopsArrivals', () => {
       } else {
         Reflect.deleteProperty(document, 'visibilityState')
       }
+    }
+  })
+
+  it('refreshes when a frozen page is restored without a visibility change event', async () => {
+    const client: StopsArrivalLoader = vi.fn()
+      .mockResolvedValueOnce(snapshot)
+      .mockResolvedValueOnce(refreshedSnapshot)
+
+    render(<Probe client={client} active />)
+    await act(async () => undefined)
+    expect(client).toHaveBeenCalledOnce()
+
+    await act(async () => {
+      window.dispatchEvent(new Event('pageshow'))
+    })
+
+    expect(client).toHaveBeenCalledTimes(2)
+    expect(screen.getByTestId('snapshot').textContent).toBe(refreshedSnapshot.observedAt)
+  })
+
+  it('keeps an in-flight request alive when multiple foreground events arrive', async () => {
+    const requestSignals: AbortSignal[] = []
+    const client: StopsArrivalLoader = vi.fn((_requestedStops, signal) => {
+      requestSignals.push(signal)
+      return new Promise<ShuttleArrivalSnapshot>(() => undefined)
+    })
+    const visibilityDescriptor = Object.getOwnPropertyDescriptor(document, 'visibilityState')
+    Object.defineProperty(document, 'visibilityState', { configurable: true, value: 'visible' })
+    const removeWindowListener = vi.spyOn(window, 'removeEventListener')
+    const { unmount } = render(<Probe client={client} active />)
+    await act(async () => undefined)
+
+    try {
+      expect(client).toHaveBeenCalledOnce()
+
+      await act(async () => {
+        window.dispatchEvent(new Event('pageshow'))
+        document.dispatchEvent(new Event('visibilitychange'))
+        window.dispatchEvent(new Event('focus'))
+      })
+
+      expect(client).toHaveBeenCalledOnce()
+      expect(requestSignals[0]?.aborted).toBe(false)
+    } finally {
+      unmount()
+      if (visibilityDescriptor) {
+        Object.defineProperty(document, 'visibilityState', visibilityDescriptor)
+      } else {
+        Reflect.deleteProperty(document, 'visibilityState')
+      }
+      removeWindowListener.mockRestore()
     }
   })
 
@@ -345,6 +397,7 @@ describe('useStopsArrivals', () => {
       return new Promise<ShuttleArrivalSnapshot>(() => undefined)
     })
     const removeListener = vi.spyOn(document, 'removeEventListener')
+    const removeWindowListener = vi.spyOn(window, 'removeEventListener')
     const { unmount } = render(<Probe client={client} active />)
     await act(async () => undefined)
 
@@ -355,6 +408,9 @@ describe('useStopsArrivals', () => {
 
     expect(requestSignals[0]?.aborted).toBe(true)
     expect(removeListener).toHaveBeenCalledWith('visibilitychange', expect.any(Function))
+    expect(removeListener).toHaveBeenCalledWith('resume', expect.any(Function))
+    expect(removeWindowListener).toHaveBeenCalledWith('pageshow', expect.any(Function))
+    expect(removeWindowListener).toHaveBeenCalledWith('focus', expect.any(Function))
     expect(vi.getTimerCount()).toBe(0)
     await act(async () => {
       await vi.advanceTimersByTimeAsync(30_000)

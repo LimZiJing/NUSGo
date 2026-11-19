@@ -56,11 +56,6 @@ export function createInitialNavigationState(): NavigationState {
   }
 }
 
-export function getIsMobileViewport(): boolean {
-  if (typeof window === 'undefined' || typeof window.matchMedia !== 'function') return true
-  return window.matchMedia(MOBILE_LAYOUT_MEDIA_QUERY).matches
-}
-
 export function subscribeToMobileViewport(listener: () => void): () => void {
   if (typeof window === 'undefined' || typeof window.matchMedia !== 'function') {
     return () => undefined

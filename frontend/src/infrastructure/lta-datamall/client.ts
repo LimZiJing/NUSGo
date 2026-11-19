@@ -115,10 +115,18 @@ export function createPublicBusArrivalClient(
   let inFlight: Promise<void> | null = null
 
   const readSnapshot = async (stops: readonly PublicBusArrivalStopRequest[], signal: AbortSignal): Promise<void> => {
-    if (inFlight) {
-      await inFlight
+    while (inFlight) {
+      const pendingRequest = inFlight
+      try {
+        await pendingRequest
+      } catch {
+        // Retry for this active caller if the shared request fails.
+        signal.throwIfAborted()
+      }
+      signal.throwIfAborted()
       if (cached && cached.cacheExpiresAt > now() && hasStops(cached.snapshot, stops)) return
     }
+    signal.throwIfAborted()
     const request = fetcher(
       `${endpoint}?stops=${encodeURIComponent(JSON.stringify(stops))}`,
       { signal },

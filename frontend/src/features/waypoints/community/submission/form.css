@@ -655,6 +655,10 @@
   cursor: pointer;
 }
 
+.community-waypoint-category-option,
+.community-waypoint-floor-option {
+  -webkit-tap-highlight-color: transparent;
+}
 .community-waypoint-category-option [data-astryx-press-box],
 .community-waypoint-floor-option [data-astryx-press-box] {
   position: absolute;

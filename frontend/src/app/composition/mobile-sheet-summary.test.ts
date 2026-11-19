@@ -103,7 +103,7 @@ describe('mobile sheet summaries', () => {
       expect(getExploreSheetSummary({
         ...initial,
         mode: 'venue-detail',
-        selectedVenue: { code: 'COM1-0201', venue: { roomName: 'Room' } },
+        selectedVenue: { code: 'COM1-0201', venue: { kind: 'room', roomName: 'Room' } },
       }, null)).toBe('Explore · COM1-0201')
       expect(getExploreSheetSummary({
         ...initial,

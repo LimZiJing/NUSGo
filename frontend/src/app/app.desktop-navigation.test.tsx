@@ -640,7 +640,7 @@ describe('desktop shared navigation shell', () => {
 
   it('uses the shared Navigate command from venue details and opens Plan', async () => {
     const user = userEvent.setup()
-    const venue = { roomName: 'Computing 1', location: { x: 103.7, y: 1.3 } }
+    const venue = { kind: 'room' as const, roomName: 'Computing 1', location: { x: 103.7, y: 1.3 } }
     appHarness.state = {
       ...createInitialNavigationSessionState(),
       transitIndex: createTransitIndex(createValidTransitNetwork()),

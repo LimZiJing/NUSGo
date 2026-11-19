@@ -6,7 +6,7 @@ import type {
 import type { TripEndpoint, TripEndpointRole, TripRequest } from '../../domain/trip/types'
 import type { Path } from '@nusgo/shared/routing/path'
 import type { DeviceLocationFix } from '../../domain/location/types'
-import type { VenueLocation, VenueLocationMap } from '@nusgo/shared/venue/types'
+import type { Venue, VenueMap } from '@nusgo/shared/venue/types'
 import type { LoadedTransitData } from './data'
 import type { ShuttleVehiclePosition } from '@nusgo/shared'
 import type { PersonalWaypoint } from '../../domain/waypoints/personal/personal-waypoint'
@@ -14,9 +14,9 @@ import type { CommunityWaypoint } from '@nusgo/shared/waypoints/community'
 
 export interface MapBuildingSelection {
   readonly name: string
-  readonly locations: readonly NonNullable<VenueLocation['location']>[]
+  readonly locations: readonly NonNullable<Venue['location']>[]
   /** The one location to mark distinctly and fit the camera to, when a single building part is chosen. */
-  readonly highlighted?: NonNullable<VenueLocation['location']>
+  readonly highlighted?: NonNullable<Venue['location']>
 }
 
 export interface MapSessionOptions {
@@ -103,7 +103,7 @@ export interface MapSession {
   setPlanLayersVisible(visible: boolean): void
   setTripRequest(
     request: TripRequest,
-    venues: VenueLocationMap,
+    venues: VenueMap,
     transitIndex: TransitIndex | null,
     buildings?: BuildingIndex | null,
   ): void
@@ -156,7 +156,7 @@ export interface MapSession {
   zoomIn(): void
   zoomOut(): void
   resetView(target: MapResetTarget): void
-  selectVenue(venue: VenueLocation): void
+  selectVenue(venue: Venue): void
   /** Re-applies the selected venue or building fit with the current insets, without waiting for an inset report. */
   refitSelectedVenue(): void
   /** Marks every part of a building, or a repeated-name group, and fits the camera to all of them. */

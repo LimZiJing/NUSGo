@@ -16,7 +16,7 @@ import type { CommunityWaypoint } from '@nusgo/shared/waypoints/community'
 import { reconcilePersonalWaypointEndpoints } from '../domain/trip/personal-waypoint-endpoints'
 import type { VenueSearchResult } from '../domain/venue/search'
 import type { BuildingIndex } from '../domain/venue/building-index'
-import type { VenueLocationMap } from '@nusgo/shared/venue/types'
+import type { VenueMap } from '@nusgo/shared/venue/types'
 import type { ShuttleVehiclePosition } from '@nusgo/shared'
 import type { JourneyPlanningClient } from '../infrastructure/pathfinding/client.ts'
 import {
@@ -61,7 +61,7 @@ export interface NavigationSessionStartupFailure {
 }
 
 export interface NavigationSessionState {
-  readonly venues: VenueLocationMap | null
+  readonly venues: VenueMap | null
   readonly buildings: BuildingIndex | null
   readonly transitIndex: TransitIndex | null
   readonly selectedRouteId: string | null
@@ -497,7 +497,7 @@ export function createNavigationSession(
 
   const syncTripRequest = (
     request: TripRequest,
-    venues: VenueLocationMap,
+    venues: VenueMap,
     nextTransitIndex: TransitIndex | null,
     buildings: BuildingIndex | null,
   ): void => {

@@ -9,7 +9,7 @@ import type { ScoredPathCandidate } from '@nusgo/shared/routing/path'
 import type { ApiJourneyPlanningResponse } from '@nusgo/shared/routing/path'
 import type { TripEndpoint as CanonicalTripEndpoint } from '@nusgo/shared/routing/path'
 import type { VenueSearchResult } from '../domain/venue/search'
-import { validateVenueLocationMap } from '@nusgo/shared/venue/validation'
+import { validateVenueMap } from '@nusgo/shared/venue/validation'
 import type { LoadedTransitData, LoadedVenueData } from './contracts/data'
 import { buildBuildingIndex } from '../domain/venue/building-index'
 import type { LocationTracker } from './contracts/location'
@@ -114,6 +114,7 @@ function createDependencies(
   const venues: LoadedVenueData = {
     venues: {
       COM1: {
+        kind: 'room',
         roomName: 'Computing 1',
         location: { x: 103, y: 1 },
       },
@@ -256,6 +257,7 @@ function endpointTestLabel(endpoint: TripEndpoint | null): string {
 const venueResult: VenueSearchResult = {
   code: 'COM1',
   venue: {
+    kind: 'room',
     roomName: 'Computing 1',
     location: { x: 103, y: 1 },
   },
@@ -1015,7 +1017,7 @@ describe('navigation session', () => {
 
     const unmappedData: LoadedVenueData = {
       venues: {
-        UNMAPPED: { roomName: 'Unmapped venue' },
+        UNMAPPED: { kind: 'room', roomName: 'Unmapped venue' },
       },
       venueCount: 0,
     }
@@ -1085,8 +1087,9 @@ describe('navigation session', () => {
   })
 
   it('publishes immutable controller-owned snapshots without cloning canonical loaded values', async () => {
-    const canonicalVenues = validateVenueLocationMap({
+    const canonicalVenues = validateVenueMap({
       COM1: {
+        kind: 'room',
         roomName: 'Computing 1',
         location: { x: 103, y: 1 },
       },
@@ -1170,7 +1173,7 @@ describe('navigation session', () => {
 
     session.selectVenue({
       code: 'COM1',
-      venue: { roomName: 'Wrong venue', location: { x: 104, y: 2 } },
+      venue: { kind: 'room', roomName: 'Wrong venue', location: { x: 104, y: 2 } },
     })
     session.selectVenue({
       code: 'MISSING',
@@ -1190,7 +1193,7 @@ describe('navigation session', () => {
 
     const unmappedData: LoadedVenueData = {
       venues: {
-        UNMAPPED: { roomName: 'Unmapped venue' },
+        UNMAPPED: { kind: 'room', roomName: 'Unmapped venue' },
       },
       venueCount: 1,
     }
@@ -1201,7 +1204,7 @@ describe('navigation session', () => {
     await unmappedSession.start(new AbortController().signal)
     unmappedSession.selectVenue({
       code: 'UNMAPPED',
-      venue: { roomName: 'Unmapped venue', location: { x: 103, y: 1 } },
+      venue: { kind: 'room', roomName: 'Unmapped venue', location: { x: 103, y: 1 } },
     })
     expect(unmappedSession.getState().exploreState.selectedVenue).toBeNull()
 
@@ -1905,6 +1908,7 @@ describe('navigation session', () => {
       venue.resolve({
         venues: {
           COM1: {
+            kind: 'room',
             roomName: 'Computing 1',
             location: { x: 103, y: 1 },
           },

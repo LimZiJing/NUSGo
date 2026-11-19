@@ -80,6 +80,24 @@ describe('searchTripLocations', () => {
     ])
   })
 
+  it('searches and labels eateries by their public name and category', () => {
+    const places: VenueLocationMap = {
+      'yih-central-square': {
+        roomName: 'YIH (Central Square)',
+        displayName: 'YIH (Central Square)',
+        category: 'canteen',
+        location: { x: 103.77477, y: 1.2985 },
+      },
+    }
+
+    expect(searchTripLocations(places, [], 'central square')).toEqual([{
+      endpoint: { kind: 'venue', id: 'yih-central-square' },
+      label: 'YIH (Central Square)',
+      detail: 'Canteen',
+    }])
+    expect(getTripEndpointLabel({ kind: 'venue', id: 'yih-central-square' }, places, [])).toBe('YIH (Central Square)')
+  })
+
   it('skips venues without coordinates', () => {
     const venuesWithMissingLocation: VenueLocationMap = {
       ...venues,

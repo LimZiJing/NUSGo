@@ -36,6 +36,7 @@ function PanelHarness({
   status,
   onDismissMapPopup,
   onNavigateToVenue,
+  venueData = venues,
 }: {
   initialState?: ExploreState
   network?: TransitNetwork | null
@@ -46,6 +47,7 @@ function PanelHarness({
   status?: ExplorePanelStatus | null
   onDismissMapPopup?: () => boolean
   onNavigateToVenue?: (venueCode: string) => void
+  venueData?: VenueLocationMap
 }) {
   const [state, setState] = useState(initialState)
   const [selectedRouteId, setSelectedRouteId] = useState<string | null>(null)
@@ -63,7 +65,7 @@ function PanelHarness({
     >
       <ExploreContent
         state={state}
-        venues={venues}
+        venues={venueData}
         transitIndex={networkIndex}
         selectedRouteId={selectedRouteId}
         onRouteSelect={setSelectedRouteId}
@@ -304,7 +306,7 @@ describe('ExploreContent accessibility workflows', () => {
     expect(panel.querySelector('.navigation-panel-content')).toBeTruthy()
     expect(screen.queryByRole('dialog')).toBeNull()
     expect(screen.getByText('Venue search opened.')).toBeTruthy()
-    expect(screen.getByText('Search for a venue')).toBeTruthy()
+    expect(screen.getByText('Search for a place or browse by category')).toBeTruthy()
     expect(screen.getByRole('button', { name: 'Bus routes' })).toBeTruthy()
     expect(screen.queryByText('Search by venue code or room name.')).toBeNull()
   })
@@ -316,6 +318,9 @@ describe('ExploreContent accessibility workflows', () => {
 
     await user.type(search, 'COM1')
     await user.tab()
+    expect(document.activeElement).toBe(screen.getByRole('button', { name: 'Clear venue search' }))
+    await user.tab()
+    expect(document.activeElement).toBe(screen.getByRole('button', { name: 'Place category All places' }))
     await user.tab()
     const result = screen.getByRole('button', { name: /COM1-0210/ })
     expect(result.getAttribute('aria-label')).toBe('COM1-0210, venue, Computing 1, Level 2')
@@ -325,7 +330,7 @@ describe('ExploreContent accessibility workflows', () => {
     await user.keyboard('{Enter}')
     const detailHeading = await screen.findByRole('heading', { name: /COM1-0210/ })
     await waitFor(() => expect(document.activeElement).toBe(detailHeading))
-    expect(screen.getByText('Venue details opened for COM1-0210.')).toBeTruthy()
+    expect(screen.getByText('Venue details opened for Computing 1, Level 2.')).toBeTruthy()
     expect(screen.getByRole('button', { name: 'Find venue' })).toBeTruthy()
     expect(screen.queryByRole('button', { name: 'Back to venue search' })).toBeNull()
     expect(screen.queryByRole('button', { name: 'Hide explore panel' })).toBeNull()
@@ -350,7 +355,36 @@ describe('ExploreContent accessibility workflows', () => {
     expect(onNavigateToVenue).toHaveBeenCalledWith('COM1-0210')
   })
 
-  it('keeps the query history when switching between segments', async () => {
+  it('browses an eatery and passes its stable ID to Navigate', async () => {
+    const user = userEvent.setup()
+    const onNavigateToVenue = vi.fn()
+    const eateryVenues: VenueLocationMap = {
+      'yih-central-square': {
+        roomName: 'YIH (Central Square)',
+        displayName: 'YIH (Central Square)',
+        category: 'canteen',
+        location: { x: 103.77477, y: 1.2985 },
+      },
+    }
+    render(
+      <PanelHarness
+        initialState={venueSearchState}
+        onNavigateToVenue={onNavigateToVenue}
+        venueData={eateryVenues}
+      />,
+    )
+
+    await user.click(screen.getByRole('button', { name: 'Place category All places' }))
+    await user.click(screen.getByRole('option', { name: 'Canteens' }))
+    await user.click(await screen.findByRole('button', { name: 'YIH (Central Square), Canteen' }))
+    expect(await screen.findByRole('heading', { name: 'YIH (Central Square), Canteen' })).toBeTruthy()
+    expect(screen.getByText('Venue details opened for YIH (Central Square).')).toBeTruthy()
+    await user.click(screen.getByRole('button', { name: 'Navigate' }))
+
+    expect(onNavigateToVenue).toHaveBeenCalledWith('yih-central-square')
+  })
+
+  it('preserves query history and restores focus when switching between Explore segments', async () => {
     const user = userEvent.setup()
     render(<PanelHarness initialState={venueSearchState} />)
 

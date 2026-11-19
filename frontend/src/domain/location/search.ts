@@ -11,11 +11,11 @@ import { compareText, getMatchPriority, normalizeSearchText as normalize } from 
 import { getTripEndpointKey } from '../trip/endpoints'
 import { createPersonalWaypointTripEndpoint } from '../trip/personal-waypoint-endpoints'
 import { EMPTY_BUILDING_INDEX, describeBuildingEntry, type BuildingIndex } from '../venue/building-index'
+import { getEateryCategoryLabel } from '../venue/eatery'
 
 const MAX_RESULTS = 8
 
-// Venue data holds rooms only, so bus stops and buildings, which stops are often named after,
-// rank ahead of rooms.
+// Stops and buildings rank ahead of rooms and named destinations.
 const STOP_AND_BUILDING_ORDER = 0
 const ROOM_ORDER = 1
 
@@ -76,7 +76,8 @@ export function getTripEndpointLabel(
     return found ? `${found.entry.name}${found.part.partLabel ? ` · ${found.part.partLabel}` : ''}` : endpoint.id
   }
   if (endpoint.kind === 'venue') {
-    return venues[endpoint.id]?.roomName ?? endpoint.id
+    const venue = venues[endpoint.id]
+    return venue?.displayName ?? venue?.roomName ?? endpoint.id
   }
 
   return getStop(stops, endpoint.id)?.longName ?? endpoint.id
@@ -103,10 +104,10 @@ export function searchTripLocations(
     candidates.push({
       result: {
         endpoint: { kind: 'venue', id: code },
-        label: code,
-        detail: venue.roomName,
+        label: venue.category ? venue.displayName ?? venue.roomName : code,
+        detail: venue.category ? getEateryCategoryLabel(venue.category) : venue.roomName,
       },
-      fields: [code, venue.roomName],
+      fields: [code, venue.displayName ?? venue.roomName, venue.roomName],
       kindOrder: ROOM_ORDER,
     })
   }

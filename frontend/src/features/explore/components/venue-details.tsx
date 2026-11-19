@@ -2,13 +2,14 @@ import { useState, type RefObject } from 'react'
 import type { VenueSearchResult } from '../../../domain/venue/search'
 import { findNearbyShuttleStops, type TransitIndex } from '../../../domain/transit'
 import { formatVenueFloorAndBuilding, getVenueBuildingName, hasVenueCoordinates } from '../../../domain/venue/details'
+import { getEateryCategoryLabel } from '../../../domain/venue/eatery'
 import { getRouteContrastTextColor } from '../../../domain/transit/route-color'
 import nusmodsLogoUrl from '../../../ui/brand-assets/nusmods-logo.svg'
 import { NavigateButton } from '../../../ui/navigate-button'
 import { Select } from '../../../ui/select'
 import type { BuildingEntry } from '../../../domain/venue/building-index'
 import type { VenueLocation } from '@nusgo/shared/venue/types'
-import { BuildingIcon, BusIcon, ChevronRightIcon, RoomIcon } from '../../../ui/icons'
+import { BuildingIcon, BusIcon, ChevronRightIcon, MapPinIcon, RoomIcon } from '../../../ui/icons'
 import { Button } from '../../../ui/button'
 
 interface VenueDetailsProps {
@@ -103,10 +104,14 @@ export function VenueDetails({
   onFocusStop,
 }: VenueDetailsProps) {
   const hasCoordinates = hasVenueCoordinates(venue.venue)
-  const floorAndBuilding = formatVenueFloorAndBuilding(
-    venue.venue.floor,
-    getVenueBuildingName(venue.code),
-  )
+  const isEatery = venue.venue.category !== undefined
+  const displayName = venue.venue.displayName ?? venue.venue.roomName
+  const categoryLabel = venue.venue.category
+    ? getEateryCategoryLabel(venue.venue.category)
+    : null
+  const floorAndBuilding = isEatery
+    ? null
+    : formatVenueFloorAndBuilding(venue.venue.floor, getVenueBuildingName(venue.code))
   const venueLocation = venue.venue.location
 
   return (
@@ -119,12 +124,14 @@ export function VenueDetails({
           id="explore-venue-detail-heading"
           ref={headingRef}
           tabIndex={-1}
-          aria-label={`${venue.code}, venue`}
+          aria-label={isEatery ? `${displayName}, ${categoryLabel}` : `${venue.code}, venue`}
         >
-          <RoomIcon className="location-identity-icon location-identity-icon--venue" />
-          {venue.code}
+          {isEatery
+            ? <MapPinIcon className="location-identity-icon location-identity-icon--eatery" />
+            : <RoomIcon className="location-identity-icon location-identity-icon--venue" />}
+          {isEatery ? displayName : venue.code}
         </h3>
-        <p className="venue-detail-name">{venue.venue.roomName}</p>
+        <p className="venue-detail-name">{isEatery ? categoryLabel : venue.venue.roomName}</p>
       </div>
       {floorAndBuilding && (
         <p className="venue-detail-location">
@@ -137,7 +144,7 @@ export function VenueDetails({
           disabled={!hasCoordinates}
           onClick={() => onNavigateToVenue?.(venue.code)}
         />
-        <NusmodsLink venueCode={venue.code} />
+        {!isEatery && <NusmodsLink venueCode={venue.code} />}
       </div>
       {hasCoordinates && venueLocation && (
         <NearbyStops location={venueLocation} transitIndex={transitIndex} onFocusStop={onFocusStop} />

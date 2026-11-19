@@ -1,5 +1,5 @@
-import { useMemo, type ReactNode } from 'react'
-import type { VenueLocationMap } from '@nusgo/shared/venue/types'
+import { useMemo, useState, type ReactNode } from 'react'
+import type { EateryCategory, VenueLocationMap } from '@nusgo/shared/venue/types'
 import { EMPTY_BUILDING_INDEX, type BuildingIndex } from '../../domain/venue/building-index'
 import { linkVenuesToBuildings } from '../../domain/venue/building-links'
 import type { TransitIndex } from '../../domain/transit'
@@ -70,7 +70,7 @@ function getExplorePanelAnnouncement(
   if (state.mode === 'bus-routes') return null
   if (state.mode === 'venue-detail' && buildingName) return `Building details opened for ${buildingName}.`
   if (state.mode === 'venue-detail' && state.selectedVenue) {
-    return `Venue details opened for ${state.selectedVenue.code}.`
+    return `Venue details opened for ${state.selectedVenue.venue.displayName ?? state.selectedVenue.venue.roomName}.`
   }
   if (state.mode === 'venue-search') return 'Venue search opened.'
   if (state.mode === 'neutral') return 'Venue search opened.'
@@ -111,6 +111,7 @@ export function ExploreContent({
     onFocusStop,
   },
 }: ExploreContentProps) {
+  const [eateryCategory, setEateryCategory] = useState<'all' | EateryCategory>('all')
   const buildingIndex = buildings ?? EMPTY_BUILDING_INDEX
   const buildingLinks = useMemo(
     () => linkVenuesToBuildings(venues ?? {}, buildingIndex),
@@ -177,6 +178,7 @@ export function ExploreContent({
         {!communityMode && (state.mode === 'venue-search' || state.mode === 'neutral') && (
           <VenueSearch
             query={state.query}
+            eateryCategory={eateryCategory}
             venues={venues}
             buildings={buildingIndex}
             buildingLinks={buildingLinks}
@@ -186,6 +188,7 @@ export function ExploreContent({
             onRestore={onRestore}
             onSearchFocus={onSearchFocus}
             onQueryChange={onQueryChange}
+            onEateryCategoryChange={setEateryCategory}
             onSelect={onVenueSelect}
             onBuildingSelect={onBuildingSelect}
             onStopSelect={onStopSelect}

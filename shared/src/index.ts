@@ -54,11 +54,14 @@ export type {
 export type { ShuttleTimingData, ShuttleTimingMetadata, ShuttleTimingRecord } from './transit/timing.ts'
 export {
   validateVenueLocationMap,
+  validateEateryLocationMap,
+  mergeVenueAndEateryMaps,
   validateBuildingCatalogue,
   getVenueCount,
   VenueValidationError,
 } from './venue/validation.ts'
-export type { VenueLocation, VenueLocationMap } from './venue/types.ts'
+export { EATERY_CATEGORIES } from './venue/types.ts'
+export type { EateryCategory, EateryLocation, EateryLocationMap, GeoLocation, VenueLocation, VenueLocationMap } from './venue/types.ts'
 export type {
   Building,
   BuildingCatalogue,

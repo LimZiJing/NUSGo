@@ -15,11 +15,12 @@ import { createTransitIndex } from '../../domain/transit'
 import { createValidTransitNetwork } from '../../domain/transit/test-fixtures.ts'
 import type { TransitNetwork } from '@nusgo/shared/transit/types'
 import type { TransitNetworkIndex } from '../../domain/transit'
-import type { VenueLocationMap } from '@nusgo/shared/venue/types'
+import type { VenueMap } from '@nusgo/shared/venue/types'
 import type { ExplorePanelStatus } from './state/explore-panel-status.ts'
 
-const venues: VenueLocationMap = {
+const venues: VenueMap = {
   'COM1-0210': {
+    kind: 'room',
     roomName: 'Computing 1, Level 2',
     floor: 2,
     location: { x: 103.77, y: 1.3 },
@@ -47,7 +48,7 @@ function PanelHarness({
   status?: ExplorePanelStatus | null
   onDismissMapPopup?: () => boolean
   onNavigateToVenue?: (venueCode: string) => void
-  venueData?: VenueLocationMap
+  venueData?: VenueMap
 }) {
   const [state, setState] = useState(initialState)
   const [selectedRouteId, setSelectedRouteId] = useState<string | null>(null)
@@ -306,7 +307,7 @@ describe('ExploreContent accessibility workflows', () => {
     expect(panel.querySelector('.navigation-panel-content')).toBeTruthy()
     expect(screen.queryByRole('dialog')).toBeNull()
     expect(screen.getByText('Venue search opened.')).toBeTruthy()
-    expect(screen.getByText('Search for a place or browse by category')).toBeTruthy()
+    expect(screen.getByText('Search for a place or bus stop')).toBeTruthy()
     expect(screen.getByRole('button', { name: 'Bus routes' })).toBeTruthy()
     expect(screen.queryByText('Search by venue code or room name.')).toBeNull()
   })
@@ -320,10 +321,8 @@ describe('ExploreContent accessibility workflows', () => {
     await user.tab()
     expect(document.activeElement).toBe(screen.getByRole('button', { name: 'Clear venue search' }))
     await user.tab()
-    expect(document.activeElement).toBe(screen.getByRole('button', { name: 'Place category All places' }))
-    await user.tab()
     const result = screen.getByRole('button', { name: /COM1-0210/ })
-    expect(result.getAttribute('aria-label')).toBe('COM1-0210, venue, Computing 1, Level 2')
+    expect(result.getAttribute('aria-label')).toBe('COM1-0210, room, Computing 1, Level 2')
     expect(result.querySelector('.location-identity-icon--venue[aria-hidden="true"]')).toBeTruthy()
     expect(document.activeElement).toBe(result)
 
@@ -355,14 +354,14 @@ describe('ExploreContent accessibility workflows', () => {
     expect(onNavigateToVenue).toHaveBeenCalledWith('COM1-0210')
   })
 
-  it('browses an eatery and passes its stable ID to Navigate', async () => {
+  it('searches Food by name and passes its stable ID to Navigate', async () => {
     const user = userEvent.setup()
     const onNavigateToVenue = vi.fn()
-    const eateryVenues: VenueLocationMap = {
+    const foodVenues: VenueMap = {
       'yih-central-square': {
-        roomName: 'YIH (Central Square)',
-        displayName: 'YIH (Central Square)',
-        category: 'canteen',
+        kind: 'food',
+        name: 'YIH (Central Square)',
+        foodType: 'canteen',
         location: { x: 103.77477, y: 1.2985 },
       },
     }
@@ -370,12 +369,11 @@ describe('ExploreContent accessibility workflows', () => {
       <PanelHarness
         initialState={venueSearchState}
         onNavigateToVenue={onNavigateToVenue}
-        venueData={eateryVenues}
+        venueData={foodVenues}
       />,
     )
 
-    await user.click(screen.getByRole('button', { name: 'Place category All places' }))
-    await user.click(screen.getByRole('option', { name: 'Canteens' }))
+    await user.type(screen.getByRole('searchbox', { name: 'Find a venue' }), 'yih')
     await user.click(await screen.findByRole('button', { name: 'YIH (Central Square), Canteen' }))
     expect(await screen.findByRole('heading', { name: 'YIH (Central Square), Canteen' })).toBeTruthy()
     expect(screen.getByText('Venue details opened for YIH (Central Square).')).toBeTruthy()

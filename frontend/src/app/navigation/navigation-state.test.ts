@@ -1,8 +1,8 @@
 import { describe, expect, it, vi } from 'vitest'
 import { MOBILE_LAYOUT_MEDIA_QUERY } from '../../domain/layout-breakpoint'
+import { getIsMobileViewport } from '../../ui/mobile/mobile-viewport'
 import {
   createInitialNavigationState,
-  getIsMobileViewport,
   navigationReducer,
 } from './navigation-state'
 

@@ -22,8 +22,8 @@ import {
 } from './navigation-session-mount'
 import { useNavigationSession } from './use-navigation-session'
 import { deriveExplorePanelStatus } from './explore-panel-status'
+import { getIsMobileViewport } from '../ui/mobile/mobile-viewport'
 import {
-  getIsMobileViewport,
   subscribeToMobileViewport,
   type MobileSheetDetent,
 } from './navigation/navigation-state'
@@ -209,6 +209,10 @@ function App() {
   }, [themePreference])
 
   const state = useNavigationSession(session)
+  const currentLocationFix = state.location.status === 'tracking' && state.location.latestFix &&
+    isValidLocationCoordinates(state.location.latestFix.longitude, state.location.latestFix.latitude)
+    ? state.location.latestFix
+    : null
   if (
     morePage === 'community-submission' && communitySubmissionWaypoint === null &&
     communitySubmissionLocationStatus === 'locating'
@@ -1290,11 +1294,22 @@ function App() {
         />}
         {morePage === 'community-placing' && <PersonalWaypointPlacement
           coordinate={communitySubmissionCoordinate}
+          showCurrentLocationAction
           onUseMapCentre={mapCenter && !isMapMoving
             ? () => {
               setCommunitySubmissionCoordinate(mapCenter)
               setCommunitySubmissionLocationStatus('ready')
               setCommunitySubmissionLocationAccuracy(null)
+            }
+            : undefined}
+          onUseCurrentLocation={currentLocationFix
+            ? () => {
+              setCommunitySubmissionCoordinate({
+                latitude: currentLocationFix.latitude,
+                longitude: currentLocationFix.longitude,
+              })
+              setCommunitySubmissionLocationStatus('ready')
+              setCommunitySubmissionLocationAccuracy(currentLocationFix.accuracy)
             }
             : undefined}
           onApplyCoordinate={applyTypedCommunityWaypointCoordinate}

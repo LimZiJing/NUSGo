@@ -1,5 +1,5 @@
 import type { Building, BuildingCatalogue } from '@nusgo/shared/venue/buildings'
-import type { VenueLocationMap } from '@nusgo/shared/venue/types'
+import type { VenueMap } from '@nusgo/shared/venue/types'
 import type { TransitIndex } from '@nusgo/shared/transit/index'
 import type { JourneyEndpoint, TripCoordinate, TripEndpoint, PathEndpointLocation } from '@nusgo/shared/routing/path'
 
@@ -66,7 +66,7 @@ export function getTripEndpointKey(endpoint: JourneyEndpoint): string {
 export function getTripEndpointCoordinate(
   endpoint: JourneyEndpoint,
   sources: {
-    readonly venues: VenueLocationMap
+    readonly venues: VenueMap
     readonly buildings: BuildingIndex
     readonly transit: TransitIndex
   },
@@ -96,7 +96,7 @@ export function getTripEndpointCoordinate(
 
 export function hasCanonicalEndpoint(
   endpoint: JourneyEndpoint,
-  sources: { readonly venues: VenueLocationMap; readonly buildings: BuildingIndex; readonly transit: TransitIndex },
+  sources: { readonly venues: VenueMap; readonly buildings: BuildingIndex; readonly transit: TransitIndex },
 ): boolean {
   return getTripEndpointCoordinate(endpoint, sources) !== null
 }

@@ -12,6 +12,7 @@ Before exploring or changing the repository, read the relevant repository guidan
 6. `docs/agents/issue-tracker.md` and `docs/agents/triage-labels.md` for GitHub issue workflow and labels.
 7. `docs/agents/workflow.md` for the standard Codex task lifecycle and efficiency guardrails.
 8. `docs/agents/task-template.md` for the reusable task kickoff prompt.
+9. `docs/agents/pr-review.md` before opening, reviewing, approving, or merging a pull request.
 
 Keep the document responsibilities distinct: `CONTEXT.md` owns stable domain and product vocabulary, `docs/project-status.md` owns changing implementation status, and this file owns agent behavior.
 
@@ -32,6 +33,7 @@ Task-specific user instructions take precedence over this guidance. If two repos
 - Run and report the exact results of `npm test`, `npm run lint`, `npm run build`, and `git diff --check` when available and applicable. UI or map changes SHOULD include targeted local-browser smoke testing for affected behavior. Full responsive and keyboard testing is required only when those behaviors change materially or before a release. If browser testing is unavailable, document what was not verified and why.
 - Before installing dependencies in a worktree, read `docs/agents/workflow.md` section 2.
 - Do not push, force-push, open a pull request, or make other external changes unless the task explicitly authorizes it.
+- Never approve, request changes on, merge, or enable auto-merge for a pull request without explicit go-ahead on that pull request from a human maintainer who is not its author. Agent review is comments only until then. See [pull request review](docs/agents/pr-review.md).
 
 ## GitHub issue workflow
 

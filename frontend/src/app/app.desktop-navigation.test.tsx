@@ -399,7 +399,7 @@ describe('desktop shared navigation shell', () => {
 
     expect(await screen.findByText(/^Correction for/)).toBeTruthy()
     expect(screen.queryByLabelText(/Waypoint name/)).toBeNull()
-    await user.type(screen.getByLabelText('What needs correcting?'), 'It has moved to the next floor.')
+    await user.type(screen.getByLabelText(/What needs correcting\?/), 'It has moved to the next floor.')
     await user.click(screen.getByRole('button', { name: 'Send suggestion' }))
 
     expect(await screen.findByRole('heading', { name: 'Correction received' })).toBeTruthy()
@@ -437,6 +437,9 @@ describe('desktop shared navigation shell', () => {
     await user.click(screen.getByRole('button', { name: 'Adjust on map' }))
 
     expect(screen.getByRole('region', { name: 'Adjust waypoint location' })).toBeTruthy()
+    const unavailableCurrentLocation = screen.getByRole('button', { name: 'Use current location' })
+    expect(unavailableCurrentLocation.getAttribute('aria-disabled')).toBe('true')
+    expect(unavailableCurrentLocation.getAttribute('aria-describedby')).toBeTruthy()
     expect(document.querySelector('.navigation-column')?.hasAttribute('hidden')).toBe(true)
     const placementCall = appHarness.commands.setWaypointPlacement.mock.calls.at(-1)
     expect(placementCall?.[1]).toBe(true)
@@ -1542,7 +1545,7 @@ describe('More surface', () => {
 
     await user.click(screen.getByRole('button', { name: 'Adjust on map' }))
     act(() => appHarness.onMapMovingChange?.(true))
-    expect((screen.getByRole('button', { name: 'Use map centre' }) as HTMLButtonElement).disabled).toBe(true)
+    expect(screen.getByRole('button', { name: 'Use map centre' }).getAttribute('aria-disabled')).toBe('true')
     act(() => {
       appHarness.onMapCenterChange?.([105, 2])
       appHarness.onMapMovingChange?.(false)
@@ -1558,6 +1561,28 @@ describe('More surface', () => {
     expect(updatedLocation.textContent).toContain('Latitude2.000000°')
     expect(updatedLocation.textContent).toContain('Longitude105.000000°')
     expect((screen.getByLabelText('Name') as HTMLInputElement).value).toBe('Quiet bench')
+  })
+
+  it('uses the latest current-location fix for a Community Waypoint placement', async () => {
+    mockDesktopViewport()
+    setActiveLocationFix()
+    const user = userEvent.setup()
+    render(<App />)
+
+    await user.click(screen.getByRole('button', { name: 'More' }))
+    await user.click(screen.getByRole('button', { name: 'Suggest a waypoint' }))
+    await user.click(screen.getByRole('button', { name: 'Adjust on map' }))
+
+    const currentLocationButton = screen.getByRole('button', { name: 'Use current location' })
+    expect(currentLocationButton.getAttribute('aria-disabled')).toBeNull()
+    await user.click(currentLocationButton)
+    expect(screen.getByText('1.293300° N · 103.784400° E')).toBeTruthy()
+
+    await user.click(screen.getByRole('button', { name: 'Done adjusting location' }))
+    const location = screen.getByRole('group', { name: 'Location' })
+    expect(location.textContent).toContain('Latitude1.293300°')
+    expect(location.textContent).toContain('Longitude103.784400°')
+    expect(location.textContent).toContain('Using current location')
   })
 
   it('applies a pasted coordinate, pans the map to it and returns it to the form', async () => {

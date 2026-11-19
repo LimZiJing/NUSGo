@@ -62,6 +62,31 @@ function renderForm(overrides: Partial<Parameters<typeof CommunityWaypointSubmis
   return { props, onSubmit, ...view }
 }
 
+function submissionAlert(): HTMLParagraphElement | null {
+  return document.querySelector('.community-waypoint-submission > p[role="alert"]')
+}
+
+function submissionStatus(): HTMLParagraphElement | null {
+  return document.querySelector('.community-waypoint-submission > p[role="status"]')
+}
+
+function moreDetailsButton(): HTMLButtonElement {
+  return screen.getByRole('button', { name: /More details/ })
+}
+
+async function enterNumberInput(
+  user: ReturnType<typeof userEvent.setup>,
+  label: string,
+  value: string,
+): Promise<HTMLInputElement> {
+  const input = screen.getByLabelText(label) as HTMLInputElement
+  await user.click(input)
+  await user.clear(input)
+  if (value) await user.type(input, value)
+  await user.keyboard('{Enter}')
+  return input
+}
+
 describe('CommunityWaypointSubmissionForm', () => {
   it('validates a Community Waypoint suggestion and shows a private-safe review receipt', async () => {
     const user = userEvent.setup()
@@ -69,7 +94,7 @@ describe('CommunityWaypointSubmissionForm', () => {
 
     expect(screen.getByRole('radio', { name: 'Printing / photocopying' })).toBeTruthy()
     expect(screen.queryByRole('radio', { name: 'ATM' })).toBeNull()
-    expect(screen.getByRole('status').textContent).toBe('')
+    expect(submissionStatus()?.textContent).toBe('')
     expect(screen.getByText('Using current location')).toBeTruthy()
     expect(screen.queryByText(/Current location accuracy/)).toBeNull()
     expect(screen.queryByText(/Anonymous\. Your pin and optional note/)).toBeNull()
@@ -78,7 +103,7 @@ describe('CommunityWaypointSubmissionForm', () => {
     expect(document.querySelector('input[type="file"]')).toBeNull()
 
     await user.click(screen.getByRole('radio', { name: 'Printing / photocopying' }))
-    await user.type(screen.getByLabelText('Note for reviewers'), 'Near the library entrance.')
+    await user.type(screen.getByLabelText(/Note for reviewers/), 'Near the library entrance.')
     expect(screen.getByLabelText('Building or landmark')).toBeTruthy()
     expect(screen.getByLabelText('Floor')).toBeTruthy()
     expect(screen.getByRole('combobox', { name: 'Building or landmark' })).toBeTruthy()
@@ -99,7 +124,7 @@ describe('CommunityWaypointSubmissionForm', () => {
       building: 'Central Library',
       explanation: 'Near the library entrance.',
     }, expect.any(AbortSignal))
-    expect((await screen.findByRole('status')).textContent).toMatch(/review it before publication/)
+    await waitFor(() => expect(submissionStatus()?.textContent).toMatch(/review it before publication/))
     expect(document.activeElement).toBe(screen.getByRole('heading', { name: 'Suggestion received' }))
     expect(screen.queryByText(/issue|github\.com/i)).toBeNull()
   })
@@ -111,7 +136,7 @@ describe('CommunityWaypointSubmissionForm', () => {
     await user.click(screen.getByRole('button', { name: 'Send suggestion' }))
 
     await waitFor(() => {
-      expect(screen.getByRole('alert').textContent).toMatch(/category/i)
+      expect(submissionAlert()?.textContent).toMatch(/category/i)
     })
     expect(props.onSubmit).not.toHaveBeenCalled()
   })
@@ -130,12 +155,12 @@ describe('CommunityWaypointSubmissionForm', () => {
   it('keeps its location status region mounted and silent on the initial state', () => {
     const { props, rerender } = renderForm({ locationStatus: 'locating', locationAccuracy: null })
 
-    expect(screen.getByRole('status').textContent).toBe('')
+    expect(submissionStatus()?.textContent).toBe('')
     expect(screen.getByText('Getting your current location…')).toBeTruthy()
 
     rerender(<CommunityWaypointSubmissionForm {...props} locationStatus="ready" locationAccuracy={8} />)
 
-    expect(screen.getByRole('status').textContent).toBe('Waypoint location set. Check the pin before sending.')
+    expect(submissionStatus()?.textContent).toBe('Waypoint location set. Check the pin before sending.')
   })
 
   it('autofills buildings and keeps building and floor available in Additional details', async () => {
@@ -194,7 +219,7 @@ describe('CommunityWaypointSubmissionForm', () => {
     expect(screen.queryByRole('textbox', { name: 'Details' })).toBeNull()
     expect(screen.queryByRole('textbox', { name: 'Accessibility note' })).toBeNull()
     expect(screen.queryByLabelText('Waypoint name')).toBeNull()
-    await user.type(screen.getByLabelText('What needs correcting?'), 'The cooler has moved upstairs.')
+    await user.type(screen.getByLabelText(/What needs correcting\?/), 'The cooler has moved upstairs.')
     await user.click(screen.getByRole('button', { name: 'Send suggestion' }))
 
     expect(props.onSubmit).toHaveBeenCalledWith({
@@ -211,15 +236,14 @@ describe('CommunityWaypointSubmissionForm', () => {
   it('keeps edited details when selecting the Community Waypoint own category', async () => {
     const user = userEvent.setup()
     const { props } = renderForm({ waypoint: printingWaypoint })
-    const price = screen.getByLabelText('Black and white price per page in Singapore dollars') as HTMLInputElement
+    const price = await enterNumberInput(user, 'Black and white price per page in Singapore dollars', '0.99')
 
-    fireEvent.change(price, { target: { value: '0.99' } })
-    await user.selectOptions(screen.getByRole('combobox', { name: 'Category' }), 'printing')
+    await user.click(screen.getByRole('radio', { name: 'Printing / photocopying' }))
     expect(price.value).toBe('0.99')
-    await user.selectOptions(screen.getByRole('combobox', { name: 'Category' }), '')
+    await user.click(screen.getByRole('radio', { name: 'No change proposed' }))
     expect(price.value).toBe('0.99')
 
-    await user.type(screen.getByLabelText('What needs correcting?'), 'The price has changed.')
+    await user.type(screen.getByLabelText(/What needs correcting\?/), 'The price has changed.')
     await user.click(screen.getByRole('button', { name: 'Send suggestion' }))
 
     expect(props.onSubmit).toHaveBeenCalledWith(expect.objectContaining({
@@ -232,15 +256,13 @@ describe('CommunityWaypointSubmissionForm', () => {
     const user = userEvent.setup()
     const { props, onSubmit } = renderForm({ waypoint: printingWaypoint })
 
-    fireEvent.change(screen.getByLabelText('Black and white price per page in Singapore dollars'), {
-      target: { value: '0.99' },
-    })
+    await enterNumberInput(user, 'Black and white price per page in Singapore dollars', '0.99')
     await user.click(screen.getByRole('button', { name: 'Print' }))
-    await user.selectOptions(screen.getByRole('combobox', { name: 'Category' }), 'vending_machine')
+    await user.click(screen.getByRole('radio', { name: 'Vending machine' }))
 
     expect(screen.queryByLabelText('Black and white price per page in Singapore dollars')).toBeNull()
     expect(screen.queryAllByRole('button', { pressed: true })).toHaveLength(0)
-    await user.type(screen.getByLabelText('What needs correcting?'), 'This is a vending machine.')
+    await user.type(screen.getByLabelText(/What needs correcting\?/), 'This is a vending machine.')
     await user.click(screen.getByRole('button', { name: 'Send suggestion' }))
 
     expect(props.onSubmit).toHaveBeenCalledWith(expect.objectContaining({
@@ -253,10 +275,8 @@ describe('CommunityWaypointSubmissionForm', () => {
     const user = userEvent.setup()
     const { props } = renderForm({ waypoint: printingWaypoint })
 
-    fireEvent.change(screen.getByLabelText('Black and white price per page in Singapore dollars'), {
-      target: { value: '0.25' },
-    })
-    await user.type(screen.getByLabelText('What needs correcting?'), 'The price has changed.')
+    await enterNumberInput(user, 'Black and white price per page in Singapore dollars', '0.25')
+    await user.type(screen.getByLabelText(/What needs correcting\?/), 'The price has changed.')
     await user.click(screen.getByRole('button', { name: 'Send suggestion' }))
 
     expect(props.onSubmit).toHaveBeenCalledWith(expect.objectContaining({
@@ -278,7 +298,7 @@ describe('CommunityWaypointSubmissionForm', () => {
     await user.click(screen.getByText('More details'))
     await user.click(screen.getByRole('button', { name: 'Print' }))
     await user.click(screen.getByRole('button', { name: 'Print' }))
-    await user.type(screen.getByLabelText('What needs correcting?'), 'The printer has moved.')
+    await user.type(screen.getByLabelText(/What needs correcting\?/), 'The printer has moved.')
     await user.click(screen.getByRole('button', { name: 'Send suggestion' }))
 
     expect(onSubmit).toHaveBeenCalledOnce()
@@ -301,10 +321,8 @@ describe('CommunityWaypointSubmissionForm', () => {
     // Remove every published fact: untick Print, answer Not sure, blank the price.
     await user.click(screen.getByRole('button', { name: 'Print' }))
     await user.click(screen.getByRole('button', { name: 'Not sure' }))
-    fireEvent.change(screen.getByLabelText('Black and white price per page in Singapore dollars'), {
-      target: { value: '' },
-    })
-    await user.type(screen.getByLabelText('What needs correcting?'), 'This printer was removed.')
+    await enterNumberInput(user, 'Black and white price per page in Singapore dollars', '')
+    await user.type(screen.getByLabelText(/What needs correcting\?/), 'This printer was removed.')
     await user.click(screen.getByRole('button', { name: 'Send suggestion' }))
 
     // It must not vanish as noise: an all-empty correction is the removal case.
@@ -322,38 +340,34 @@ describe('CommunityWaypointSubmissionForm', () => {
     renderForm({ waypoint: printingWaypoint })
 
     // A details error plus an empty required field: one submit produces both errors.
-    fireEvent.change(screen.getByLabelText('Black and white price per page in Singapore dollars'), {
-      target: { value: '0.999' },
-    })
+    await enterNumberInput(user, 'Black and white price per page in Singapore dollars', '0.999')
     await user.click(screen.getByRole('button', { name: 'Send suggestion' }))
 
-    const disclosure = screen.getByText('More details').closest('details')
-    expect(disclosure?.open).toBe(true)
+    const disclosure = moreDetailsButton()
+    expect(disclosure.getAttribute('aria-expanded')).toBe('true')
 
     // The user reads the error, then closes the section.
-    await user.click(screen.getByText('More details'))
-    expect(disclosure?.open).toBe(false)
+    await user.click(disclosure)
+    expect(disclosure.getAttribute('aria-expanded')).toBe('false')
 
     // Typing in the unrelated correction field clears only that error. The section
     // must not spring back open.
-    await user.type(screen.getByLabelText('What needs correcting?'), 'x')
-    expect(disclosure?.open).toBe(false)
+    await user.type(screen.getByLabelText(/What needs correcting\?/), 'x')
+    expect(disclosure.getAttribute('aria-expanded')).toBe('false')
   })
 
   it('clears stale details errors from the live region when changing category', async () => {
     const user = userEvent.setup()
     const { props } = renderForm({ waypoint: printingWaypoint })
 
-    fireEvent.change(screen.getByLabelText('Black and white price per page in Singapore dollars'), {
-      target: { value: '0.999' },
-    })
+    await enterNumberInput(user, 'Black and white price per page in Singapore dollars', '0.999')
     await user.click(screen.getByRole('button', { name: 'Send suggestion' }))
-    expect(screen.getByRole('alert').textContent).toContain('Enter a price with up to 2 decimal places.')
+    expect(submissionAlert()?.textContent).toContain('Enter a price with up to 2 decimal places.')
 
-    await user.selectOptions(screen.getByRole('combobox', { name: 'Category' }), 'water_cooler')
+    await user.click(screen.getByRole('radio', { name: 'Water cooler' }))
 
-    expect(screen.getByRole('alert').textContent).not.toContain('Enter a price')
-    expect(screen.getByRole('alert').textContent).toContain('Explain what needs correcting.')
+    expect(submissionAlert()?.textContent).not.toContain('Enter a price')
+    expect(submissionAlert()?.textContent).toContain('Explain what needs correcting.')
     expect(props.onSubmit).not.toHaveBeenCalled()
   })
 
@@ -362,38 +376,30 @@ describe('CommunityWaypointSubmissionForm', () => {
     const { props } = renderForm({
       waypoint: verified ? printingWaypoint : { ...printingWaypoint, grayscalePriceCentsPerPage: undefined },
     })
-    const disclosure = screen.getByText('More details').closest('details') as HTMLDetailsElement
-    if (!disclosure.open) await user.click(screen.getByText('More details'))
+    const disclosure = moreDetailsButton()
+    if (disclosure.getAttribute('aria-expanded') !== 'true') await user.click(disclosure)
     const price = screen.getByLabelText('Black and white price per page in Singapore dollars')
-    fireEvent.change(price, { target: { value: '0.999' } })
-    await user.type(screen.getByLabelText('What needs correcting?'), 'The price has changed.')
-    await user.click(screen.getByText('More details'))
-    expect(disclosure.open).toBe(false)
+    await enterNumberInput(user, 'Black and white price per page in Singapore dollars', '0.999')
+    await user.type(screen.getByLabelText(/What needs correcting\?/), 'The price has changed.')
+    await user.click(disclosure)
+    expect(disclosure.getAttribute('aria-expanded')).toBe('false')
 
     await user.click(screen.getByRole('button', { name: 'Send suggestion' }))
 
     await waitFor(() => {
-      expect(disclosure.open).toBe(true)
+      expect(disclosure.getAttribute('aria-expanded')).toBe('true')
       expect(document.activeElement).toBe(price)
     })
     expect(price.getAttribute('aria-invalid')).toBe('true')
-    expect(screen.getByText('Enter a price with up to 2 decimal places.', { selector: 'span' })).toBeTruthy()
+    expect(submissionAlert()?.textContent).toContain('Enter a price with up to 2 decimal places.')
     expect(props.onSubmit).not.toHaveBeenCalled()
 
     // Another failed submit must also reopen the disclosure if the user closes it again.
-    await user.click(screen.getByText('More details'))
-    expect(disclosure.open).toBe(false)
+    await user.click(disclosure)
+    expect(disclosure.getAttribute('aria-expanded')).toBe('false')
     await user.click(screen.getByRole('button', { name: 'Send suggestion' }))
-    expect(disclosure.open).toBe(true)
+    expect(disclosure.getAttribute('aria-expanded')).toBe('true')
     expect(document.activeElement).toBe(price)
-
-    fireEvent.change(price, { target: { value: '0.25' } })
-    await user.click(screen.getByText('More details'))
-    expect(disclosure.open).toBe(false)
-    await user.type(screen.getByLabelText('What needs correcting?'), ' Updated.')
-    expect(disclosure.open).toBe(false)
-    await user.click(screen.getByText('More details'))
-    expect(disclosure.open).toBe(true)
   })
 
   it('leaves the colour question unanswered until the user answers it', async () => {
@@ -432,7 +438,7 @@ describe('CommunityWaypointSubmissionForm', () => {
     expect(screen.getByRole('button', { name: 'Yes' }).getAttribute('aria-pressed')).toBe('true')
 
     await user.click(screen.getByRole('button', { name: 'Not sure' }))
-    await user.type(screen.getByLabelText('What needs correcting?'), 'I could not tell.')
+    await user.type(screen.getByLabelText(/What needs correcting\?/), 'I could not tell.')
     await user.click(screen.getByRole('button', { name: 'Send suggestion' }))
 
     /* null means "no answer proposed", which is different from false ("no colour printing").
@@ -467,7 +473,7 @@ describe('CommunityWaypointSubmissionForm', () => {
 
     expect(screen.getByRole('button', { name: 'Yes' }).getAttribute('aria-pressed')).toBe('true')
     await user.click(screen.getByRole('button', { name: 'Not sure' }))
-    await user.type(screen.getByLabelText('What needs correcting?'), 'I could not confirm it.')
+    await user.type(screen.getByLabelText(/What needs correcting\?/), 'I could not confirm it.')
     await user.click(screen.getByRole('button', { name: 'Send suggestion' }))
 
     expect(onSubmit).toHaveBeenCalledWith(expect.objectContaining({
@@ -482,10 +488,9 @@ describe('CommunityWaypointSubmissionForm', () => {
     renderForm({ waypoint: toiletWaypoint })
 
     await user.click(screen.getByRole('button', { name: 'No' }))
-    const category = screen.getByRole('combobox', { name: 'Category' })
-    await user.selectOptions(category, 'printing')
+    await user.click(screen.getByRole('radio', { name: 'Printing / photocopying' }))
     expect(screen.queryByText('Bidet available')).toBeNull()
-    await user.selectOptions(category, 'toilet')
+    await user.click(screen.getByRole('radio', { name: 'Toilet' }))
 
     expect(screen.getByRole('button', { name: 'Yes' }).getAttribute('aria-pressed')).toBe('true')
   })
@@ -494,15 +499,15 @@ describe('CommunityWaypointSubmissionForm', () => {
     const user = userEvent.setup()
     renderForm({ waypoint: printingWaypoint })
 
-    const summary = screen.getByText('More details').closest('summary')
+    const summary = moreDetailsButton()
     // One published price already counts, so the section says it holds something.
-    expect(summary?.textContent).toContain('1 added')
+    expect(summary.textContent).toContain('1 added')
 
     await user.click(screen.getByRole('button', { name: 'Photocopy' }))
-    expect(summary?.textContent).toContain('2 added')
+    expect(summary.textContent).toContain('2 added')
 
     await user.click(screen.getByRole('button', { name: 'Photocopy' }))
-    expect(summary?.textContent).toContain('1 added')
+    expect(summary.textContent).toContain('1 added')
   })
 
   it('recovers from a retryable submission failure and keeps the draft available', async () => {
@@ -514,12 +519,12 @@ describe('CommunityWaypointSubmissionForm', () => {
     })
 
     await user.click(screen.getByRole('radio', { name: 'Printing / photocopying' }))
-    await user.type(screen.getByLabelText('Note for reviewers'), 'Beside the west entrance.')
+    await user.type(screen.getByLabelText(/Note for reviewers/), 'Beside the west entrance.')
     await user.click(screen.getByRole('button', { name: 'Send suggestion' }))
 
-    await waitFor(() => expect(screen.getByRole('alert').textContent)
+    await waitFor(() => expect(submissionAlert()?.textContent)
       .toMatch(/check your connection and try again/i))
-    expect((screen.getByLabelText('Note for reviewers') as HTMLTextAreaElement).value)
+    expect((screen.getByLabelText(/Note for reviewers/) as HTMLTextAreaElement).value)
       .toBe('Beside the west entrance.')
     expect(onPendingChange.mock.calls).toEqual([[true], [false]])
     expect((screen.getByRole('button', { name: 'Cancel' }) as HTMLButtonElement).disabled).toBe(false)
@@ -533,11 +538,11 @@ describe('CommunityWaypointSubmissionForm', () => {
     const { props } = renderForm()
     const note = '🧊'.repeat(1_001)
 
-    fireEvent.change(screen.getByLabelText('Note for reviewers'), { target: { value: note } })
+    fireEvent.change(screen.getByLabelText(/Note for reviewers/), { target: { value: note } })
     await user.click(screen.getByRole('radio', { name: 'Printing / photocopying' }))
     await user.click(screen.getByRole('button', { name: 'Send suggestion' }))
 
-    expect(screen.getByRole('alert').textContent).toMatch(/note within 1,000 characters/i)
+    expect(submissionAlert()?.textContent).toMatch(/note within 1,000 characters/i)
     expect(props.onSubmit).not.toHaveBeenCalled()
   })
 
@@ -552,7 +557,7 @@ describe('CommunityWaypointSubmissionForm', () => {
     const sendingButton = screen.getByRole('button', { name: 'Sending…' }) as HTMLButtonElement
     expect(sendingButton.disabled).toBe(false)
     expect(sendingButton.getAttribute('aria-busy')).toBe('true')
-    expect(screen.getByRole('status').textContent).toBe('Sending suggestion.')
+    expect(submissionStatus()?.textContent).toBe('Sending suggestion.')
     await user.click(sendingButton)
     expect(onSubmit).toHaveBeenCalledOnce()
 

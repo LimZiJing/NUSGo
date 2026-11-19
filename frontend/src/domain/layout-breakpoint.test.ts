@@ -21,6 +21,7 @@ const LAYOUT_FEATURES = new Set([
 const OTHER_BREAKPOINTS = new Set([
   'max-width: 480px', // Component-level breakpoint in plan-content.css.
   'max-width: 768px', // Component-level breakpoint in community waypoint panel and submission styles.
+  'width <= 420px', // Compact placement actions in personal-waypoints.css.
   'max-width: 1024px', // Component-level breakpoint in shared/base.css and shared/tokens.css.
 ])
 

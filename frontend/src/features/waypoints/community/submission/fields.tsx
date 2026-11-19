@@ -1,6 +1,12 @@
-import { useLayoutEffect, useMemo, useRef, type ComponentType } from 'react'
-import { Autocomplete } from '@base-ui/react/autocomplete'
-import { Input } from '@base-ui/react/input'
+import { useLayoutEffect, useMemo, useRef, useState, type ComponentType, type KeyboardEvent } from 'react'
+import { createPortal } from 'react-dom'
+import { Button } from '@astryxdesign/core/Button'
+import { Collapsible } from '@astryxdesign/core/Collapsible'
+import { NumberInput } from '@astryxdesign/core/NumberInput'
+import { RadioList, RadioListItem } from '@astryxdesign/core/RadioList'
+import { TextArea } from '@astryxdesign/core/TextArea'
+import { TextInput } from '@astryxdesign/core/TextInput'
+import { ToggleButton } from '@astryxdesign/core/ToggleButton'
 import {
   COMMUNITY_WAYPOINT_CATEGORIES,
   COMMUNITY_WAYPOINT_PRINTING_SERVICES,
@@ -16,11 +22,10 @@ import {
 import type { WaypointCoordinate } from '@nusgo/shared/waypoints/waypoint'
 import type { BuildingIndex } from '../../../../domain/venue/building-index'
 import { describeBuildingEntry, searchBuildings } from '../../../../domain/venue/building-index'
-import { Button } from '../../../../ui/button'
-import { Chip } from '../../../../ui/chip'
 import {
   AlertCircleIcon,
   BuildingIcon,
+  LocateIcon,
   SearchIcon,
   type IconProps,
 } from '../../../../ui/icons'
@@ -29,7 +34,6 @@ import { COMMUNITY_WAYPOINT_PRINTING_SERVICE_ICONS } from '../community-waypoint
 import { COMMUNITY_WAYPOINT_VENDING_ITEM_ICONS } from '../community-waypoint-vending-item-icons'
 import { COMMUNITY_WAYPOINT_VENDING_PREP_ICONS } from '../community-waypoint-vending-prep-icons'
 import { OTHER_FLOOR, type SubmissionDraft, type SubmissionErrors } from './draft'
-import { SubmissionField as FormField } from './field'
 import { FloorPicker } from './floor-picker'
 
 type SubmissionFieldValue = SubmissionDraft[keyof SubmissionDraft]
@@ -64,56 +68,55 @@ function CategoryField({
 }) {
   if (isCorrection) {
     return (
-      <FormField
-        id="community-submission-category"
-        name="category"
-        label="Category"
-        error={errors.category}
-        layout="select"
-      >
-        <select
-          id="community-submission-category"
-          name="category"
-          className="community-waypoint-field-control"
+      <div className="community-waypoint-category-field">
+        <RadioList
+          label="Category"
+          isLabelHidden
+          isOptional
           value={draft.category}
-          aria-invalid={Boolean(errors.category)}
-          aria-describedby={errors.category ? 'community-submission-category-error' : undefined}
-          onChange={(event) => onFieldChange('category', event.target.value)}
+          htmlName="category"
+          status={errors.category ? { type: 'error' } : undefined}
+          controlClassName="community-waypoint-category-options community-waypoint-category-options--correction"
+          onChange={(value) => onFieldChange('category', value)}
         >
-          <option value="">No change proposed</option>
+          <RadioListItem label="No change proposed" value="" className="community-waypoint-category-option" />
           {COMMUNITY_WAYPOINT_CATEGORIES.map(({ value, label }) => (
-            <option key={value} value={value}>{label}</option>
+            <RadioListItem
+              key={value}
+              value={value}
+              label={label}
+              startContent={<CommunityWaypointCategoryIcon category={value} size={20} />}
+              className="community-waypoint-category-option"
+            />
           ))}
-        </select>
-      </FormField>
+        </RadioList>
+      </div>
     )
   }
 
   return (
-    <fieldset
-      className="community-waypoint-category-picker"
-      aria-invalid={Boolean(errors.category)}
-      aria-describedby={errors.category ? 'community-submission-category-error' : undefined}
-    >
+    <fieldset className="community-waypoint-category-picker">
       <legend>Choose a category</legend>
-      <div className="community-waypoint-category-options">
+      <RadioList
+        label="Choose a category"
+        isLabelHidden
+        isRequired
+        value={draft.category}
+        htmlName="category"
+        status={errors.category ? { type: 'error' } : undefined}
+        controlClassName="community-waypoint-category-options"
+        onChange={(value) => onFieldChange('category', value)}
+      >
         {COMMUNITY_WAYPOINT_CATEGORIES.map(({ value, label }) => (
-          <label key={value} className="community-waypoint-category-option">
-            <input
-              type="radio"
-              name="category"
-              value={value}
-              checked={draft.category === value}
-              required
-              onChange={(event) => onFieldChange('category', event.target.value)}
-            />
-            <span className="community-waypoint-category-card">
-              <CommunityWaypointCategoryIcon category={value} size={23} />
-              <span>{label}</span>
-            </span>
-          </label>
+          <RadioListItem
+            key={value}
+            value={value}
+            label={label}
+            startContent={<CommunityWaypointCategoryIcon category={value} size={23} />}
+            className="community-waypoint-category-option"
+          />
         ))}
-      </div>
+      </RadioList>
       {errors.category && <p id="community-submission-category-error" className="community-waypoint-field-error">
         <AlertCircleIcon className="community-waypoint-field-error-icon" size={14} />
         <span>{errors.category}</span>
@@ -167,9 +170,11 @@ function LocationField({
           </p>
         )}
         <Button
+          className="community-waypoint-adjust-location-action"
           label="Adjust on map"
+          icon={<LocateIcon size={15} />}
           onClick={(event) => onAdjustLocation(event.currentTarget)}
-          ariaDescribedBy={error ? 'community-submission-coordinate-error' : undefined}
+          aria-describedby={error ? 'community-submission-coordinate-error' : undefined}
         />
       </div>
       {error && <p id="community-submission-coordinate-error" className="community-waypoint-field-error">
@@ -191,73 +196,135 @@ function BuildingField({
   readonly error: string | undefined
   readonly onChange: (value: string) => void
 }) {
+  const [isOpen, setIsOpen] = useState(false)
+  const [activeIndex, setActiveIndex] = useState(-1)
+  const [popupPosition, setPopupPosition] = useState({ top: 0, left: 0, width: 0, maxHeight: 256 })
+  const inputRef = useRef<HTMLInputElement>(null)
+  useLayoutEffect(() => {
+    if (inputRef.current) inputRef.current.maxLength = (COMMUNITY_WAYPOINT_TEXT_LIMITS.building + 1) * 2
+  }, [])
   const results = useMemo(
     () => buildingIndex && value.trim() ? searchBuildings(buildingIndex, value) : [],
     [buildingIndex, value],
   )
+  const resultId = (index: number): string => `community-submission-building-result-${index}`
+  useLayoutEffect(() => {
+    if (!isOpen) return
+    const updatePosition = (): void => {
+      const input = inputRef.current
+      if (!input) return
+      const anchor = input.closest<HTMLElement>('.community-waypoint-building-input-group') ?? input
+      const rect = anchor.getBoundingClientRect()
+      const viewport = window.visualViewport
+      const visibleBottom = viewport ? viewport.offsetTop + viewport.height : window.innerHeight
+      setPopupPosition({
+        top: rect.bottom + 4,
+        left: rect.left,
+        width: rect.width,
+        maxHeight: Math.max(80, Math.min(256, visibleBottom - rect.bottom - 12)),
+      })
+    }
+    updatePosition()
+    window.addEventListener('resize', updatePosition)
+    window.addEventListener('scroll', updatePosition, true)
+    window.visualViewport?.addEventListener('resize', updatePosition)
+    window.visualViewport?.addEventListener('scroll', updatePosition)
+    return () => {
+      window.removeEventListener('resize', updatePosition)
+      window.removeEventListener('scroll', updatePosition, true)
+      window.visualViewport?.removeEventListener('resize', updatePosition)
+      window.visualViewport?.removeEventListener('scroll', updatePosition)
+    }
+  }, [isOpen])
+  const choose = (entry: NonNullable<typeof results>[number]): void => {
+    onChange(entry.name)
+    setIsOpen(false)
+    setActiveIndex(-1)
+  }
+  const handleKeyDown = (event: KeyboardEvent<HTMLInputElement>): void => {
+    if (event.key === 'ArrowDown' && results.length > 0) {
+      event.preventDefault()
+      setIsOpen(true)
+      setActiveIndex((current) => (current + 1) % results.length)
+    } else if (event.key === 'ArrowUp' && results.length > 0) {
+      event.preventDefault()
+      setIsOpen(true)
+      setActiveIndex((current) => current <= 0 ? results.length - 1 : current - 1)
+    } else if (event.key === 'Enter' && isOpen && activeIndex >= 0 && results[activeIndex]) {
+      event.preventDefault()
+      choose(results[activeIndex])
+    } else if (event.key === 'Escape' && isOpen) {
+      event.preventDefault()
+      event.stopPropagation()
+      setIsOpen(false)
+      setActiveIndex(-1)
+    }
+  }
 
   return (
-    <FormField
-      id="community-submission-building"
-      name="building"
-      label="Building or landmark"
-      error={error}
-      layout="search"
-    >
-      <Autocomplete.Root
-        items={buildingIndex?.entries ?? []}
-        filteredItems={results}
-        value={value}
-        itemToStringValue={(entry) => entry.name}
-        openOnInputClick
-        onValueChange={onChange}
-      >
-        <Autocomplete.InputGroup className="community-waypoint-building-input-group">
-          <SearchIcon className="community-waypoint-building-search-icon" />
-          <Autocomplete.Input
-            id="community-submission-building"
-            name="building"
-            className="community-waypoint-field-control community-waypoint-building-input"
-            placeholder=" "
-            maxLength={(COMMUNITY_WAYPOINT_TEXT_LIMITS.building + 1) * 2}
-            aria-invalid={Boolean(error)}
-            aria-describedby={error ? 'community-submission-building-error' : undefined}
-            autoComplete="off"
-          />
-        </Autocomplete.InputGroup>
-        <Autocomplete.Portal>
-          <Autocomplete.Positioner className="community-waypoint-building-positioner" sideOffset={4}>
-            <Autocomplete.Popup className="community-waypoint-building-popup">
-              <Autocomplete.Empty>
-                <div className="community-waypoint-building-empty">
-                  {value.trim()
-                    ? 'No matching buildings. You can keep your text.'
-                    : 'Search for a building or landmark.'}
-                </div>
-              </Autocomplete.Empty>
-              <Autocomplete.List className="community-waypoint-building-list">
-                {(entry) => {
-                  const secondary = describeBuildingEntry(entry)
-                  return (
-                    <Autocomplete.Item
-                      key={entry.id}
-                      value={entry}
-                      className="community-waypoint-building-item"
-                    >
-                      <BuildingIcon className="community-waypoint-building-item-icon" />
-                      <span className="community-waypoint-building-item-label">
-                        <strong>{entry.name}</strong>
-                        {secondary && <span>{secondary}</span>}
-                      </span>
-                    </Autocomplete.Item>
-                  )
-                }}
-              </Autocomplete.List>
-            </Autocomplete.Popup>
-          </Autocomplete.Positioner>
-        </Autocomplete.Portal>
-      </Autocomplete.Root>
-    </FormField>
+    <div className="community-waypoint-field community-waypoint-field--search">
+      <div className="community-waypoint-building-combobox">
+        <TextInput
+          ref={inputRef}
+          id="community-submission-building"
+          label="Building or landmark"
+          htmlName="building"
+          type="text"
+          value={value}
+          placeholder="Search buildings or landmarks"
+          hasClear
+          autoComplete="off"
+          inputMode="search"
+          enterKeyHint="search"
+          hasAutoCorrect={false}
+          hasSpellCheck={false}
+          startIcon={<SearchIcon />}
+          status={error ? { type: 'error', message: error } : undefined}
+          containerClassName="community-waypoint-building-astryx-field"
+          controlClassName="community-waypoint-building-input-group"
+          role="combobox"
+          aria-autocomplete="list"
+          aria-expanded={isOpen}
+          aria-controls="community-submission-building-listbox"
+          aria-activedescendant={isOpen && activeIndex >= 0 ? resultId(activeIndex) : undefined}
+          onFocus={() => setIsOpen(true)}
+          onBlur={() => { setIsOpen(false); setActiveIndex(-1) }}
+          onChange={(nextValue) => { onChange(nextValue); setIsOpen(true); setActiveIndex(-1) }}
+          onKeyDown={handleKeyDown}
+        />
+        {isOpen && createPortal(<div
+          id="community-submission-building-listbox"
+          className="community-waypoint-building-popup"
+          role="listbox"
+          aria-label="Building suggestions"
+          style={popupPosition}
+        >
+          {results.length > 0 ? results.map((entry, index) => {
+            const secondary = describeBuildingEntry(entry)
+            return <div
+              key={entry.id}
+              id={resultId(index)}
+              className="community-waypoint-building-item"
+              role="option"
+              aria-selected={activeIndex === index}
+              data-highlighted={activeIndex === index ? 'true' : undefined}
+              onPointerDown={(event) => event.preventDefault()}
+              onClick={() => choose(entry)}
+            >
+              <BuildingIcon className="community-waypoint-building-item-icon" />
+              <span className="community-waypoint-building-item-label">
+                <strong>{entry.name}</strong>
+                {secondary && <span>{secondary}</span>}
+              </span>
+            </div>
+          }) : <div className="community-waypoint-building-empty">
+            {value.trim()
+              ? 'No matching buildings. You can keep your text.'
+              : 'Search for a building or landmark.'}
+          </div>}
+        </div>, document.body)}
+      </div>
+    </div>
   )
 }
 
@@ -281,21 +348,24 @@ function TextField({
   readonly onChange: (value: string) => void
 }) {
   return (
-    <FormField id={id} name={name} label={label} error={error} layout="multiline">
-      <textarea
+    <div className="community-waypoint-field community-waypoint-field--multiline">
+      <span className="community-waypoint-field-label">{label}</span>
+      <TextArea
         id={id}
-        name={name}
-        className="community-waypoint-field-control community-waypoint-field-control--multiline"
+        label={label}
+        isLabelHidden
+        htmlName={name}
         placeholder=" "
         rows={2}
         value={value}
-        required={required}
-        maxLength={maxLength}
-        aria-invalid={Boolean(error)}
-        aria-describedby={error ? `${id}-error` : undefined}
-        onChange={(event) => onChange(event.target.value)}
+        isRequired={required}
+        htmlMaxLength={maxLength}
+        status={error ? { type: 'error', message: error } : undefined}
+        containerClassName="community-waypoint-astryx-field"
+        controlClassName="community-waypoint-field-control community-waypoint-field-control--multiline"
+        onChange={(nextValue) => onChange(nextValue)}
       />
-    </FormField>
+    </div>
   )
 }
 
@@ -319,14 +389,13 @@ function PillChoices<T extends string>({
         {options.map(({ value, label }) => {
           const Icon = icons?.[value]
           return (
-            <Chip
+            <ToggleButton
               key={value}
               label={label}
-              leading={Icon ? <Icon size={15} /> : undefined}
-              /* Announces state through aria-pressed. Multi-select toggles each pill
-                 independently, which is what a checkbox group does. */
-              pressed={selected.includes(value)}
-              onClick={() => onToggle(value)}
+              className="community-waypoint-choice"
+              icon={Icon ? <Icon size={15} /> : undefined}
+              isPressed={selected.includes(value)}
+              onPressedChange={() => onToggle(value)}
             />
           )
         })}
@@ -354,32 +423,64 @@ function PriceInput({
   readonly error: string | undefined
   readonly onChange: (value: string) => void
 }) {
+  const inputRef = useRef<HTMLInputElement>(null)
+  const [lastCommittedValue, setLastCommittedValue] = useState<number | null>(() => {
+    const parsed = Number(value)
+    return value.trim() !== '' && Number.isFinite(parsed) ? parsed : null
+  })
+  const [hasEntryError, setHasEntryError] = useState(false)
+  const hasEntryErrorRef = useRef(false)
+  const parsedValue = Number(value)
+  const numberValue = value.trim() === ''
+    ? null
+    : Number.isFinite(parsedValue)
+      ? parsedValue
+      : lastCommittedValue
+
   return (
     <div className="community-waypoint-details-price-field">
-      <label htmlFor={id}>{label}</label>
+      <span className="community-waypoint-details-price-label">{label}</span>
       <div className="community-waypoint-details-price-input-group">
         <span className="community-waypoint-details-currency" aria-hidden="true">S$</span>
-        {/* A text input with a decimal keypad, not type="number": the spinners eat the
-            editable width in this narrow column, and the number type lets a scroll wheel
-            change a submitted price by accident. Validation stays in the draft errors. */}
-        <Input
+        <NumberInput
+          ref={inputRef}
           id={id}
-          name={name}
-          className="community-waypoint-details-input"
-          type="text"
-          inputMode="decimal"
-          autoComplete="off"
-          value={value}
-          aria-label={`${label} price per page in Singapore dollars`}
-          aria-invalid={Boolean(error)}
-          aria-describedby={error ? `${id}-error` : undefined}
-          onValueChange={onChange}
+          label={`${label} price per page in Singapore dollars`}
+          isLabelHidden
+          htmlName={name}
+          value={numberValue}
+          min={0}
+          step={0.01}
+          hasClear
+          hasNumberSteppers={false}
+          isWheelEnabled={false}
+          formatValue={(nextValue) => nextValue.toFixed(2)}
+          statusVariant="tooltip"
+          status={error
+            ? { type: 'error', message: error }
+            : hasEntryError
+              ? { type: 'error', message: 'Enter a price with up to 2 decimal places.' }
+              : undefined}
+          containerClassName="community-waypoint-details-price-astryx-field"
+          controlClassName="community-waypoint-details-input"
+          onChange={(nextValue) => {
+            setLastCommittedValue(nextValue)
+            onChange(nextValue === null ? '' : String(nextValue))
+          }}
+          onEntryErrorChange={(entryError) => {
+            const hadEntryError = hasEntryErrorRef.current
+            hasEntryErrorRef.current = entryError !== null
+            setHasEntryError(entryError !== null)
+            if (entryError) {
+              const currentValue = Number(value)
+              setLastCommittedValue(value.trim() !== '' && Number.isFinite(currentValue) ? currentValue : null)
+              onChange(entryError.text)
+            } else if (hadEntryError && inputRef.current) {
+              onChange(inputRef.current.value)
+            }
+          }}
         />
       </div>
-      {error && <p id={`${id}-error`} className="community-waypoint-field-error">
-        <AlertCircleIcon className="community-waypoint-field-error-icon" size={14} />
-        <span>{error}</span>
-      </p>}
     </div>
   )
 }
@@ -424,6 +525,9 @@ function CategoryDetailsFields({
         />
         <fieldset className="community-waypoint-details-group">
           <legend className="community-waypoint-details-legend">Price per page</legend>
+          {draft.colour !== 'yes' && <p className="community-waypoint-details-price-hint">
+            Select Yes above to add a colour price.
+          </p>}
           <div className={draft.colour === 'yes'
             ? 'community-waypoint-details-price-fields'
             : 'community-waypoint-details-price-fields community-waypoint-details-price-fields--single'}>
@@ -490,38 +594,19 @@ function MoreDetailsField({
   draft,
   errors,
   waypoint,
-  validationAttempt,
+  isOpen,
+  onOpenChange,
   onFieldChange,
 }: {
   readonly draft: SubmissionDraft
   readonly errors: SubmissionErrors
   readonly waypoint: CommunityWaypoint | null
-  readonly validationAttempt: number
+  readonly isOpen: boolean
+  readonly onOpenChange: (isOpen: boolean) => void
   readonly onFieldChange: (field: keyof SubmissionDraft, value: SubmissionFieldValue) => void
 }) {
-  const detailsRef = useRef<HTMLDetailsElement>(null)
-  const hasDetailsErrors = Boolean(
-    errors.services || errors.colour || errors.grayscalePricePerPage ||
-    errors.colourPricePerPage || errors.items || errors.prep || errors.bidet,
-  )
-
-  /* Opens when a submit attempt reports details errors, so the field is visible before the
-     form tries to focus it. Keyed on the attempt count, not on `errors`: watching the object
-     made an unrelated field's error re-open a section the user had just closed, while a
-     repeat submit of the same error never re-opened it. */
-  useLayoutEffect(() => {
-    if (hasDetailsErrors && detailsRef.current) detailsRef.current.open = true
-    // eslint-disable-next-line react-hooks/exhaustive-deps -- hasDetailsErrors is read, not the trigger
-  }, [validationAttempt])
-
   const category = draft.category || waypoint?.category
   if (category !== 'printing' && category !== 'vending_machine' && category !== 'toilet') return null
-  const hasVerifiedDetails = waypoint !== null && (
-    (waypoint.services?.length ?? 0) > 0 || waypoint.colour !== undefined ||
-    waypoint.grayscalePriceCentsPerPage !== undefined || waypoint.colourPriceCentsPerPage !== undefined ||
-    (waypoint.items?.length ?? 0) > 0 || (waypoint.prep?.length ?? 0) > 0 ||
-    waypoint.bidet !== undefined
-  )
   /* Counts the answers currently filled in, so a collapsed section still says it holds
      something. The disclosure's open state lives in the DOM, so this is not conditional
      on it: the count is also useful while the section is open with many options.
@@ -535,18 +620,26 @@ function MoreDetailsField({
       : draft.items.length + draft.prep.length
 
   return (
-    <details ref={detailsRef} className="community-waypoint-more-details" open={hasVerifiedDetails}>
-      <summary>
+    <Collapsible
+      className="community-waypoint-more-details"
+      isOpen={isOpen}
+      onOpenChange={onOpenChange}
+      trigger={(
+        <>
         <span>More details</span>
-        <span>{filledCount > 0 ? `· ${filledCount} added` : '(optional)'}</span>
-      </summary>
+        <span className="community-waypoint-more-details-count">
+          {filledCount > 0 ? `· ${filledCount} added` : '(optional)'}
+        </span>
+        </>
+      )}
+    >
       <CategoryDetailsFields
         category={category}
         draft={draft}
         errors={errors}
         onFieldChange={onFieldChange}
       />
-    </details>
+    </Collapsible>
   )
 }
 
@@ -559,7 +652,8 @@ export function CommunityWaypointSubmissionFields({
   locationAccuracy,
   buildingIndex,
   observedFloors,
-  validationAttempt,
+  isDetailsOpen,
+  onDetailsOpenChange,
   onFieldChange,
   onAdjustLocation,
 }: {
@@ -571,7 +665,8 @@ export function CommunityWaypointSubmissionFields({
   readonly locationAccuracy: number | null
   readonly buildingIndex: BuildingIndex | null
   readonly observedFloors: readonly number[] | undefined
-  readonly validationAttempt: number
+  readonly isDetailsOpen: boolean
+  readonly onDetailsOpenChange: (isOpen: boolean) => void
   readonly onFieldChange: (field: keyof SubmissionDraft, value: SubmissionFieldValue) => void
   readonly onAdjustLocation: (trigger: HTMLButtonElement) => void
 }) {
@@ -633,7 +728,8 @@ export function CommunityWaypointSubmissionFields({
         draft={draft}
         errors={errors}
         waypoint={waypoint}
-        validationAttempt={validationAttempt}
+        isOpen={isDetailsOpen}
+        onOpenChange={onDetailsOpenChange}
         onFieldChange={onFieldChange}
       />
 

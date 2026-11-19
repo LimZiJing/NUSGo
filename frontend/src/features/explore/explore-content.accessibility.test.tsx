@@ -366,7 +366,13 @@ describe('ExploreContent accessibility workflows', () => {
         location: { x: 103.77477, y: 1.2985 },
       },
     }
-    render(<PanelHarness onNavigateToVenue={onNavigateToVenue} venueData={eateryVenues} />)
+    render(
+      <PanelHarness
+        initialState={venueSearchState}
+        onNavigateToVenue={onNavigateToVenue}
+        venueData={eateryVenues}
+      />,
+    )
 
     await user.click(screen.getByRole('button', { name: 'Place category All places' }))
     await user.click(screen.getByRole('option', { name: 'Canteens' }))

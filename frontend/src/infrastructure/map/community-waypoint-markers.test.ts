@@ -51,7 +51,6 @@ const waypoint: CommunityWaypoint = {
   displayLabel: 'Water cooler',
   category: 'water_cooler',
   coordinate: { longitude: 103.78, latitude: 1.29 },
-  source: 'NUS Campus Facilities',
   updatedAt: '2026-10-26',
 }
 

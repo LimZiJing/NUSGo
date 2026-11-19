@@ -1,4 +1,5 @@
 import {
+  COMMUNITY_WAYPOINT_SUBMISSION_TEXT_LIMIT,
   COMMUNITY_WAYPOINT_TEXT_LIMITS,
   SINGAPORE_COORDINATE_BOUNDS,
   type ActiveCommunityWaypointCategory,
@@ -24,6 +25,7 @@ export interface SubmissionDraft {
   /* '' = not answered, 'unsure' = answered "I don't know", otherwise a real answer.
      Keeping these apart stops an untouched form from looking like a deliberate answer. */
   readonly colour: '' | 'yes' | 'no' | 'unsure'
+  readonly bidet: '' | 'yes' | 'no' | 'unsure'
   readonly grayscalePricePerPage: string
   readonly colourPricePerPage: string
   readonly items: readonly CommunityWaypointVendingItem[]
@@ -40,10 +42,9 @@ export const FLOOR_UNSET = 'unset'
 
 export function initialSubmissionDraft(
   waypoint: CommunityWaypoint | null,
-  initialCategory: ActiveCommunityWaypointCategory | null = null,
 ): SubmissionDraft {
   return {
-    category: waypoint ? '' : initialCategory ?? '',
+    category: '',
     building: waypoint?.building ?? '',
     floor: waypoint?.floor === undefined ? '' : String(waypoint.floor),
     otherFloor: '',
@@ -51,6 +52,7 @@ export function initialSubmissionDraft(
     requestedChange: '',
     services: waypoint?.services ?? [],
     colour: waypoint?.colour === undefined ? '' : waypoint.colour ? 'yes' : 'no',
+    bidet: waypoint?.bidet === undefined ? '' : waypoint.bidet ? 'yes' : 'no',
     grayscalePricePerPage: priceCentsToDraft(waypoint?.grayscalePriceCentsPerPage),
     colourPricePerPage: priceCentsToDraft(waypoint?.colourPriceCentsPerPage),
     items: waypoint?.items ?? [],
@@ -67,11 +69,17 @@ export function validateSubmissionDraft(
 ): SubmissionErrors {
   const errors: SubmissionErrors = {}
   if (!waypoint && !draft.category) errors.category = 'Choose a category.'
-  if (textExceedsLimit(draft.building, COMMUNITY_WAYPOINT_TEXT_LIMITS.building)) {
-    errors.building = 'Keep the building within 80 characters.'
+  const buildingTextLimit = COMMUNITY_WAYPOINT_TEXT_LIMITS.building
+  if (textExceedsLimit(draft.building, buildingTextLimit)) {
+    errors.building = `Keep the building within ${buildingTextLimit.toLocaleString('en')} characters.`
   }
-  if (textExceedsLimit(draft.explanation, 1_000)) errors.explanation = 'Keep the note within 1,000 characters.'
-  if (textExceedsLimit(draft.requestedChange, 1_000)) errors.requestedChange = 'Keep the reason within 1,000 characters.'
+  const submissionTextLimit = COMMUNITY_WAYPOINT_SUBMISSION_TEXT_LIMIT
+  if (textExceedsLimit(draft.explanation, submissionTextLimit)) {
+    errors.explanation = `Keep the note within ${submissionTextLimit.toLocaleString('en')} characters.`
+  }
+  if (textExceedsLimit(draft.requestedChange, submissionTextLimit)) {
+    errors.requestedChange = `Keep the reason within ${submissionTextLimit.toLocaleString('en')} characters.`
+  }
   if (waypoint && !draft.requestedChange.trim()) errors.requestedChange = 'Explain what needs correcting.'
 
   if (draft.detailsTouched && getDetailsCategory(draft, waypoint) === 'printing') {
@@ -178,9 +186,11 @@ export function priceCentsToDraft(value: number | undefined): string {
 export function getDetailsCategory(
   draft: SubmissionDraft,
   waypoint: CommunityWaypoint | null,
-): 'printing' | 'vending_machine' | undefined {
+): 'printing' | 'vending_machine' | 'toilet' | undefined {
   const category = draft.category || waypoint?.category
-  return category === 'printing' || category === 'vending_machine' ? category : undefined
+  return category === 'printing' || category === 'vending_machine' || category === 'toilet'
+    ? category
+    : undefined
 }
 
 export function priceDraftToCents(value: string): number | null {
@@ -212,6 +222,10 @@ function createSuggestedDetails(
     }
   }
 
+  if (category === 'toilet') {
+    return { category, bidet: draft.bidet === 'yes' ? true : draft.bidet === 'no' ? false : null }
+  }
+
   return { category, items: draft.items, prep: draft.prep }
 }
 
@@ -220,6 +234,7 @@ function hasSubmittedDetails(details: CommunityWaypointDetailsSuggestion): boole
     return details.services.length > 0 || details.colour !== null ||
       details.grayscalePriceCentsPerPage !== null || details.colourPriceCentsPerPage !== null
   }
+  if (details.category === 'toilet') return details.bidet !== null
   return details.items.length > 0 || details.prep.length > 0
 }
 
@@ -241,5 +256,6 @@ function detailsMatchWaypoint(
       (waypoint.grayscalePriceCentsPerPage ?? null) === details.grayscalePriceCentsPerPage &&
       (waypoint.colourPriceCentsPerPage ?? null) === details.colourPriceCentsPerPage
   }
+  if (details.category === 'toilet') return (waypoint.bidet ?? null) === details.bidet
   return sameList(waypoint.items, details.items) && sameList(waypoint.prep, details.prep)
 }

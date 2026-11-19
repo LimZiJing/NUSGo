@@ -1,6 +1,7 @@
 import {
   COMMUNITY_WAYPOINT_CATEGORIES,
   COMMUNITY_WAYPOINT_PRINTING_SERVICES,
+  COMMUNITY_WAYPOINT_SUBMISSION_TEXT_LIMIT,
   COMMUNITY_WAYPOINT_TEXT_LIMITS,
   COMMUNITY_WAYPOINT_VENDING_ITEMS,
   COMMUNITY_WAYPOINT_VENDING_PREP_OPTIONS,
@@ -13,7 +14,6 @@ import type { CommunityWaypointSubmission, ProposedCommunityWaypointFields } fro
 
 const CATEGORY_VALUES = new Set<string>(COMMUNITY_WAYPOINT_CATEGORIES.map(({ value }) => value))
 const WAYPOINT_ID_PATTERN = /^cw-[0-9a-f]{8}-[0-9a-f]{4}-[1-8][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i
-const EXPLANATION_LIMIT = 1_000
 
 export class InvalidCommunityWaypointSubmissionError extends Error {
   constructor(message: string) {
@@ -191,7 +191,12 @@ function readSuggestedDetails(
     }
   }
 
-  invalid('suggestedDetails is only supported for printing and vending machine waypoints')
+  if (category === 'toilet') {
+    assertAllowedFields(input, new Set(['category', 'bidet']))
+    return { category, bidet: readOptionalBoolean(input, 'bidet') }
+  }
+
+  invalid('suggestedDetails is only supported for printing, toilet, and vending machine waypoints')
 }
 
 function readWaypointId(input: Record<string, unknown>): CommunityWaypointId {
@@ -218,7 +223,7 @@ export function parseCommunityWaypointSubmission(input: unknown): CommunityWaypo
     const fields = readProposedFields(input)
     const category = requiredCategory(input)
     const coordinates = readCoordinates(input, true)!
-    const explanation = optionalText(input, 'explanation', EXPLANATION_LIMIT)
+    const explanation = optionalText(input, 'explanation', COMMUNITY_WAYPOINT_SUBMISSION_TEXT_LIMIT)
     const suggestedDetails = Object.prototype.hasOwnProperty.call(input, 'suggestedDetails')
       ? readSuggestedDetails(input.suggestedDetails, category)
       : undefined
@@ -236,7 +241,7 @@ export function parseCommunityWaypointSubmission(input: unknown): CommunityWaypo
   if (kind === 'correction') {
     assertAllowedFields(input, CORRECTION_FIELDS)
     const waypointId = readWaypointId(input)
-    const requestedChange = requiredText(input, 'requestedChange', EXPLANATION_LIMIT)
+    const requestedChange = requiredText(input, 'requestedChange', COMMUNITY_WAYPOINT_SUBMISSION_TEXT_LIMIT)
     const fields = readProposedFields(input)
     const suggestedDetails = Object.prototype.hasOwnProperty.call(input, 'suggestedDetails')
       ? readSuggestedDetails(input.suggestedDetails, fields.category)
@@ -255,7 +260,7 @@ export function parseCommunityWaypointSubmission(input: unknown): CommunityWaypo
     return {
       kind,
       waypointId: readWaypointId(input),
-      reason: requiredText(input, 'reason', EXPLANATION_LIMIT),
+      reason: requiredText(input, 'reason', COMMUNITY_WAYPOINT_SUBMISSION_TEXT_LIMIT),
     }
   }
 

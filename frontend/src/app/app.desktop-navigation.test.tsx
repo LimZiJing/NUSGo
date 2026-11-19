@@ -30,6 +30,7 @@ const appHarness = vi.hoisted(() => {
   }
   return {
     state: null as unknown,
+    mountCount: 0,
     communityWaypoints: [] as unknown[],
     onStopSelected: null as ((stopId: string) => boolean) | null,
     onMapStopInteraction: null as ((stopId: string) => void) | null,
@@ -65,6 +66,7 @@ vi.mock('./navigation-session-mount', () => ({
       onMapMovingChange?: (moving: boolean) => void
     },
   ) => {
+    appHarness.mountCount += 1
     appHarness.onStopSelected = dependencies.onStopSelected ?? null
     appHarness.onMapStopInteraction = dependencies.onMapStopInteraction ?? null
     appHarness.onMapStopDestinationSet = dependencies.onMapStopDestinationSet ?? null
@@ -120,6 +122,23 @@ function mockMobileViewport(): void {
       removeEventListener: vi.fn(),
     }),
   })
+}
+
+function mockChangeableViewport(initialMatch = false): (matches: boolean) => void {
+  const listeners = new Set<() => void>()
+  const mediaQuery = {
+    matches: initialMatch,
+    addEventListener: (_type: string, listener: () => void) => listeners.add(listener),
+    removeEventListener: (_type: string, listener: () => void) => listeners.delete(listener),
+  }
+  Object.defineProperty(window, 'matchMedia', {
+    configurable: true,
+    value: vi.fn().mockReturnValue(mediaQuery),
+  })
+  return (matches) => {
+    mediaQuery.matches = matches
+    listeners.forEach((listener) => listener())
+  }
 }
 
 function setActiveLocationFix(): void {
@@ -187,6 +206,7 @@ function selectPersonalWaypointFromMap(waypointId: string): HTMLButtonElement {
 beforeEach(() => {
   appHarness.communityWaypoints = []
   mockDesktopViewport()
+  appHarness.mountCount = 0
   vi.stubGlobal('IntersectionObserver', class {
     observe() {}
     unobserve() {}
@@ -356,7 +376,6 @@ describe('desktop shared navigation shell', () => {
       displayLabel: 'Water cooler at UTown',
       category: 'water_cooler',
       coordinate: { longitude: 103.78, latitude: 1.29 },
-      source: 'NUS Campus Facilities',
       updatedAt: '2026-10-26',
     }
     appHarness.communityWaypoints = [waypoint]
@@ -437,7 +456,6 @@ describe('desktop shared navigation shell', () => {
       displayLabel: 'Water cooler at UTown',
       category: 'water_cooler',
       coordinate: { longitude: 103.78, latitude: 1.29 },
-      source: 'NUS Campus Facilities',
       updatedAt: '2026-10-26',
     }
     appHarness.communityWaypoints = [waypoint]
@@ -454,7 +472,7 @@ describe('desktop shared navigation shell', () => {
     act(() => onSelect?.(waypoint.id, trigger))
 
     expect(await screen.findByRole('heading', { name: waypoint.displayLabel })).toBeTruthy()
-    expect(screen.getByText('NUS Campus Facilities')).toBeTruthy()
+    expect(screen.queryByText('NUS Campus Facilities')).toBeNull()
     expect(appHarness.commands.focusCommunityWaypoint).not.toHaveBeenCalled()
     await user.click(screen.getByRole('button', { name: 'Community Waypoints' }))
     await waitFor(() => expect(document.activeElement).toBe(trigger))
@@ -608,6 +626,25 @@ describe('desktop shared navigation shell', () => {
     expect(document.getElementById('plan-panel')?.hasAttribute('hidden')).toBe(true)
     expect(document.getElementById('explore-panel')?.hasAttribute('inert')).toBe(true)
     expect(document.getElementById('plan-panel')?.hasAttribute('inert')).toBe(true)
+  })
+
+  it('keeps the navigation session mounted and refreshes map callbacks across viewport changes', async () => {
+    const user = userEvent.setup()
+    const setMobileViewport = mockChangeableViewport(false)
+    render(<App />)
+    expect(appHarness.mountCount).toBe(1)
+
+    await user.click(screen.getByRole('button', { name: 'Explore' }))
+    act(() => appHarness.onMapStopInteraction?.('STOP-A'))
+    await waitFor(() => expect(screen.getByRole('button', { name: 'Stops' }).getAttribute('aria-current'))
+      .toBe('page'))
+
+    await user.click(screen.getByRole('button', { name: 'Explore' }))
+    act(() => setMobileViewport(true))
+    expect(appHarness.mountCount).toBe(1)
+
+    act(() => appHarness.onMapStopInteraction?.('STOP-A'))
+    expect(screen.getByRole('button', { name: 'Explore' }).getAttribute('aria-current')).toBe('page')
   })
 
   it('switches to the unified Explore tab from the shared navigation', async () => {

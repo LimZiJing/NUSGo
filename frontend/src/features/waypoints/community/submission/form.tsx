@@ -1,6 +1,5 @@
 import { useEffect, useLayoutEffect, useMemo, useRef, useState, type FormEvent } from 'react'
 import type {
-  ActiveCommunityWaypointCategory,
   CommunityWaypoint,
   CommunityWaypointSubmission,
 } from '@nusgo/shared'
@@ -27,7 +26,6 @@ type FormStatus = 'editing' | 'submitting' | 'received'
 
 export function CommunityWaypointSubmissionForm({
   waypoint,
-  initialCategory = null,
   coordinate,
   locationStatus,
   locationAccuracy,
@@ -39,7 +37,6 @@ export function CommunityWaypointSubmissionForm({
   onPendingChange,
 }: {
   readonly waypoint: CommunityWaypoint | null
-  readonly initialCategory?: ActiveCommunityWaypointCategory | null
   readonly coordinate: WaypointCoordinate
   readonly locationStatus: LocationStatus
   readonly locationAccuracy: number | null
@@ -50,7 +47,7 @@ export function CommunityWaypointSubmissionForm({
   readonly onBack: () => void
   readonly onPendingChange?: (pending: boolean) => void
 }) {
-  const [draft, setDraft] = useState(() => initialSubmissionDraft(waypoint, initialCategory))
+  const [draft, setDraft] = useState(() => initialSubmissionDraft(waypoint))
   const [status, setStatus] = useState<FormStatus>('editing')
   const [errors, setErrors] = useState<SubmissionErrors>({})
   /* Counts submit attempts, so a child can react to "this submit failed validation"
@@ -123,6 +120,9 @@ export function CommunityWaypointSubmissionForm({
           colour: preserveExisting && waypoint?.colour !== undefined
             ? waypoint.colour ? 'yes' : 'no'
             : '',
+          bidet: preserveExisting && waypoint?.bidet !== undefined
+            ? waypoint.bidet ? 'yes' : 'no'
+            : '',
           grayscalePricePerPage: preserveExisting
             ? priceCentsToDraft(waypoint?.grayscalePriceCentsPerPage)
             : '',
@@ -137,7 +137,7 @@ export function CommunityWaypointSubmissionForm({
 
       const isDetailsField = field === 'services' || field === 'colour' ||
         field === 'grayscalePricePerPage' || field === 'colourPricePerPage' ||
-        field === 'items' || field === 'prep'
+        field === 'items' || field === 'prep' || field === 'bidet'
       return {
         ...current,
         [field]: value,
@@ -156,6 +156,7 @@ export function CommunityWaypointSubmissionForm({
         delete next.colourPricePerPage
         delete next.items
         delete next.prep
+        delete next.bidet
       }
       return next
     })

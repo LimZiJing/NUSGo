@@ -1,5 +1,6 @@
 import type { Ref } from 'react'
 import { EllipsisVerticalIcon } from './icons'
+import { MapOverlayIconButton } from './map-overlay-icon-button'
 
 interface MoreEntryButtonProps {
   readonly expanded: boolean
@@ -13,17 +14,15 @@ export function MoreEntryButton({
   onClick,
 }: MoreEntryButtonProps) {
   return (
-    <button
-      className="more-entry-button map-overlay-button"
-      type="button"
-      aria-label="More"
-      aria-expanded={expanded}
-      aria-controls="more-panel"
+    <MapOverlayIconButton
+      className="more-entry-button"
+      label="More"
       title="More"
+      icon={<EllipsisVerticalIcon />}
+      expanded={expanded}
+      controls="more-panel"
       ref={buttonRef}
       onClick={onClick}
-    >
-      <EllipsisVerticalIcon />
-    </button>
+    />
   )
 }

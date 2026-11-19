@@ -34,10 +34,11 @@ export const COMMUNITY_WAYPOINT_READABLE_CATEGORIES = [
 ] as const
 
 export const COMMUNITY_WAYPOINT_TEXT_LIMITS = {
-  source: 160,
   building: 80,
   details: 500,
 } as const
+
+export const COMMUNITY_WAYPOINT_SUBMISSION_TEXT_LIMIT = 1_000
 
 export type ActiveCommunityWaypointCategory = typeof COMMUNITY_WAYPOINT_CATEGORIES[number]['value']
 export type CommunityWaypointCategory = typeof COMMUNITY_WAYPOINT_READABLE_CATEGORIES[number]['value']
@@ -60,13 +61,16 @@ export type CommunityWaypointDetailsSuggestion =
       readonly items: readonly CommunityWaypointVendingItem[]
       readonly prep: readonly CommunityWaypointVendingPrep[]
     })
+  | ({
+      readonly category: 'toilet'
+      readonly bidet: boolean | null
+    })
 
 export interface CommunityWaypoint extends Omit<Waypoint, 'name'> {
   readonly id: CommunityWaypointId
   readonly category: CommunityWaypointCategory
   /** Derived app display label; this is not a public GeoJSON property. */
   readonly displayLabel: string
-  readonly source: string
   readonly updatedAt: string
   readonly building?: string
   readonly floor?: number
@@ -79,6 +83,7 @@ export interface CommunityWaypoint extends Omit<Waypoint, 'name'> {
   readonly colourPriceCentsPerPage?: number
   readonly items?: readonly CommunityWaypointVendingItem[]
   readonly prep?: readonly CommunityWaypointVendingPrep[]
+  readonly bidet?: boolean
 }
 
 export function getCommunityWaypointCategoryLabel(category: CommunityWaypointCategory): string {

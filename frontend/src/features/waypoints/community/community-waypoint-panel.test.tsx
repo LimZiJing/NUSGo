@@ -14,7 +14,6 @@ const waypoints: readonly CommunityWaypoint[] = [
     displayLabel: 'Water cooler · Stephen Riady Centre · Floor 1',
     category: 'water_cooler',
     coordinate: { longitude: 103.78, latitude: 1.29 },
-    source: 'NUS Campus Facilities',
     updatedAt: '2026-10-26',
     building: 'Stephen Riady Centre',
     floor: 1,
@@ -25,7 +24,6 @@ const waypoints: readonly CommunityWaypoint[] = [
     displayLabel: 'Printing / photocopying',
     category: 'printing',
     coordinate: { longitude: 103.77, latitude: 1.30 },
-    source: 'NUS Campus Facilities',
     updatedAt: '2026-10-25',
   },
 ]
@@ -78,6 +76,31 @@ function DiscoveryHarness({
 }
 
 describe('CommunityWaypointPanel', () => {
+  it.each([[true, 'Yes'], [false, 'No']] as const)(
+    'displays verified Toilet bidet availability as %s',
+    async (bidet, label) => {
+      const toiletWaypoint: CommunityWaypoint = {
+        id: 'cw-toilet-001',
+        displayLabel: 'Toilet at UTown',
+        category: 'toilet',
+        coordinate: { longitude: 103.78, latitude: 1.29 },
+        updatedAt: '2026-11-17',
+        bidet,
+      }
+      render(
+        <DiscoveryHarness
+          load={async () => [toiletWaypoint]}
+          selectWaypointOnMount={toiletWaypoint.id}
+        />,
+      )
+
+      const detailPanel = await screen.findByRole('region', { name: toiletWaypoint.displayLabel })
+      expect(within(detailPanel).getByText('Bidet')).toBeTruthy()
+      expect(within(detailPanel).getByText(label)).toBeTruthy()
+      expect(within(detailPanel).queryByText('Source')).toBeNull()
+    },
+  )
+
   it('persists category visibility as soon as a category is toggled', async () => {
     const user = userEvent.setup()
     const onVisibleWaypointsChange = vi.fn()
@@ -132,7 +155,7 @@ describe('CommunityWaypointPanel', () => {
     render(<DiscoveryHarness load={async () => waypoints} />)
 
     expect(await screen.findByText(
-      'Saved category visibility could not be read. Review the categories and save to replace it.',
+      'Saved category visibility could not be read. Toggle a category to replace it.',
     )).toBeTruthy()
     expect(screen.queryByRole('button', { name: 'Save Community Waypoint categories' })).toBeNull()
 
@@ -140,7 +163,7 @@ describe('CommunityWaypointPanel', () => {
     await user.click(waterSwitch)
     expect(localStorage.getItem(VISIBILITY_KEY)).toBe('["water_cooler"]')
     expect(screen.queryByText(
-      'Saved category visibility could not be read. Review the categories and save to replace it.',
+      'Saved category visibility could not be read. Toggle a category to replace it.',
     )).toBeNull()
   })
 
@@ -184,7 +207,7 @@ describe('CommunityWaypointPanel', () => {
     expect(screen.getByText('Floor 1')).toBeTruthy()
     expect(screen.getByText('Beside the east stairwell.')).toBeTruthy()
     expect(screen.queryByText('Accessibility')).toBeNull()
-    expect(screen.getByText('NUS Campus Facilities')).toBeTruthy()
+    expect(screen.queryByText('NUS Campus Facilities')).toBeNull()
     expect(screen.getByText('2026-10-26').tagName).toBe('TIME')
 
     await user.click(screen.getByRole('button', { name: 'Suggest a correction' }))

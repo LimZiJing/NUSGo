@@ -708,6 +708,29 @@ function App() {
     }
   }, [])
 
+  const navigationSessionCallbacksRef = useRef({
+    handleStopSelected: appNavigation.handleStopSelected,
+    openStopDetailsFromMap: appNavigation.openStopDetailsFromMap,
+    handleMapStopInteraction: appNavigation.handleMapStopInteraction,
+    openPlan: appNavigation.openPlan,
+    handleMapJourneyOptionSelected,
+  })
+  useLayoutEffect(() => {
+    navigationSessionCallbacksRef.current = {
+      handleStopSelected: appNavigation.handleStopSelected,
+      openStopDetailsFromMap: appNavigation.openStopDetailsFromMap,
+      handleMapStopInteraction: appNavigation.handleMapStopInteraction,
+      openPlan: appNavigation.openPlan,
+      handleMapJourneyOptionSelected,
+    }
+  }, [
+    appNavigation.handleMapStopInteraction,
+    appNavigation.handleStopSelected,
+    appNavigation.openPlan,
+    appNavigation.openStopDetailsFromMap,
+    handleMapJourneyOptionSelected,
+  ])
+
   useLayoutEffect(() => {
     const candidateKey = pendingMapJourneySelectionRef.current
     if (!candidateKey) return
@@ -753,11 +776,11 @@ function App() {
       loadTransit: services.loadTransit,
       pathfinder: services.pathfinder,
       locationTracker: services.createLocationTracker(),
-      onStopSelected: appNavigation.handleStopSelected,
-      onStopDetailsSelected: appNavigation.openStopDetailsFromMap,
-      onMapStopInteraction: appNavigation.handleMapStopInteraction,
-      onMapStopDestinationSet: appNavigation.openPlan,
-      onMapJourneyOptionSelected: handleMapJourneyOptionSelected,
+      onStopSelected: (stopId) => navigationSessionCallbacksRef.current.handleStopSelected(stopId),
+      onStopDetailsSelected: (stopId) => navigationSessionCallbacksRef.current.openStopDetailsFromMap(stopId),
+      onMapStopInteraction: (stopId) => navigationSessionCallbacksRef.current.handleMapStopInteraction(stopId),
+      onMapStopDestinationSet: () => navigationSessionCallbacksRef.current.openPlan(),
+      onMapJourneyOptionSelected: (candidateKey) => navigationSessionCallbacksRef.current.handleMapJourneyOptionSelected(candidateKey),
       onMapCenterChange: ([longitude, latitude]) => setMapCenter({ longitude, latitude }),
       onMapMovingChange: setIsMapMoving,
     })
@@ -767,11 +790,6 @@ function App() {
       mount.dispose()
     }
   }, [
-    appNavigation.handleMapStopInteraction,
-    appNavigation.handleStopSelected,
-    appNavigation.openStopDetailsFromMap,
-    appNavigation.openPlan,
-    handleMapJourneyOptionSelected,
     services,
   ])
 
@@ -1358,7 +1376,6 @@ function App() {
             /> : morePage === 'community-submission' || morePage === 'community-placing' ? (
               <CommunityWaypointSubmissionForm
                 waypoint={communitySubmissionWaypoint}
-                initialCategory={null}
                 coordinate={communitySubmissionCoordinate}
                 locationStatus={communitySubmissionLocationStatus}
                 locationAccuracy={communitySubmissionLocationAccuracy}

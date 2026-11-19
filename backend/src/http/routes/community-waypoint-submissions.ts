@@ -1,6 +1,6 @@
 import type { Express } from 'express'
 import {
-  COMMUNITY_WAYPOINT_CATEGORIES,
+  getCommunityWaypointCategoryLabel as getCategoryLabel,
   COMMUNITY_WAYPOINT_PRINTING_SERVICES,
   COMMUNITY_WAYPOINT_VENDING_ITEMS,
   COMMUNITY_WAYPOINT_VENDING_PREP_OPTIONS,
@@ -41,10 +41,6 @@ function formatIssueField(label: string, value: string | number): string {
   return '- **' + label + ':** ' + cleanMarkdownText(String(value))
 }
 
-function getCategoryLabel(category: string): string {
-  return COMMUNITY_WAYPOINT_CATEGORIES.find(({ value }) => value === category)?.label ?? category
-}
-
 function getOptionLabels<T extends string>(
   values: readonly T[] | null | undefined,
   options: readonly { readonly value: T; readonly label: string }[],
@@ -67,6 +63,9 @@ function getSuggestedDetailsSummary(details: CommunityWaypointDetailsSuggestion)
       'Colour price per page: ' + formatPriceCents(details.colourPriceCentsPerPage),
     ].join('; ')
   }
+  if (details.category === 'toilet') {
+    return 'Bidet available: ' + (details.bidet === null ? 'Not provided' : details.bidet ? 'Yes' : 'No')
+  }
   return [
     'Items: ' + getOptionLabels(details.items, COMMUNITY_WAYPOINT_VENDING_ITEMS),
     'Prep: ' + getOptionLabels(details.prep, COMMUNITY_WAYPOINT_VENDING_PREP_OPTIONS),
@@ -81,6 +80,12 @@ function getSuggestedDetailsLines(details: CommunityWaypointDetailsSuggestion): 
       formatIssueField('Colour available', details.colour === null ? 'Not provided' : details.colour ? 'Yes' : 'No'),
       formatIssueField('Grayscale price per page', formatPriceCents(details.grayscalePriceCentsPerPage)),
       formatIssueField('Colour price per page', formatPriceCents(details.colourPriceCentsPerPage)),
+    ]
+  }
+  if (details.category === 'toilet') {
+    return [
+      formatIssueField('Category', getCategoryLabel(details.category)),
+      formatIssueField('Bidet available', details.bidet === null ? 'Not provided' : details.bidet ? 'Yes' : 'No'),
     ]
   }
   return [

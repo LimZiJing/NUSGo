@@ -1,6 +1,6 @@
-# Eateries data review
+# Food catalogue review
 
-Updated 16 November 2026. The [eateries data](../../frontend/public/data/eateries.json) contains 39 entries. Locations use exact OpenStreetMap points, coordinates supplied by the user, or shared building points as noted below.
+Updated 16 November 2026. The [Food data](../../frontend/public/data/food.json) contains 39 entries. Locations use exact OpenStreetMap points, coordinates supplied by the user, or shared building points as noted below.
 
 ## Still needs confirmation
 
@@ -24,11 +24,11 @@ These have map points but are outside the current scope or still need a kiosk/ca
 
 ## Location and source notes
 
-- Each `location.x` is longitude and `location.y` is latitude. Exact OSM POI coordinates, user-supplied coordinates, and existing building points from `buildings.json` are documented separately above. Shared points are approximations, so overlapping markers are expected until exact locations are confirmed. The JSON stores only the name, category, and location.
+- Each `location.x` is longitude and `location.y` is latitude. Exact OSM POI coordinates, user-supplied coordinates, and existing building points from `buildings.json` are documented separately above. Shared points are approximations, so overlapping markers are expected until exact locations are confirmed. The JSON stores only the name, `foodType`, and location; validation adds `kind: 'food'` at runtime.
 - Display names use **HSSML**, **ERC**, and **CDE** for the corresponding campus locations.
 - The added records now include BTC Cafeteria, A Hot Hideout (PGP), Arise and Shine, CHAGEE, Nami, The Spread, Subway (UTown), Udon Don Bar, Waa Cow, Cool Spot, Starbucks (CDE), Supersnacks (PGPR), Supersnacks (UTown), and Wild Skew.
 - The user supplied the coordinates for A Hot Hideout and both Supersnacks entries. NUS lists A Hot Hideout at PGP and Supersnacks at PGPR and Stephen Riady Centre. OSM points are linked below for Starbucks (CDE) and Wild Skew.
-- All beverage and snack outlets use the `drinks & snacks` category per the user's decision; OSM tags Cool Spot as a convenience shop.
+- All beverage and snack outlets use `foodType: 'drinks & snacks'` per the user's decision; OSM tags Cool Spot as a convenience shop.
 - **Waa Cow / Bueno Bueno** is one UCI directory listing. Only Waa Cow has an exact OSM point, so the JSON uses the mapped name “Waa Cow” and leaves Bueno Bueno unconfirmed.
 - Initial research found that NUS site content needs permission to reproduce. The project owner has since confirmed reuse permission and that attribution is handled. OSM attribution remains required: [© OpenStreetMap contributors](https://www.openstreetmap.org/copyright).
 - The UCI dining pages cover Kent Ridge, University Town, and Bukit Timah. Confirm whether Outram should be included. The UCI index total also differs from the sum of campus totals, so it should not be used as a completeness check.

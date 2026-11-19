@@ -2,12 +2,13 @@
 
 What data the app ships with and how the map is built. For a one-page summary see [project status](project-status.md). The Express side (live arrivals, snapshots, configuration) is in [Express live transit data](backend-live-data.md).
 
-## Venues and eateries
+## Rooms and Food venues
 
-- `frontend/public/data/venues.json` holds 729 venue records, including rooms and whole-building venue identities.
-- `frontend/public/data/eateries.json` holds 39 minimal named destinations: 9 canteens, 14 restaurants, and 16 drinks & snacks. Each record has a stable ID, name, category, and WGS84 location (`x` longitude, `y` latitude). Unresolved candidates and their review notes stay in [the eateries review](research/eateries-review.md).
-- These are separate source files. The frontend and backend validate both, then merge eateries into the venue map used by Explore and route planning. The optional building relationship is not needed to search for or navigate to an eatery.
-- An existing venue is reused only when the stable ID matches; names alone are not enough. The legacy `Frontier` room is on floor 4 and has different coordinates from the Frontier canteen, so both retain their own identities.
+- `frontend/public/data/venues.json` holds 729 Room source records, including identities that resolve to whole Buildings.
+- `frontend/public/data/food.json` holds 39 Food source records: 9 canteens, 14 restaurants, and 16 drinks & snacks. Each record has a stable ID, `name`, `foodType`, and WGS84 location (`x` longitude, `y` latitude). Cafes use `drinks & snacks`. Unresolved candidates and source notes stay in [the Food catalogue review](research/food-catalogue-review.md).
+- The frontend and backend validate both files at the shared adapter boundary. Room source records become `RoomVenue`; Food records become `FoodVenue`. The runtime `VenueMap` is a `RoomVenue | FoodVenue` union keyed by the existing route ID. The source files do not store a redundant `kind` field.
+- Room building relationships resolve from `roomCodePrefixes`. Whole-building source identities remain searchable Buildings with their NUSMods aliases, not Room results. Foods are searched by name and stable ID; the stable ID alone does not infer a Building relationship.
+- An existing location is reused only when its stable ID matches; names alone are not enough. The floor-4 `Frontier` Room has different coordinates from the Frontier canteen, so they retain distinct source identities.
 
 ## Buildings
 

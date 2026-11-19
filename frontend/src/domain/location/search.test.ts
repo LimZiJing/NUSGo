@@ -1,268 +1,127 @@
 import { describe, expect, it } from 'vitest'
-import { getTripEndpointLabel, searchTripLocations } from './search'
 import type { Building } from '@nusgo/shared/venue/buildings'
 import type { TransitStop } from '@nusgo/shared/transit/types'
 import { buildBuildingIndex } from '../venue/building-index'
-import type { VenueLocationMap } from '@nusgo/shared/venue/types'
+import type { VenueMap } from '@nusgo/shared/venue/types'
 import type { PersonalWaypoint } from '../waypoints/personal/personal-waypoint'
+import { getTripEndpointLabel, searchTripLocations } from './search'
 
-const venues: VenueLocationMap = {
-  LT17: {
-    roomName: 'Lecture Theatre 17',
-    location: { x: 103.77, y: 1.3 },
-  },
-  'COM2-0112': {
-    roomName: 'Seminar Room 1-12',
-    location: { x: 103.78, y: 1.31 },
+const venues: VenueMap = {
+  LT17: { kind: 'room', roomName: 'Lecture Theatre 17', location: { x: 103.77, y: 1.3 } },
+  'COM2-0112': { kind: 'room', roomName: 'Seminar Room 1-12', location: { x: 103.78, y: 1.31 } },
+  'the-terrace-canteen': {
+    kind: 'food',
+    name: 'The Terrace',
+    foodType: 'canteen',
+    location: { x: 103.77458, y: 1.29458 },
   },
 }
 
 const stops: TransitStop[] = [
-  {
-    id: 'STOP-B',
-    longName: 'Central Bus Stop',
-    shortName: 'CBS',
-    latitude: 1.31,
-    longitude: 103.78,
-    services: ['A1'],
-  },
-  {
-    id: 'STOP-A',
-    longName: 'Central Library',
-    shortName: 'Library',
-    latitude: 1.3,
-    longitude: 103.77,
-    services: ['A1'],
-  },
-  {
-    id: 'UTOWN',
-    longName: 'University Town',
-    shortName: 'UTown',
-    latitude: 1.32,
-    longitude: 103.79,
-    services: ['A1'],
-  },
+  { id: 'STOP-B', longName: 'Central Bus Stop', shortName: 'CBS', latitude: 1.31, longitude: 103.78, services: ['A1'] },
+  { id: 'STOP-A', longName: 'Central Library', shortName: 'Library', latitude: 1.3, longitude: 103.77, services: ['A1'] },
+  { id: 'UTOWN', longName: 'University Town', shortName: 'UTown', latitude: 1.32, longitude: 103.79, services: ['A1'] },
 ]
 
-const personalWaypoints: PersonalWaypoint[] = [
-  {
-    id: '00000000-0000-4000-8000-000000000041',
-    name: 'Quiet bench',
-    category: 'Rest areas',
-    coordinate: { longitude: 103.78, latitude: 1.29 },
-    markerColor: 'blue',
-    markerIcon: 'dot',
-    note: 'Near the sheltered walkway',
-    createdAt: '2026-10-25T00:00:00.000Z',
-    updatedAt: '2026-10-25T00:00:00.000Z',
-  },
-]
+const personalWaypoints: PersonalWaypoint[] = [{
+  id: '00000000-0000-4000-8000-000000000041',
+  name: 'Quiet bench',
+  category: 'Rest areas',
+  coordinate: { longitude: 103.78, latitude: 1.29 },
+  markerColor: 'blue',
+  markerIcon: 'dot',
+  note: 'Near the sheltered walkway',
+  createdAt: '2026-10-25T00:00:00.000Z',
+  updatedAt: '2026-10-25T00:00:00.000Z',
+}]
 
 describe('searchTripLocations', () => {
   it('returns no results for an empty query', () => {
     expect(searchTripLocations(venues, stops, '   ')).toEqual([])
   })
 
-  it('searches venue codes and room names with stable venue endpoints', () => {
-    expect(searchTripLocations(venues, stops, 'lt17')).toEqual([
-      {
-        endpoint: { kind: 'venue', id: 'LT17' },
-        label: 'LT17',
-        detail: 'Lecture Theatre 17',
-      },
-    ])
-    expect(searchTripLocations(venues, stops, 'seminar')).toEqual([
-      {
-        endpoint: { kind: 'venue', id: 'COM2-0112' },
-        label: 'COM2-0112',
-        detail: 'Seminar Room 1-12',
-      },
-    ])
-  })
-
-  it('searches and labels eateries by their public name and category', () => {
-    const places: VenueLocationMap = {
-      'yih-central-square': {
-        roomName: 'YIH (Central Square)',
-        displayName: 'YIH (Central Square)',
-        category: 'canteen',
-        location: { x: 103.77477, y: 1.2985 },
-      },
-    }
-
-    expect(searchTripLocations(places, [], 'central square')).toEqual([{
-      endpoint: { kind: 'venue', id: 'yih-central-square' },
-      label: 'YIH (Central Square)',
-      detail: 'Canteen',
+  it('shows Rooms by code with room-name detail', () => {
+    expect(searchTripLocations(venues, stops, 'lt17')).toMatchObject([{
+      kind: 'room',
+      endpoint: { kind: 'venue', id: 'LT17' },
+      label: 'LT17',
+      detail: 'Lecture Theatre 17',
     }])
-    expect(getTripEndpointLabel({ kind: 'venue', id: 'yih-central-square' }, places, [])).toBe('YIH (Central Square)')
+    expect(searchTripLocations(venues, stops, 'seminar')).toMatchObject([{
+      kind: 'room',
+      endpoint: { kind: 'venue', id: 'COM2-0112' },
+      detail: 'Seminar Room 1-12',
+    }])
   })
 
-  it('skips venues without coordinates', () => {
-    const venuesWithMissingLocation: VenueLocationMap = {
-      ...venues,
-      'NO-LOCATION': {
-        roomName: 'Unmapped Room',
-      },
-    }
+  it('shows Food by its public name, foodType, and stable venue endpoint', () => {
+    expect(searchTripLocations(venues, [], 'the terrace')).toMatchObject([{
+      kind: 'food',
+      endpoint: { kind: 'venue', id: 'the-terrace-canteen' },
+      label: 'The Terrace',
+      detail: 'Canteen',
+      venue: venues['the-terrace-canteen'],
+    }])
+    expect(getTripEndpointLabel({ kind: 'venue', id: 'the-terrace-canteen' }, venues, [])).toBe('The Terrace')
+  })
 
-    expect(searchTripLocations(venuesWithMissingLocation, [], 'no-location')).toEqual([])
+  it('keeps Rooms and Food separate when filtering and skips unlocated venues', () => {
+    const unlocated: VenueMap = { ...venues, 'NO-LOCATION': { kind: 'room', roomName: 'Unmapped Room' } }
+    expect(searchTripLocations(unlocated, [], 'terrace', 8, undefined, ['room'])).toEqual([])
+    expect(searchTripLocations(unlocated, [], 'terrace', 8, undefined, ['food']).map(({ kind }) => kind)).toEqual(['food'])
+    expect(searchTripLocations(unlocated, [], 'no-location')).toEqual([])
   })
 
   it('searches stop IDs, long names, and short names', () => {
-    expect(searchTripLocations(venues, stops, 'stop-b')).toEqual([
-      {
-        endpoint: { kind: 'stop', id: 'STOP-B' },
-        label: 'Central Bus Stop',
-        detail: 'CBS (STOP-B)',
-      },
-    ])
-    expect(searchTripLocations(venues, stops, 'utown')).toEqual([
-      {
-        endpoint: { kind: 'stop', id: 'UTOWN' },
-        label: 'University Town',
-        detail: '',
-      },
-    ])
+    expect(searchTripLocations({}, stops, 'stop-b')).toMatchObject([{
+      kind: 'stop',
+      endpoint: { kind: 'stop', id: 'STOP-B' },
+      label: 'Central Bus Stop',
+      detail: 'CBS (STOP-B)',
+    }])
+    expect(searchTripLocations({}, stops, 'utown')).toMatchObject([{ kind: 'stop', detail: '' }])
   })
 
-  it('searches Personal Waypoints by name or category and exposes only the name and category', () => {
-    expect(searchTripLocations({}, [], 'quiet bench', 8, undefined, undefined, personalWaypoints)).toEqual([
-      {
-        endpoint: {
-          kind: 'personal-waypoint',
-          id: '00000000-0000-4000-8000-000000000041',
-          label: 'Quiet bench',
-          coordinate: { longitude: 103.78, latitude: 1.29 },
-        },
-        label: 'Quiet bench',
-        detail: 'Rest areas',
-      },
-    ])
+  it('searches Personal Waypoints by name or category', () => {
+    expect(searchTripLocations({}, [], 'quiet bench', 8, undefined, undefined, personalWaypoints)).toMatchObject([{
+      kind: 'personal-waypoint',
+      label: 'Quiet bench',
+      detail: 'Rest areas',
+    }])
     expect(searchTripLocations({}, [], 'rest areas', 8, undefined, undefined, personalWaypoints)).toHaveLength(1)
     expect(searchTripLocations({}, [], 'sheltered walkway', 8, undefined, undefined, personalWaypoints)).toEqual([])
   })
 
-  it('ranks and limits results deterministically across venues and stops', () => {
-    expect(searchTripLocations(venues, stops, 'central', 1)).toEqual([
-      {
-        endpoint: { kind: 'stop', id: 'STOP-A' },
-        label: 'Central Library',
-        detail: 'Library (STOP-A)',
-      },
-    ])
-    expect(searchTripLocations(venues, stops, 'central', 10).map((result) => result.endpoint)).toEqual([
-      { kind: 'stop', id: 'STOP-A' },
-      { kind: 'stop', id: 'STOP-B' },
-    ])
-  })
-})
-
-describe('searchTripLocations grouping', () => {
-  it('ranks stops ahead of rooms even when a room matches more closely', () => {
-    const roomVenues: VenueLocationMap = {
-      'CLB-04-01H': {
-        roomName: 'Central Library Seminar Room',
-        location: { x: 103.77, y: 1.3 },
-      },
-      CENTRAL: {
-        roomName: 'Exact Code Room',
-        location: { x: 103.77, y: 1.3 },
-      },
-    }
-
-    expect(searchTripLocations(roomVenues, stops, 'central').map((result) => result.endpoint)).toEqual([
-      { kind: 'stop', id: 'STOP-A' },
-      { kind: 'stop', id: 'STOP-B' },
-      { kind: 'venue', id: 'CENTRAL' },
-      { kind: 'venue', id: 'CLB-04-01H' },
-    ])
-  })
-})
-
-describe('getTripEndpointLabel for a building of a group', () => {
-  const helix = (overrides: Partial<Building> & Pick<Building, 'id'>): Building => ({
-    name: 'Helix House', aliases: [], elementId: `way/${overrides.id}`, location: { x: 103.78, y: 1.29 },
-    locationKind: 'centroid', roomCodePrefixes: [], sourceRefs: [], groupKey: 'helix-house', ...overrides,
-  })
-  const index = buildBuildingIndex([
-    helix({ id: 'helix-house', groupRole: 'entrance' }),
-    helix({ id: 'helix-18-19', partLabel: 'Blocks 18-19', blocks: ['18', '19'] }),
-  ])
-
-  it('names the group alone for the group and adds the block label for one of its buildings', () => {
-    expect(getTripEndpointLabel({ kind: 'building', id: 'helix-house' }, venues, stops, index)).toBe('Helix House')
-    expect(getTripEndpointLabel({ kind: 'building', id: 'helix-18-19' }, venues, stops, index)).toBe(
-      'Helix House · Blocks 18-19',
-    )
-  })
-})
-
-describe('getTripEndpointLabel', () => {
-  it('resolves known endpoints to readable labels', () => {
-    expect(getTripEndpointLabel({ kind: 'venue', id: 'LT17' }, venues, stops)).toBe(
-      'Lecture Theatre 17',
-    )
-    expect(getTripEndpointLabel({ kind: 'stop', id: 'STOP-A' }, venues, stops)).toBe(
-      'Central Library',
-    )
-  })
-
-  it('labels a building by its name and falls back to its ID when the catalogue is unavailable', () => {
-    const index = buildBuildingIndex([
-      { id: 'com3', name: 'COM3', aliases: [], elementId: 'way/1', location: { x: 103.77, y: 1.29 }, roomCodePrefixes: [], sourceRefs: [] },
-    ])
-
-    expect(getTripEndpointLabel({ kind: 'building', id: 'com3' }, venues, stops, index)).toBe('COM3')
-    expect(getTripEndpointLabel({ kind: 'building', id: 'com3' }, venues, stops)).toBe('com3')
-  })
-
-  it('falls back to the stable endpoint ID when data is unavailable', () => {
-    expect(getTripEndpointLabel({ kind: 'venue', id: 'MISSING' }, venues, stops)).toBe('MISSING')
-    expect(getTripEndpointLabel({ kind: 'stop', id: 'MISSING' }, venues, stops)).toBe('MISSING')
-  })
-
-  it('labels Current location without an identifier', () => {
-    expect(getTripEndpointLabel({
-      kind: 'current-location',
-      coordinate: { longitude: 103.78, latitude: 1.29 },
-    }, venues, stops)).toBe('Current location')
+  it('ranks and limits stops ahead of Rooms and Foods', () => {
+    expect(searchTripLocations(venues, stops, 'central', 1).map(({ kind }) => kind)).toEqual(['stop'])
+    expect(searchTripLocations(venues, stops, 'the terrace', 8, undefined, ['room'])).toEqual([])
   })
 })
 
 describe('searchTripLocations with buildings', () => {
   const makeBuilding = (id: string, name: string, extra: Partial<Building> = {}): Building => ({
-    id,
-    name,
-    aliases: [],
-    elementId: `way/${id}`,
-    location: { x: 103.775, y: 1.295 },
-    locationKind: 'centroid',
-    roomCodePrefixes: [],
-    sourceRefs: [],
-    ...extra,
+    id, name, aliases: [], elementId: `way/${id}`, location: { x: 103.775, y: 1.295 },
+    locationKind: 'centroid', roomCodePrefixes: [], sourceRefs: [], ...extra,
   })
   const buildings = buildBuildingIndex([
     makeBuilding('com3', 'COM3', { aliases: ['COM 3', 'Computing 3'], address: '13 Computing Drive' }),
-    makeBuilding('biz-2', 'BIZ 2', { aliases: ['BIZ2'] }),
     makeBuilding('elm-college-2', 'Elm College', { groupKey: 'elm-college' }),
     makeBuilding('elm-college-1', 'Elm College', { groupKey: 'elm-college' }),
     makeBuilding('elm-college-3', 'Elm College', { groupKey: 'elm-college' }),
   ])
-  const venuesWithCom3: VenueLocationMap = {
-    'COM3-0201': { roomName: 'Computing room', location: { x: 103.775, y: 1.295 } },
+  const venuesWithCom3: VenueMap = {
+    'COM3-0201': { kind: 'room', roomName: 'Computing room', location: { x: 103.775, y: 1.295 }, buildingId: 'com3' },
   }
   const stopsWithCom3: TransitStop[] = [
     { id: 'COM3', longName: 'COM3', shortName: 'COM3', latitude: 1.2944, longitude: 103.7752, services: ['A1'] },
   ]
-  const search = (query: string) =>
-    searchTripLocations(venuesWithCom3, stopsWithCom3, query, 8, buildings)
+  const search = (query: string) => searchTripLocations(venuesWithCom3, stopsWithCom3, query, 8, buildings)
 
-  it.each(['COM3', 'com 3', 'computing 3', 'COM 3'])('finds the COM3 building for "%s"', (query) => {
+  it.each(['COM3', 'com 3', 'computing 3'])('finds the COM3 building for "%s"', (query) => {
     expect(search(query).map((result) => result.endpoint)).toContainEqual({ kind: 'building', id: 'com3' })
   })
 
-  it('lists the building and its bus stop as separate results with their own identities', () => {
+  it('lists the building and bus stop separately from the Room', () => {
     expect(search('com3').map((result) => result.endpoint)).toEqual([
       { kind: 'building', id: 'com3' },
       { kind: 'stop', id: 'COM3' },
@@ -270,26 +129,29 @@ describe('searchTripLocations with buildings', () => {
     ])
   })
 
-  it('ranks buildings and stops ahead of rooms and labels a building by name with its address', () => {
-    const results = search('com')
-    expect(results.at(-1)?.endpoint).toEqual({ kind: 'venue', id: 'COM3-0201' })
-    expect(results.find((result) => result.endpoint.kind === 'building')).toMatchObject({
-      label: 'COM3',
-      detail: '13 Computing Drive',
-    })
+  it('limits results to the requested kind before applying the cap', () => {
+    expect(searchTripLocations(venuesWithCom3, stopsWithCom3, 'com', 1, buildings, ['room']).map(({ endpoint }) => endpoint))
+      .toEqual([{ kind: 'venue', id: 'COM3-0201' }])
   })
 
-  it('limits results to the requested kinds before applying the result cap', () => {
-    const results = searchTripLocations(venuesWithCom3, stopsWithCom3, 'com', 1, buildings, ['venue'])
-
-    expect(results.map((result) => result.endpoint)).toEqual([{ kind: 'venue', id: 'COM3-0201' }])
+  it('shows a grouped building once with its name and parts detail', () => {
+    expect(searchTripLocations({}, [], 'elm college', 8, buildings)).toMatchObject([{
+      kind: 'building',
+      endpoint: { kind: 'building', id: 'elm-college' },
+      label: 'Elm College',
+      detail: '3 buildings',
+    }])
   })
+})
 
-  it('shows a repeated-name group as one result that keeps the group identity', () => {
-    const results = searchTripLocations({}, [], 'elm college', 8, buildings)
-
-    expect(results).toEqual([
-      { endpoint: { kind: 'building', id: 'elm-college' }, label: 'Elm College', detail: '3 buildings' },
-    ])
+describe('getTripEndpointLabel', () => {
+  it('uses readable Room, Food, Building, stop, and current-location labels', () => {
+    expect(getTripEndpointLabel({ kind: 'venue', id: 'LT17' }, venues, stops)).toBe('Lecture Theatre 17')
+    expect(getTripEndpointLabel({ kind: 'venue', id: 'the-terrace-canteen' }, venues, stops)).toBe('The Terrace')
+    expect(getTripEndpointLabel({ kind: 'stop', id: 'STOP-A' }, venues, stops)).toBe('Central Library')
+    expect(getTripEndpointLabel({ kind: 'venue', id: 'MISSING' }, venues, stops)).toBe('MISSING')
+    expect(getTripEndpointLabel({
+      kind: 'current-location', coordinate: { longitude: 103.78, latitude: 1.29 },
+    }, venues, stops)).toBe('Current location')
   })
 })

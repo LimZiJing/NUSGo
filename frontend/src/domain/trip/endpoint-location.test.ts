@@ -23,7 +23,7 @@ const com3Stop: TransitStop = {
   services: [],
 }
 const sources = {
-  venues: { 'COM3-0201': { roomName: 'Room', location: { x: 103.7753, y: 1.2952 } } },
+  venues: { 'COM3-0201': { kind: 'room' as const, roomName: 'Room', location: { x: 103.7753, y: 1.2952 } } },
   buildings: buildBuildingIndex([com3]),
   transitIndex: { stopById: new Map([[com3Stop.id, com3Stop]]) },
 }

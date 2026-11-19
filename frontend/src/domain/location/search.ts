@@ -6,12 +6,12 @@ import type {
 } from '../trip/types'
 import type { PersonalWaypoint } from '../waypoints/personal/personal-waypoint'
 import type { JourneyEndpoint } from '@nusgo/shared/routing/path'
-import type { VenueLocationMap } from '@nusgo/shared/venue/types'
+import type { VenueMap } from '@nusgo/shared/venue/types'
 import { compareText, getMatchPriority, normalizeSearchText as normalize } from '../text-match'
 import { getTripEndpointKey } from '../trip/endpoints'
 import { createPersonalWaypointTripEndpoint } from '../trip/personal-waypoint-endpoints'
 import { EMPTY_BUILDING_INDEX, describeBuildingEntry, type BuildingIndex } from '../venue/building-index'
-import { getEateryCategoryLabel } from '../venue/eatery'
+import { getVenueSearchFields, getVenueSearchPresentation } from '../venue/search'
 
 const MAX_RESULTS = 8
 
@@ -40,6 +40,7 @@ function getPersonalWaypointSearchResult(waypoint: PersonalWaypoint): TripLocati
   const endpoint = createPersonalWaypointTripEndpoint(waypoint)
   if (!endpoint) return null
   return {
+    kind: 'personal-waypoint',
     endpoint,
     label: waypoint.name,
     detail: waypoint.category,
@@ -62,7 +63,7 @@ function getStop(source: TransitStopSource, id: string): TransitStop | undefined
 
 export function getTripEndpointLabel(
   endpoint: TripEndpoint | JourneyEndpoint,
-  venues: VenueLocationMap,
+  venues: VenueMap,
   stops: TransitStopSource,
   buildings: BuildingIndex = EMPTY_BUILDING_INDEX,
 ): string {
@@ -77,19 +78,19 @@ export function getTripEndpointLabel(
   }
   if (endpoint.kind === 'venue') {
     const venue = venues[endpoint.id]
-    return venue?.displayName ?? venue?.roomName ?? endpoint.id
+    return venue?.kind === 'food' ? venue.name : venue?.kind === 'room' ? venue.roomName : endpoint.id
   }
 
   return getStop(stops, endpoint.id)?.longName ?? endpoint.id
 }
 
 export function searchTripLocations(
-  venues: VenueLocationMap,
+  venues: VenueMap,
   stops: TransitStopSource,
   query: string,
   limit = MAX_RESULTS,
   buildings: BuildingIndex = EMPTY_BUILDING_INDEX,
-  kinds?: readonly TripEndpoint['kind'][],
+  kinds?: readonly TripLocationSearchResult['kind'][],
   personalWaypoints: readonly PersonalWaypoint[] = [],
 ): TripLocationSearchResult[] {
   const normalizedQuery = normalize(query)
@@ -101,13 +102,24 @@ export function searchTripLocations(
     // Endpoint markers require mappable venue coordinates.
     if (!venue.location) continue
 
+    const presentation = getVenueSearchPresentation(code, venue)
     candidates.push({
-      result: {
-        endpoint: { kind: 'venue', id: code },
-        label: venue.category ? venue.displayName ?? venue.roomName : code,
-        detail: venue.category ? getEateryCategoryLabel(venue.category) : venue.roomName,
-      },
-      fields: [code, venue.displayName ?? venue.roomName, venue.roomName],
+      result: venue.kind === 'food'
+        ? {
+          kind: 'food',
+          endpoint: { kind: 'venue', id: code },
+          venue,
+          label: presentation.title,
+          detail: presentation.detail,
+        }
+        : {
+          kind: 'room',
+          endpoint: { kind: 'venue', id: code },
+          venue,
+          label: code,
+          detail: presentation.detail,
+        },
+      fields: getVenueSearchFields(code, venue),
       kindOrder: ROOM_ORDER,
     })
   }
@@ -115,6 +127,7 @@ export function searchTripLocations(
   for (const stop of getStops(stops)) {
     candidates.push({
       result: {
+        kind: 'stop',
         endpoint: { kind: 'stop', id: stop.id },
         label: stop.longName,
         // A short name that repeats the stop ID would print the code twice.
@@ -128,6 +141,7 @@ export function searchTripLocations(
   for (const building of buildings.entries) {
     candidates.push({
       result: {
+        kind: 'building',
         endpoint: { kind: 'building', id: building.id },
         label: building.name,
         detail: describeBuildingEntry(building),
@@ -154,7 +168,7 @@ export function searchTripLocations(
     }))
     .filter((candidate): candidate is SearchCandidate & { priority: number } => candidate.priority !== null)
     // Filtering before the cap keeps a narrow chip from being starved by other kinds.
-    .filter((candidate) => !kinds || kinds.includes(candidate.result.endpoint.kind))
+    .filter((candidate) => !kinds || kinds.includes(candidate.result.kind))
     .sort((first, second) => {
       const kindDifference = first.kindOrder - second.kindOrder
       if (kindDifference !== 0) return kindDifference

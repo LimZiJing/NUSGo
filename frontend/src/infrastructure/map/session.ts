@@ -16,7 +16,7 @@ import type { DeviceLocationFix } from '../../domain/location/types'
 import type { PersonalWaypoint } from '../../domain/waypoints/personal/personal-waypoint'
 import type { CommunityWaypoint } from '@nusgo/shared/waypoints/community'
 import { getBusPathLegStopIds } from './path-stops'
-import type { VenueLocation } from '@nusgo/shared/venue/types'
+import type { Venue } from '@nusgo/shared/venue/types'
 import { applyBasemapPresentation } from './basemap'
 import { watchBasemapTheme } from './basemap-theme'
 import { createTripEndpointMarkers, type TripEndpointMarkers } from './endpoint-markers'
@@ -35,7 +35,7 @@ import { createPersonalWaypointMarkers, type PersonalWaypointMarkers } from './p
 import { createCommunityWaypointMarkers, type CommunityWaypointMarkers } from './community-waypoint-markers'
 import type { TransitIndex } from '../../domain/transit'
 import type { BuildingEntry, BuildingIndex } from '../../domain/venue/building-index'
-import type { VenueLocationMap } from '@nusgo/shared/venue/types'
+import type { VenueMap } from '@nusgo/shared/venue/types'
 import {
   createBlockLabelGeoJson,
   createBlockNumberGeoJson,
@@ -75,10 +75,10 @@ function getJourneyFitInsets(
 
 type VenueCameraFit = {
   readonly kind: 'venue'
-  readonly venue: VenueLocation
+  readonly venue: Venue
 } | {
   readonly kind: 'building'
-  readonly locations: readonly VenueLocation['location'][]
+  readonly locations: readonly Venue['location'][]
 }
 
 export function createMapSession(options: MapSessionOptions): MapSession {
@@ -113,7 +113,7 @@ export function createMapSession(options: MapSessionOptions): MapSession {
   let visibleCenterZoomEnabled = false
   let transitData: LoadedTransitData | null = null
   let currentTripRequest: TripRequest | null = null
-  let currentVenues: VenueLocationMap = {}
+  let currentVenues: VenueMap = {}
   let currentBuildings: BuildingIndex | null = null
   let currentTransitIndex: TransitIndex | null = null
   let buildingLabelEntries: readonly BuildingEntry[] = []
@@ -199,11 +199,11 @@ export function createMapSession(options: MapSessionOptions): MapSession {
     if (fit.kind === 'venue') {
       fitVenue(fit.venue)
     } else {
-      fitBuilding(fit.locations as NonNullable<VenueLocation['location']>[])
+      fitBuilding(fit.locations as NonNullable<Venue['location']>[])
     }
   }
 
-  const fitVenue = (venue: VenueLocation): void => {
+  const fitVenue = (venue: Venue): void => {
     const location = venue.location
     if (!location) return
     map.flyTo({
@@ -215,10 +215,10 @@ export function createMapSession(options: MapSessionOptions): MapSession {
     })
   }
 
-  const fitBuilding = (locations: readonly NonNullable<VenueLocation['location']>[]): void => {
+  const fitBuilding = (locations: readonly NonNullable<Venue['location']>[]): void => {
     if (locations.length === 0) return
     if (locations.length === 1) {
-      fitVenue({ roomName: '', location: locations[0] })
+      fitVenue({ kind: 'room', roomName: '', location: locations[0] })
       return
     }
     const longitudes = locations.map(({ x }) => x)
@@ -518,7 +518,7 @@ export function createMapSession(options: MapSessionOptions): MapSession {
 
     setTripRequest(
       request: TripRequest,
-      venues: VenueLocationMap,
+      venues: VenueMap,
       transitIndex: TransitIndex | null,
       buildings: BuildingIndex | null = null,
     ) {
@@ -781,7 +781,7 @@ export function createMapSession(options: MapSessionOptions): MapSession {
       }
     },
 
-    selectVenue(venue: VenueLocation) {
+    selectVenue(venue: Venue) {
       if (disposed) return
 
       clearVenueMarker()
@@ -805,12 +805,12 @@ export function createMapSession(options: MapSessionOptions): MapSession {
 
       clearVenueMarker()
       const { highlighted } = building
-      const isHighlighted = (location: NonNullable<VenueLocation['location']>) =>
+      const isHighlighted = (location: NonNullable<Venue['location']>) =>
         highlighted !== undefined && location.x === highlighted.x && location.y === highlighted.y
       const markers = building.locations.flatMap((location) => {
         const marker = createVenueMarker(
           map,
-          { roomName: building.name, location },
+          { kind: 'room', roomName: building.name, location },
           isHighlighted(location) ? BUILDING_PART_HIGHLIGHT_COLOR : undefined,
         )
         return marker ? [marker] : []

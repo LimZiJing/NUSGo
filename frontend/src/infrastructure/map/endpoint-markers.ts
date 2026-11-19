@@ -2,7 +2,7 @@ import { Marker, Popup, type Map } from 'maplibre-gl'
 import { getTripEndpointLabel } from '../../domain/location/search'
 import type { TransitIndex } from '../../domain/transit'
 import type { TripRequest } from '../../domain/trip/types'
-import type { VenueLocationMap } from '@nusgo/shared/venue/types'
+import type { VenueMap } from '@nusgo/shared/venue/types'
 import { getTripEndpointCoordinate } from '../../domain/trip/endpoint-location'
 import type { BuildingIndex } from '../../domain/venue/building-index'
 import { createPopupContent } from './popup'
@@ -30,7 +30,7 @@ function createTripEndpointMarkerElement(
 export function createTripEndpointMarkers(
   map: Map,
   request: TripRequest,
-  venues: VenueLocationMap,
+  venues: VenueMap,
   transitIndex: TransitIndex | null,
   buildings: BuildingIndex | null = null,
 ): TripEndpointMarkers {

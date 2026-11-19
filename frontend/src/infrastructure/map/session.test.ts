@@ -8,7 +8,7 @@ import { createTransitIndex } from '../../domain/transit'
 import { generateShuttleTimingData } from '@nusgo/shared/transit/timing'
 import type { BusRouteGeometry } from '@nusgo/shared/transit/types'
 import type { Path } from '@nusgo/shared/routing/path'
-import type { VenueLocation } from '@nusgo/shared/venue/types'
+import type { Venue } from '@nusgo/shared/venue/types'
 import type { DeviceLocationFix } from '../../domain/location/types'
 import type { PersonalWaypoint } from '../../domain/waypoints/personal/personal-waypoint'
 
@@ -849,8 +849,8 @@ describe('MapSession', () => {
       addedMarkers: Array<{ remove: ReturnType<typeof vi.fn> }>
     }
     const venues = {
-      ONE: { roomName: 'One', location: { x: 103.7, y: 1.3 } },
-      TWO: { roomName: 'Two', location: { x: 103.8, y: 1.4 } },
+      ONE: { kind: 'room' as const, roomName: 'One', location: { x: 103.7, y: 1.3 } },
+      TWO: { kind: 'room' as const, roomName: 'Two', location: { x: 103.8, y: 1.4 } },
     }
     const request = { origin: { kind: 'venue', id: 'ONE' }, destination: { kind: 'venue', id: 'TWO' } } as const
     const options = [{ candidateKey: 'bus', path: createPath() }]
@@ -1235,11 +1235,13 @@ describe('MapSession', () => {
       onMapError: vi.fn(),
       onEmptyMapClick: vi.fn(),
     })
-    const venueOne: VenueLocation = {
+    const venueOne: Venue = {
+      kind: 'room',
       roomName: 'Venue One',
       location: { x: 103.7, y: 1.3 },
     }
-    const venueTwo: VenueLocation = {
+    const venueTwo: Venue = {
+      kind: 'room',
       roomName: 'Venue Two',
       location: { x: 103.8, y: 1.4 },
     }
@@ -1292,7 +1294,8 @@ describe('MapSession', () => {
       onMapError: vi.fn(),
       onEmptyMapClick: vi.fn(),
     })
-    const venue: VenueLocation = {
+    const venue: Venue = {
+      kind: 'room',
       roomName: 'Venue One',
       location: { x: 103.7, y: 1.3 },
     }
@@ -1452,7 +1455,7 @@ describe('MapSession', () => {
 
     await session.ready
     session.loadTransitData(transitData, { route: null, overlappingRouteIds: new Set() })
-    session.selectVenue({ roomName: 'COM2-0108', location: { x: 103.774, y: 1.293 } })
+    session.selectVenue({ kind: 'room', roomName: 'COM2-0108', location: { x: 103.774, y: 1.293 } })
     session.setViewportInsets({ top: 0, right: 12, bottom: 373, left: 12 })
     session.setRouteSelection(createRouteSelection(transitData))
     session.setViewportInsets({ top: 0, right: 12, bottom: 498, left: 12 })
@@ -1602,6 +1605,7 @@ describe('MapSession', () => {
     }
     const venues = {
       'VENUE-A': {
+        kind: 'room' as const,
         roomName: 'Venue A',
         location: { x: 103.9, y: 1.5 },
       },
@@ -1861,7 +1865,7 @@ describe('MapSession', () => {
     const flyToCount = map.flyTo.mock.calls.length
     session.setRouteSelection({ route: null, overlappingRouteIds: new Set() })
     session.setTripRequest({ origin: null, destination: null }, {}, null)
-    session.selectVenue({} as VenueLocation)
+    session.selectVenue({} as Venue)
     session.clearVenue()
     expect(map.addedMarkers).toHaveLength(markerCount)
     expect(map.removedLayers).toHaveLength(removedLayerCount)

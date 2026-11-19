@@ -1,5 +1,17 @@
 import type { BuildingCatalogue } from './buildings.ts'
-import { EATERY_CATEGORIES, type EateryCategory, type EateryLocationMap, type VenueLocation, type VenueLocationMap } from './types.ts'
+import {
+  FOOD_TYPES,
+  type ComposedVenueData,
+  type FoodLocation,
+  type FoodLocationMap,
+  type FoodType,
+  type RoomVenue,
+  type RoomVenueSource,
+  type RoomVenueSourceMap,
+  type Venue,
+  type VenueMap,
+  type WholeBuildingVenueAlias,
+} from './types.ts'
 
 export class VenueValidationError extends Error {
   readonly issues: readonly string[]
@@ -22,11 +34,38 @@ function isValidFloor(value: unknown): boolean {
   )
 }
 
-function validateVenue(
+function validateGeoLocation(label: string, value: unknown, issues: string[]): boolean {
+  if (!isRecord(value)) {
+    issues.push(`${label} location must be an object`)
+    return false
+  }
+
+  const longitude = value.x
+  const latitude = value.y
+  if (
+    typeof longitude !== 'number' ||
+    !Number.isFinite(longitude) ||
+    longitude < -180 ||
+    longitude > 180
+  ) {
+    issues.push(`${label} has invalid longitude: ${String(longitude)}`)
+  }
+  if (
+    typeof latitude !== 'number' ||
+    !Number.isFinite(latitude) ||
+    latitude < -90 ||
+    latitude > 90
+  ) {
+    issues.push(`${label} has invalid latitude: ${String(latitude)}`)
+  }
+  return true
+}
+
+function validateVenueSource(
   code: string,
   value: unknown,
   issues: string[],
-): value is VenueLocation {
+): value is RoomVenueSource {
   if (!isRecord(value)) {
     issues.push(`Venue ${code} must be an object`)
     return false
@@ -35,45 +74,15 @@ function validateVenue(
   if (typeof value.roomName !== 'string' || value.roomName.trim().length === 0) {
     issues.push(`Venue ${code} roomName must be a non-empty string`)
   }
-  if (value.displayName !== undefined && !isNonEmptyString(value.displayName)) {
-    issues.push(`Venue ${code} displayName must be a non-empty string when provided`)
-  }
-  if (value.category !== undefined && !isEateryCategory(value.category)) {
-    issues.push(`Venue ${code} has invalid eatery category: ${String(value.category)}`)
-  }
   if (!isValidFloor(value.floor)) {
     issues.push(`Venue ${code} floor must be an integer or null when provided`)
   }
 
   if (value.location === undefined) return true
-  if (!isRecord(value.location)) {
-    issues.push(`Venue ${code} location must be an object when provided`)
-    return false
-  }
-
-  const longitude = value.location.x
-  const latitude = value.location.y
-  if (
-    typeof longitude !== 'number' ||
-    !Number.isFinite(longitude) ||
-    longitude < -180 ||
-    longitude > 180
-  ) {
-    issues.push(`Venue ${code} has invalid longitude: ${String(longitude)}`)
-  }
-  if (
-    typeof latitude !== 'number' ||
-    !Number.isFinite(latitude) ||
-    latitude < -90 ||
-    latitude > 90
-  ) {
-    issues.push(`Venue ${code} has invalid latitude: ${String(latitude)}`)
-  }
-
-  return true
+  return validateGeoLocation(`Venue ${code}`, value.location, issues)
 }
 
-export function validateVenueLocationMap(input: unknown): VenueLocationMap {
+export function validateVenueSourceMap(input: unknown): RoomVenueSourceMap {
   const issues: string[] = []
   if (!isRecord(input)) {
     throw new VenueValidationError(['Venue data must be an object'])
@@ -84,85 +93,188 @@ export function validateVenueLocationMap(input: unknown): VenueLocationMap {
       issues.push('Venue code must be a non-empty string')
       continue
     }
-    validateVenue(code, value, issues)
+    validateVenueSource(code, value, issues)
   }
 
   if (issues.length > 0) throw new VenueValidationError(issues)
   const validatedVenues = Object.fromEntries(Object.entries(input).map(([code, value]) => {
-    const venue = value as VenueLocation
-    const validatedVenue = { ...venue }
-    delete validatedVenue.isStandaloneEatery
+    const venue = value as RoomVenueSource
     return [code, Object.freeze({
-      ...validatedVenue,
-      location: venue.location ? Object.freeze({ ...venue.location }) : undefined,
+      roomName: venue.roomName,
+      ...(venue.floor === undefined ? {} : { floor: venue.floor }),
+      ...(venue.location === undefined ? {} : { location: Object.freeze({ ...venue.location }) }),
     })]
   }))
-  return Object.freeze(validatedVenues) as VenueLocationMap
+  return Object.freeze(validatedVenues) as RoomVenueSourceMap
 }
 
-function isEateryCategory(value: unknown): value is EateryCategory {
-  return typeof value === 'string' && EATERY_CATEGORIES.some((category) => category === value)
+function isFoodType(value: unknown): value is FoodType {
+  return typeof value === 'string' && FOOD_TYPES.some((foodType) => foodType === value)
 }
 
-function validateEateryLocation(label: string, value: unknown, issues: string[]): boolean {
+function validateFoodLocation(label: string, value: unknown, issues: string[]): boolean {
   if (!isRecord(value)) {
-    issues.push(`Eatery ${label} must be an object`)
+    issues.push(`Food ${label} must be an object`)
     return false
   }
-  if (!isNonEmptyString(value.name)) issues.push(`Eatery ${label} name must be a non-empty string`)
-  if (!isEateryCategory(value.category)) {
-    issues.push(`Eatery ${label} has invalid category: ${String(value.category)}`)
+  if (!isNonEmptyString(value.name)) issues.push(`Food ${label} name must be a non-empty string`)
+  if (!isFoodType(value.foodType)) {
+    issues.push(`Food ${label} has invalid foodType: ${String(value.foodType)}`)
   }
-  if (!isRecord(value.location)) {
-    issues.push(`Eatery ${label} location must be an object`)
-    return false
-  }
-  validateBuildingLocation(`Eatery ${label}`, value.location, issues)
-  return true
+  return validateGeoLocation(`Food ${label}`, value.location, issues)
 }
 
-export function validateEateryLocationMap(input: unknown): EateryLocationMap {
+export function validateFoodLocationMap(input: unknown): FoodLocationMap {
   const issues: string[] = []
-  if (!isRecord(input)) throw new VenueValidationError(['Eatery data must be an object'])
+  if (!isRecord(input)) throw new VenueValidationError(['Food data must be an object'])
 
   for (const [id, value] of Object.entries(input)) {
     if (id.trim().length === 0) {
-      issues.push('Eatery ID must be a non-empty string')
+      issues.push('Food ID must be a non-empty string')
       continue
     }
-    validateEateryLocation(id, value, issues)
+    validateFoodLocation(id, value, issues)
   }
 
   if (issues.length > 0) throw new VenueValidationError(issues)
   const validated = Object.fromEntries(Object.entries(input).map(([id, value]) => {
-    const eatery = value as EateryLocationMap[string]
+    const food = value as FoodLocationMap[string]
     return [id, Object.freeze({
-      name: eatery.name,
-      category: eatery.category,
-      location: Object.freeze({ ...eatery.location }),
+      name: food.name,
+      foodType: food.foodType,
+      location: Object.freeze({ ...food.location }),
     })]
   }))
-  return Object.freeze(validated) as EateryLocationMap
+  return Object.freeze(validated) as FoodLocationMap
 }
 
-export function mergeVenueAndEateryMaps(
-  venues: VenueLocationMap,
-  eateries: EateryLocationMap,
-): VenueLocationMap {
-  const merged: Record<string, VenueLocation> = { ...venues }
-  for (const [eateryId, eatery] of Object.entries(eateries)) {
-    // Stable IDs are the only safe way to reuse a venue: names can refer to separate places.
-    const existing = venues[eateryId]
-    merged[eateryId] = Object.freeze({
-      ...(existing ?? { roomName: eatery.name }),
-      displayName: eatery.name,
-      category: eatery.category,
-      isStandaloneEatery: existing === undefined,
-      location: Object.freeze({ ...eatery.location }),
-    })
+function validateVenue(
+  id: string,
+  value: unknown,
+  issues: string[],
+): value is Venue {
+  if (!isRecord(value)) {
+    issues.push(`Venue ${id} must be an object`)
+    return false
   }
 
-  return Object.freeze(merged)
+  if (value.kind === 'room') {
+    if (!isNonEmptyString(value.roomName)) issues.push(`Room ${id} roomName must be a non-empty string`)
+    if (!isValidFloor(value.floor)) issues.push(`Room ${id} floor must be an integer or null when provided`)
+    if (value.location !== undefined) validateGeoLocation(`Room ${id}`, value.location, issues)
+  } else if (value.kind === 'food') {
+    if (!isNonEmptyString(value.name)) issues.push(`Food ${id} name must be a non-empty string`)
+    if (!isFoodType(value.foodType)) issues.push(`Food ${id} has invalid foodType: ${String(value.foodType)}`)
+    validateGeoLocation(`Food ${id}`, value.location, issues)
+  } else {
+    issues.push(`Venue ${id} has unknown kind: ${String(value.kind)}`)
+    return false
+  }
+
+  if (value.buildingId !== undefined && !isNonEmptyString(value.buildingId)) {
+    issues.push(`Venue ${id} buildingId must be a non-empty string when provided`)
+  }
+  return true
+}
+
+export function validateVenueMap(input: unknown): VenueMap {
+  if (!isRecord(input)) throw new VenueValidationError(['Venue map must be an object'])
+  const issues: string[] = []
+
+  for (const [id, value] of Object.entries(input)) {
+    if (id.trim().length === 0) {
+      issues.push('Venue ID must be a non-empty string')
+      continue
+    }
+    validateVenue(id, value, issues)
+  }
+  if (issues.length > 0) throw new VenueValidationError(issues)
+
+  const validated = Object.fromEntries(Object.entries(input).map(([id, value]) => {
+    const venue = value as Record<string, unknown>
+    if (venue.kind === 'room') {
+      const room: RoomVenue = {
+        kind: 'room',
+        roomName: venue.roomName as string,
+        ...(venue.floor === undefined ? {} : { floor: venue.floor as number | null }),
+        ...(venue.location === undefined
+          ? {}
+          : { location: Object.freeze({ ...(venue.location as { x: number, y: number }) }) }),
+        ...(venue.buildingId === undefined ? {} : { buildingId: venue.buildingId as string }),
+      }
+      return [id, Object.freeze(room)]
+    }
+
+    const food = {
+      kind: 'food' as const,
+      name: venue.name as string,
+      foodType: venue.foodType as FoodType,
+      location: Object.freeze({ ...(venue.location as { x: number, y: number }) }),
+      ...(venue.buildingId === undefined ? {} : { buildingId: venue.buildingId as string }),
+    }
+    return [id, Object.freeze(food)]
+  }))
+  return Object.freeze(validated) as VenueMap
+}
+
+export function composeVenueData(
+  roomSources: RoomVenueSourceMap,
+  foodLocations: FoodLocationMap,
+  buildings?: BuildingCatalogue,
+): ComposedVenueData {
+  const buildingIdByPrefix = new Map<string, string>()
+  const buildingIdByPrimaryPrefix = new Map<string, string>()
+  for (const building of buildings?.buildings ?? []) {
+    const buildingId = building.groupKey ?? building.id
+    for (const prefix of building.roomCodePrefixes) {
+      buildingIdByPrefix.set(prefix.toLowerCase(), buildingId)
+    }
+    const primaryPrefix = building.roomCodePrefixes[0]
+    if (primaryPrefix !== undefined) {
+      buildingIdByPrimaryPrefix.set(primaryPrefix.toLowerCase(), buildingId)
+    }
+  }
+
+  const venueRecords: Record<string, RoomVenue | { kind: 'food'; name: string; foodType: FoodType; location: FoodLocation['location']; buildingId?: string }> = {}
+  const wholeBuildingVenueAliases: WholeBuildingVenueAlias[] = []
+  const buildingIdByVenueCode = new Map<string, string>()
+
+  for (const [venueCode, source] of Object.entries(roomSources)) {
+    const buildingId = buildingIdByPrimaryPrefix.get(venueCode.toLowerCase())
+    if (buildingId !== undefined) {
+      wholeBuildingVenueAliases.push({ venueCode, name: source.roomName, buildingId })
+      buildingIdByVenueCode.set(venueCode, buildingId)
+      continue
+    }
+
+    const roomToken = venueCode.split(/[-_]/)[0]?.toLowerCase()
+    const roomBuildingId = roomToken === undefined ? undefined : buildingIdByPrefix.get(roomToken)
+    venueRecords[venueCode] = {
+      kind: 'room',
+      roomName: source.roomName,
+      ...(source.floor === undefined ? {} : { floor: source.floor }),
+      ...(source.location === undefined ? {} : { location: source.location }),
+      ...(roomBuildingId === undefined ? {} : { buildingId: roomBuildingId }),
+    }
+    if (roomBuildingId !== undefined) buildingIdByVenueCode.set(venueCode, roomBuildingId)
+  }
+
+  for (const [foodId, food] of Object.entries(foodLocations)) {
+    // An exact shared source identity is a validated link; Food IDs are never parsed as room codes.
+    const buildingId = buildingIdByVenueCode.get(foodId)
+    venueRecords[foodId] = {
+      kind: 'food',
+      name: food.name,
+      foodType: food.foodType,
+      location: food.location,
+      ...(buildingId === undefined ? {} : { buildingId }),
+    }
+  }
+
+  return Object.freeze({
+    venues: validateVenueMap(venueRecords),
+    wholeBuildingVenueAliases: Object.freeze(wholeBuildingVenueAliases.map((alias) => Object.freeze(alias))),
+  })
 }
 
 function isNonEmptyString(value: unknown): value is string {
@@ -370,6 +482,6 @@ export function validateBuildingCatalogue(input: unknown): BuildingCatalogue {
   })
 }
 
-export function getVenueCount(venues: VenueLocationMap): number {
+export function getVenueCount(venues: VenueMap): number {
   return Object.values(venues).filter((venue) => venue.location).length
 }

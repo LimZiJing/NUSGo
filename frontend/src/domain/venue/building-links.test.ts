@@ -1,7 +1,8 @@
 import { readFileSync } from 'node:fs'
 import { describe, expect, it } from 'vitest'
-import type { Building, BuildingCatalogue } from '@nusgo/shared/venue/buildings'
-import type { VenueLocationMap } from '@nusgo/shared/venue/types'
+import type { Building } from '@nusgo/shared/venue/buildings'
+import type { VenueMap } from '@nusgo/shared/venue/types'
+import { composeVenueData, validateBuildingCatalogue, validateFoodLocationMap, validateVenueSourceMap } from '@nusgo/shared/venue/validation'
 import { buildBuildingIndex } from './building-index'
 import { linkVenuesToBuildings } from './building-links'
 
@@ -17,7 +18,12 @@ function building(overrides: Partial<Building> & Pick<Building, 'id' | 'name'>):
   }
 }
 
-const room = (roomName: string) => ({ roomName, location: { x: 103.77, y: 1.29 } })
+const room = (roomName: string, buildingId?: string) => ({
+  kind: 'room' as const,
+  roomName,
+  location: { x: 103.77, y: 1.29 },
+  ...(buildingId ? { buildingId } : {}),
+})
 
 describe('linkVenuesToBuildings', () => {
   const index = buildBuildingIndex([
@@ -25,12 +31,11 @@ describe('linkVenuesToBuildings', () => {
     building({ id: 'lt-17', name: 'LT 17', roomCodePrefixes: ['LT17'] }),
     building({ id: 'rc-1', name: 'Saga College', groupKey: 'saga', roomCodePrefixes: ['RC1'] }),
     building({ id: 'rc-2', name: 'Saga College', groupKey: 'saga', roomCodePrefixes: ['RC1'] }),
-  ])
-  const venues: VenueLocationMap = {
-    'COM1-0210': room('Seminar Room 10'),
-    'com1-0211': room('Seminar Room 11'),
-    LT17: room('Lecture Theatre 17'),
-    'RC1-01-01': room('Saga classroom'),
+  ], undefined, [{ venueCode: 'LT17', name: 'Lecture Theatre 17', buildingId: 'lt-17' }])
+  const venues: VenueMap = {
+    'COM1-0210': room('Seminar Room 10', 'com1'),
+    'com1-0211': room('Seminar Room 11', 'com1'),
+    'RC1-01-01': room('Saga classroom', 'saga'),
     'Y-CR3': room('Yale classroom'),
     LAW_SR3: room('SR 3'),
     Pinnacle: room('Pinnacle'),
@@ -73,9 +78,15 @@ describe('linkVenuesToBuildings', () => {
 })
 
 describe('linkVenuesToBuildings with the real data', () => {
-  const venues = JSON.parse(readFileSync('public/data/venues.json', 'utf8')) as VenueLocationMap
-  const catalogue = JSON.parse(readFileSync('public/data/buildings.json', 'utf8')) as BuildingCatalogue
-  const links = linkVenuesToBuildings(venues, buildBuildingIndex(catalogue.buildings))
+  const catalogue = validateBuildingCatalogue(JSON.parse(readFileSync('public/data/buildings.json', 'utf8')))
+  const venueData = composeVenueData(
+    validateVenueSourceMap(JSON.parse(readFileSync('public/data/venues.json', 'utf8'))),
+    validateFoodLocationMap(JSON.parse(readFileSync('public/data/food.json', 'utf8'))),
+    catalogue,
+  )
+  const venues: VenueMap = venueData.venues
+  const buildings = buildBuildingIndex(catalogue.buildings, catalogue.source, venueData.wholeBuildingVenueAliases)
+  const links = linkVenuesToBuildings(venues, buildings)
 
   it('treats the lecture theatres and Frontier as whole buildings', () => {
     expect(links.wholeBuildingVenueCodes.has('LT17')).toBe(true)

@@ -1,7 +1,7 @@
 import { mkdir, readFile, readdir, writeFile } from 'node:fs/promises'
 import { basename, dirname, join } from 'node:path'
 import type { BuildingCatalogue, BuildingCatalogueSource } from '../../../shared/src/venue/buildings.ts'
-import { validateBuildingCatalogue, validateVenueLocationMap } from '../../../shared/src/venue/validation.ts'
+import { validateBuildingCatalogue, validateVenueSourceMap } from '../../../shared/src/venue/validation.ts'
 import { BUILDING_ALIASES, validateAliases } from './aliases.ts'
 import { buildCatalogue } from './catalogue.ts'
 import { parseOverrides, parseUnlinkedPrefixes } from './overrides.ts'
@@ -75,7 +75,7 @@ async function importFromSnapshot(paths: CommandPaths): Promise<string> {
     checkRecordDrop(apiBuildings.length, previous.length, previousFile)
   }
 
-  const venues = validateVenueLocationMap(await readJson(paths.venues))
+  const venues = validateVenueSourceMap(await readJson(paths.venues))
   const overridesFile = await readJson(paths.overrides)
   const overrides = parseOverrides(
     overridesFile,

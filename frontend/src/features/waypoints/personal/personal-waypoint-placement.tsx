@@ -37,6 +37,7 @@ export function PersonalWaypointPlacement({
   readonly onCancel: () => void
 }) {
   const headingRef = useRef<HTMLHeadingElement>(null)
+  const panelRef = useRef<HTMLElement>(null)
   const inputRef = useRef<HTMLInputElement>(null)
   const editButtonRef = useRef<HTMLButtonElement>(null)
   const returnFocusToEdit = useRef(false)
@@ -107,7 +108,56 @@ export function PersonalWaypointPlacement({
     onContinue()
   }
 
-  return <section className="personal-waypoint-placement" aria-label="Adjust waypoint location">
+  // The panel is pinned to the bottom of the map stage, and the page opts into
+  // `interactive-widget=overlays-content`, so the software keyboard does not resize the layout
+  // viewport — it covers the bottom of the screen instead. Without this the coordinate input stays
+  // exactly where the keyboard is, and neither the field nor what is typed into it can be seen.
+  // The panel is lifted by however much of it the keyboard covers, and its height is capped so the
+  // lift can never push its own heading off the top of the screen.
+  useEffect(() => {
+    const panel = panelRef.current
+    const viewport = window.visualViewport
+    if (!panel || !viewport) return
+
+    let frame: number | null = null
+    let lift = 0
+    const reposition = (): void => {
+      frame = null
+      // Measure from where the panel would sit without a lift. Reading the lifted rect and feeding
+      // it back would make each pass cancel the previous one, so the lift is subtracted off first.
+      const bounds = panel.getBoundingClientRect()
+      const baseBottom = bounds.bottom + lift
+      const visibleTop = viewport.offsetTop
+      const visibleBottom = visibleTop + viewport.height
+      const covered = baseBottom - visibleBottom
+      lift = covered > 0 ? Math.ceil(covered) : 0
+      // Cap the height to the room between the keyboard's top edge and the panel's own top margin,
+      // so lifting a tall panel scrolls its contents instead of hiding the heading off-screen.
+      const containingTop = panel.offsetParent?.getBoundingClientRect().top ?? visibleTop
+      const room = baseBottom - lift - containingTop - 16
+      panel.style.setProperty('--personal-waypoint-keyboard-lift', `${lift}px`)
+      panel.style.setProperty('--personal-waypoint-keyboard-max-height', `${Math.max(160, Math.floor(room))}px`)
+    }
+    const schedule = (): void => {
+      if (frame !== null) return
+      frame = window.requestAnimationFrame(reposition)
+    }
+
+    reposition()
+    viewport.addEventListener('resize', schedule)
+    viewport.addEventListener('scroll', schedule)
+    window.addEventListener('resize', schedule)
+    return () => {
+      if (frame !== null) window.cancelAnimationFrame(frame)
+      viewport.removeEventListener('resize', schedule)
+      viewport.removeEventListener('scroll', schedule)
+      window.removeEventListener('resize', schedule)
+      panel.style.removeProperty('--personal-waypoint-keyboard-lift')
+      panel.style.removeProperty('--personal-waypoint-keyboard-max-height')
+    }
+  }, [])
+
+  return <section className="personal-waypoint-placement" aria-label="Adjust waypoint location" ref={panelRef}>
     <header className="personal-waypoint-placement-header">
       <h2 ref={headingRef} tabIndex={-1}>Adjust waypoint location</h2>
       <p>Tap the map or use its centre to move the pin, then return to your form.</p>

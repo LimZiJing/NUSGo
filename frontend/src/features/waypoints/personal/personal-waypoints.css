@@ -587,11 +587,25 @@
 }
 /* Leave room inside the box for the chevron and, when validation fails, Astryx's error glyph beside
    it. The chevron is 44px wide and sits 4px in from the edge, so trailing content needs 52px of
-   clearance. This only applies while the chevron is rendered: with no saved categories yet there is
-   no trigger, and reserving its space pushed the error glyph into the middle of the field instead of
-   the trailing edge where the other fields put it. */
+   clearance. This only applies while the chevron is actually drawn: with no saved categories yet
+   there is no trigger, and reserving its space pushed the error glyph into the middle of the field
+   instead of the trailing edge where the other fields put it. */
 .personal-waypoint-field:has(> .personal-waypoint-category-trigger) .personal-waypoint-category-astryx-field .astryx-text-input {
   padding-right: 52px;
+}
+
+/* While the category is invalid, the error glyph takes the trailing slot on its own.
+   Two things follow from that. The chevron would otherwise sit to the right of the glyph, so the
+   glyph landed 53px from the edge here while the same glyph sat 17px from the edge on Name and
+   Note — the same control in two different places on one screen. Hiding the chevron while the field
+   is in error puts every error glyph on the same inset. Nothing is lost: tapping the field itself
+   opens the suggestion list (see `onFocus` in the form), so the button is a second affordance for
+   the same action, and it comes back as soon as the error clears. */
+.personal-waypoint-field[data-invalid='true'] .personal-waypoint-category-trigger {
+  display: none;
+}
+.personal-waypoint-field[data-invalid='true']:has(> .personal-waypoint-category-trigger) .personal-waypoint-category-astryx-field .astryx-text-input {
+  padding-right: var(--space-4);
 }
 
 /* The suggestion list is portalled to the body and positioned from the input's measured rect, so
@@ -901,27 +915,48 @@
    a tick, so the dot is a second, redundant indicator — and at eight across it pushed the row off
    the screen. Same treatment as the community form's option lists. */
 .personal-waypoint-astryx-radio-list .astryx-radio-indicator { display: none; }
+
+/* Astryx nests the option's artwork inside `startContent`, which it wraps in a shrink-to-fit span,
+   and puts the hidden <input> in a separate 24x24 wrapper. A percentage width on the swatch resolved
+   against that shrink-to-fit span and collapsed, and making the wrapper `display: contents` instead
+   promoted the 24px input wrapper to a flex item that shoved the artwork off centre.
+   So the option stays a plain centring box and the artwork is centred by the option itself; the
+   input wrapper is taken out of the flow entirely, since the option already paints the target and
+   the input is invisible. */
 .personal-waypoint-astryx-radio-list .personal-waypoint-color-option,
 .personal-waypoint-astryx-radio-list .personal-waypoint-icon-option {
-  display: grid;
+  position: relative;
+  display: flex;
   min-width: 0;
-  place-items: center;
+  align-items: center;
+  justify-content: center;
   padding: 0;
   border: 0;
   background: transparent;
 }
-.personal-waypoint-astryx-radio-list .personal-waypoint-color-swatch {
-  display: grid;
-  width: 100%;
-  max-width: 34px;
-  aspect-ratio: 1;
-  place-items: center;
-  border-radius: 50%;
+/* The empty label. Hiding it removes the second flex item that used up width and `gap`. */
+.personal-waypoint-astryx-radio-list .personal-waypoint-color-option > span:last-child,
+.personal-waypoint-astryx-radio-list .personal-waypoint-icon-option > span:last-child {
+  display: none;
+}
+/* The wrapper holding the input and the (hidden) dot: keep it out of layout so only the artwork
+   takes part in centring. */
+/* Astryx nests everything in `startContent` inside one wrapper span: the hidden <input> in a 24x24
+   div, then the artwork. `display: contents` dissolves the wrapper so the artwork becomes the
+   option's flex item — but it also promoted that 24px input box to a flex item, which consumed
+   24px plus the gap and pushed the artwork 16px to the right. The input box is the one that has to
+   leave the flow; the wrapper itself must stay dissolved or the artwork would leave with it. */
+.personal-waypoint-astryx-radio-list .personal-waypoint-color-option > span:first-child,
+.personal-waypoint-astryx-radio-list .personal-waypoint-icon-option > span:first-child {
+  display: contents;
+}
+.personal-waypoint-astryx-radio-list .personal-waypoint-color-option > span:first-child > div,
+.personal-waypoint-astryx-radio-list .personal-waypoint-icon-option > span:first-child > div {
+  position: absolute;
+  inset: 0;
 }
 
-/* Five icons across the same width as the eight colours, so the two rows share one grid rather than
-   being a wide row above a narrow one. Each cell is square: a 17px glyph inside a 42px-tall, 58px-wide
-   box left most of the tile empty and made the row look sparse next to the colours. */
+/* Five icons across the same width as the eight colours, so the two rows share one grid. */
 .personal-waypoint-icon-options {
   display: grid;
   grid-template-columns: repeat(5, minmax(0, 1fr));
@@ -941,15 +976,15 @@
   cursor: pointer;
 }
 
-/* A square tile that fills its cell. The tiles used to be 58 x 42 around a 17px glyph, so most of
-   each button was empty border; square cells give the glyph room and make the five read as one row
-   of buttons rather than five wide bars with a speck in the middle. */
+/* Back to the original compact height. The tiles were never too small; the glyph inside them was,
+   so growing the button only made more empty border. The icon is sized to the tile instead. */
 .personal-waypoint-form .personal-waypoint-icon-option {
   position: relative;
-  display: grid;
+  display: flex;
   min-width: 0;
-  aspect-ratio: 1;
-  place-items: center;
+  min-height: 40px;
+  align-items: center;
+  justify-content: center;
   padding: 4px;
   border: 1px solid var(--border-control);
   border-radius: var(--radius-control);
@@ -985,13 +1020,13 @@
   outline-offset: 2px;
 }
 
-.personal-waypoint-color-swatch {
-  display: grid;
-  width: 22px;
-  height: 22px;
-  place-items: center;
+/* A generous touch target around a smaller visible circle. The swatch fills the option's inner space
+   up to 34px, so the colours stay visually smaller than the tap targets, which is the intent. */
+.personal-waypoint-astryx-radio-list .personal-waypoint-color-swatch {
+  flex: 0 1 auto;
+  width: min(100%, 34px);
+  aspect-ratio: 1;
   border-radius: 50%;
-  box-sizing: border-box;
 }
 
 .personal-waypoint-color-option:has(input:checked) .personal-waypoint-color-swatch {
@@ -1014,9 +1049,17 @@
   opacity: 1;
 }
 
+/* Size the glyph to the tile rather than to a fixed pixel value. The icons are 24-unit line drawings
+   with a lot of internal padding, so at 17px inside a 40px tile the artwork still only filled about a
+   third of the button. These icons are square by definition, so the glyph is given a square box that
+   grows with the tile and never shrinks below a legible size. `aspect-ratio` rather than a percentage
+   width, because inside a flex row a percentage width resolves against the tile's content box while
+   the height resolves against the row, and the two disagreed. */
 .personal-waypoint-choice-icon {
-  width: 21px;
-  height: 21px;
+  flex: 0 0 auto;
+  width: auto;
+  height: min(100%, 28px);
+  aspect-ratio: 1;
   color: var(--text-secondary);
 }
 
@@ -1234,15 +1277,12 @@
   position: absolute;
   z-index: 17;
   right: 16px;
-  /* Lifted by the part of the panel the software keyboard covers. The property is written from
-     `personal-waypoint-placement.tsx`, because `interactive-widget=overlays-content` keeps the
-     keyboard from resizing the layout viewport, so CSS alone has nothing to react to. */
-  bottom: calc(max(16px, env(safe-area-inset-bottom, 0px)) + var(--personal-waypoint-keyboard-lift, 0px));
+  bottom: max(16px, env(safe-area-inset-bottom, 0px));
   left: 16px;
   display: grid;
   gap: var(--space-3);
   width: min(360px, calc(100% - 32px));
-  max-height: min(60vh, 500px, var(--personal-waypoint-keyboard-max-height, 60vh));
+  max-height: min(60vh, 500px);
   overflow-y: auto;
   padding: var(--space-4);
   border: 1px solid var(--border-card);
@@ -1252,7 +1292,20 @@
   box-shadow: var(--shadow-lg);
   box-sizing: border-box;
   text-align: left;
-  transition: bottom var(--motion-duration-standard, 160ms) ease;
+  transition: top var(--motion-duration-standard, 180ms) ease;
+}
+
+/* While the coordinate field is open on a phone the keyboard covers the bottom of the screen, and
+   `interactive-widget=overlays-content` means nothing reports how much. Anchoring to the top instead
+   of measuring the keyboard keeps the field, and the text being typed into it, above the keyboard
+   whatever its height. Only the mobile layout needs this: a desktop panel has no keyboard to clear. */
+@media (width <= 640px), (width <= 768px) and (height > 420px) {
+  .personal-waypoint-placement[data-raised='true'] {
+    top: calc(env(safe-area-inset-top, 0px) + var(--space-3));
+    bottom: auto;
+    /* Leave the lower two fifths for the keyboard and the map behind it. */
+    max-height: 56vh;
+  }
 }
 .personal-waypoint-placement-header { display: grid; gap: var(--space-1); }
 .personal-waypoint-placement h2 { margin: 0; font-size: var(--font-size-lg); font-weight: 650; line-height: 1.3; }

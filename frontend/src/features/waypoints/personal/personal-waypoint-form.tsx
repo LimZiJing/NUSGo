@@ -84,9 +84,13 @@ function CategoryField({
   const measure = (): void => {
     const input = inputRef.current
     if (!input) return
-    const box = input.getBoundingClientRect()
+    // Measure the box that draws the field, not the <input> inside it. Astryx's wrapper carries the
+    // border, the floating-label padding and the room reserved for the chevron, so the inner input is
+    // inset by all of that; measuring it made the popup noticeably narrower than the field it belongs
+    // to and pushed it in from both edges.
+    const box = (input.closest('.personal-waypoint-field-control') ?? input).getBoundingClientRect()
     // The popup is portalled to the body, so it is positioned against the viewport rather than a
-    // scrolling ancestor; the input's own rect already accounts for any scroll.
+    // scrolling ancestor; the box's own rect already accounts for any scroll.
     setPosition({ top: box.bottom + 4, left: box.left, width: box.width })
   }
 
@@ -108,6 +112,26 @@ function CategoryField({
     setIsOpen(false)
     setActiveIndex(-1)
   }
+
+  // Close on a press anywhere outside the field and the list.
+  //
+  // `onBlur` alone is not enough: on touch, tapping a non-focusable part of the panel (the gap
+  // between fields, the panel background) can leave focus on the input, so the list stayed open
+  // after tapping what looked like somewhere else. This listens in the capture phase on pointerdown
+  // so it runs before any handler inside the popup, and it ignores presses inside the field itself
+  // so tapping the input does not immediately close the list it just opened.
+  useEffect(() => {
+    if (!isOpen) return
+    const onPointerDown = (event: PointerEvent): void => {
+      const target = event.target
+      if (!(target instanceof Node)) return
+      if (inputRef.current?.contains(target)) return
+      if (document.getElementById(listboxId)?.contains(target)) return
+      close()
+    }
+    document.addEventListener('pointerdown', onPointerDown, true)
+    return () => document.removeEventListener('pointerdown', onPointerDown, true)
+  }, [isOpen])
 
   const choose = (category: string): void => {
     // Selecting a suggestion changes the value programmatically, which would otherwise be treated

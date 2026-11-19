@@ -19,9 +19,9 @@ async function readJson(filename: string): Promise<unknown> {
 }
 
 async function readInputs() {
-  const [venues, eateries, buildings, network, routeGeometry, walkingStopGraph] = await Promise.all([
+  const [venues, foods, buildings, network, routeGeometry, walkingStopGraph] = await Promise.all([
     readJson('venues.json'),
-    readJson('eateries.json'),
+    readJson('food.json'),
     readJson('buildings.json'),
     readJson('shuttle-network.json'),
     readJson('shuttle-routes.geojson'),
@@ -33,7 +33,7 @@ async function readInputs() {
     transit.geometry,
     transit.network.metadata.verifiedAt,
   )
-  return { venues, eateries, buildings, network, routeGeometry, walkingStopGraph, shuttleTiming }
+  return { venues, foods, buildings, network, routeGeometry, walkingStopGraph, shuttleTiming }
 }
 
 describe('canonical backend data', () => {
@@ -43,7 +43,7 @@ describe('canonical backend data', () => {
     assert.equal(data.counts.stops, 33)
     assert.equal(data.counts.walkingConnections, 33 * 32)
     assert.ok(data.counts.venues > 0)
-    expectEateryEndpoints(data.venues)
+    expectFoodEndpoints(data.venues)
     assert.equal(data.counts.buildings, data.buildings.buildings.length)
   })
 
@@ -72,7 +72,7 @@ describe('canonical backend data', () => {
     try {
       await Promise.all([
         writeFile(resolve(directory, 'venues.json'), JSON.stringify(inputs.venues)),
-        writeFile(resolve(directory, 'eateries.json'), JSON.stringify(inputs.eateries)),
+        writeFile(resolve(directory, 'food.json'), JSON.stringify(inputs.foods)),
         writeFile(resolve(directory, 'buildings.json'), JSON.stringify(inputs.buildings)),
         writeFile(resolve(directory, 'shuttle-network.json'), JSON.stringify(inputs.network)),
         writeFile(resolve(directory, 'shuttle-routes.geojson'), JSON.stringify(inputs.routeGeometry)),
@@ -94,10 +94,12 @@ describe('canonical backend data', () => {
   })
 })
 
-function expectEateryEndpoints(venues: Readonly<Record<string, { readonly category?: string; readonly location?: unknown }>>): void {
-  assert.equal(venues['yih-central-square']?.category, 'canteen')
-  assert.equal(venues['frontier-canteen']?.category, 'canteen')
-  assert.equal(venues['Frontier']?.category, undefined)
+function expectFoodEndpoints(venues: Readonly<Record<string, { readonly kind?: string; readonly foodType?: string; readonly location?: unknown }>>): void {
+  assert.equal(venues['yih-central-square']?.kind, 'food')
+  assert.equal(venues['yih-central-square']?.foodType, 'canteen')
+  assert.equal(venues['frontier-canteen']?.kind, 'food')
+  assert.equal(venues['frontier-canteen']?.foodType, 'canteen')
+  assert.equal(venues.Frontier, undefined)
   assert.ok(venues['yih-central-square']?.location)
   assert.ok(venues['frontier-canteen']?.location)
 }

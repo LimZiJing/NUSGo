@@ -11,7 +11,7 @@ COPY scripts/generate-shuttle-timing.mjs scripts/generate-shuttle-timing.mjs
 COPY frontend/public/data/bus-stops.json frontend/public/data/bus-stops.json
 COPY frontend/public/data/lta-public-bus-stops.json frontend/public/data/lta-public-bus-stops.json
 COPY frontend/public/data/venues.json frontend/public/data/venues.json
-COPY frontend/public/data/eateries.json frontend/public/data/eateries.json
+COPY frontend/public/data/food.json frontend/public/data/food.json
 COPY frontend/public/data/buildings.json frontend/public/data/buildings.json
 COPY frontend/public/data/shuttle-network.json frontend/public/data/shuttle-network.json
 COPY frontend/public/data/shuttle-routes.geojson frontend/public/data/shuttle-routes.geojson

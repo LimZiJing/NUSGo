@@ -2,7 +2,7 @@ import { useEffect, useRef, useState } from 'react'
 import type { TransitIndex } from '../../domain/transit'
 import type { TripEndpointRole, TripLocationSearchResult, TripRequest } from '../../domain/trip/types.ts'
 import type { BuildingIndex } from '../../domain/venue/building-index'
-import type { VenueLocationMap } from '@nusgo/shared/venue/types'
+import type { VenueMap } from '@nusgo/shared/venue/types'
 import type { PersonalWaypoint } from '../../domain/waypoints/personal/personal-waypoint'
 import { PlanTripCard, type OriginLocationRequestState } from './components/plan-trip-card.tsx'
 import { PlanLocationSearch } from './components/plan-location-search.tsx'
@@ -14,7 +14,7 @@ import './styles/plan-content.css'
 
 interface PlanContentProps {
   tripRequest: TripRequest
-  venues: VenueLocationMap | null
+  venues: VenueMap | null
   buildings?: BuildingIndex | null
   networkIndex: TransitIndex | null
   form: PlanTripFormBindings

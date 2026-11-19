@@ -4,7 +4,7 @@ import { formatDuration } from '../../../domain/trip/duration-format'
 import { getTripEndpointKey } from '../../../domain/trip/endpoints'
 import { getTripEndpointLabel } from '../../../domain/location/search'
 import type { BuildingIndex } from '../../../domain/venue/building-index'
-import type { VenueLocationMap } from '@nusgo/shared/venue/types'
+import type { VenueMap } from '@nusgo/shared/venue/types'
 import type { TripEndpoint, TripRequest } from '../../../domain/trip/types'
 
 export type JourneyTimelineEntry =
@@ -13,6 +13,7 @@ export type JourneyTimelineEntry =
       readonly id: string
       readonly label: string
       readonly locationKind: PathLeg['from']['kind']
+      readonly venueId?: string
     }
   | {
       readonly kind: 'walking'
@@ -56,7 +57,7 @@ interface JourneyRoutePresentation {
 
 function getEndpointLabel(
   endpoint: PathLeg['from'],
-  venues: VenueLocationMap | null,
+  venues: VenueMap | null,
   networkIndex: TransitIndex | null,
   buildings: BuildingIndex | null,
 ): string {
@@ -206,7 +207,7 @@ function sameEndpoint(left: PathLeg['from'], right: PathLeg['from']): boolean {
 function getLocationEntry(
   endpoint: PathLeg['from'],
   id: string,
-  venues: VenueLocationMap | null,
+  venues: VenueMap | null,
   networkIndex: TransitIndex | null,
   buildings: BuildingIndex | null,
   selectedEndpoint: TripEndpoint | null = null,
@@ -222,6 +223,7 @@ function getLocationEntry(
     id,
     label: selectedWaypointLabel ?? getEndpointLabel(endpoint, venues, networkIndex, buildings),
     locationKind: endpoint.kind,
+    ...(endpoint.kind === 'venue' ? { venueId: endpoint.id } : {}),
   }
 }
 
@@ -231,7 +233,7 @@ function getLocationEntry(
  */
 export function getJourneyTimelineEntries(
   path: Path,
-  venues: VenueLocationMap | null,
+  venues: VenueMap | null,
   networkIndex: TransitIndex | null,
   buildings: BuildingIndex | null = null,
   tripRequest?: TripRequest,

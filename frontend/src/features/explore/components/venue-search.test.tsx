@@ -87,4 +87,13 @@ describe('VenueSearch', () => {
     expect(screen.getByRole('combobox', { name: 'Filter places: All places' })).toBeTruthy()
     expect(screen.getByText('Search for a place or bus stop')).toBeTruthy()
   })
+
+  it('shows the selected filter in the compact trigger name and active state', () => {
+    renderSearch('', 'food')
+    const trigger = screen.getByRole('combobox', { name: 'Filter places: Food & beverage' })
+    expect(trigger.parentElement?.className).toContain('explore-content-filter-control--active')
+    expect(trigger.parentElement?.querySelectorAll('svg')).toHaveLength(3)
+    expect(screen.getAllByRole('button', { name: /Canteen|Drinks & snacks|Restaurant/ })).toHaveLength(3)
+  })
+
 })

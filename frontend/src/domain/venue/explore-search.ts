@@ -4,7 +4,9 @@ import type { TransitIndex } from '../transit'
 import { compareText, getMatchPriority, normalizeSearchText } from '../text-match'
 import { getBuildingSearchFields, type BuildingEntry, type BuildingIndex } from './building-index'
 import type { BuildingVenueLinks } from './building-links'
-import { getVenueSearchFields, type VenueSearchResult } from './search'
+import { getVenueSearchFields, getVenueSearchPresentation, type VenueSearchResult } from './search'
+
+export type ExploreResultFilter = 'all' | 'food' | 'room' | 'building' | 'stop'
 
 export type ExploreSearchResult =
   | { readonly kind: 'stop'; readonly stop: TransitStop }
@@ -28,8 +30,15 @@ interface Candidate {
   readonly result: ExploreSearchResult
   readonly fields: readonly string[]
   readonly kindOrder: number
+  readonly label: string
   /** Stable key within a kind: stop ID, building ID or venue code. */
   readonly key: string
+}
+
+function matchesFilter(candidate: Candidate, filter: ExploreResultFilter): boolean {
+  if (filter === 'all') return true
+  if (filter === 'stop' || filter === 'building') return candidate.result.kind === filter
+  return candidate.result.kind === 'venue' && candidate.result.result.venue.kind === filter
 }
 
 function getStops(source: ExploreSearchSources['stops']): readonly TransitStop[] {
@@ -38,19 +47,20 @@ function getStops(source: ExploreSearchSources['stops']): readonly TransitStop[]
 }
 
 /**
- * Find-a-venue search over bus stops, buildings, rooms and foods, returned as one ranked list.
- * Results rank by match quality first (exact, then prefix, then partial), then stops before
- * buildings before rooms and foods, then by key. A room that is itself a whole building appears once,
- * as that building; foods keep their own results. Venues without coordinates
+ * Find-a-venue search over bus stops, buildings, rooms and foods. Queries rank by match quality
+ * first (exact, then prefix, then partial), then stops before buildings before rooms and foods, then
+ * by key. An empty query browses a selected kind alphabetically. A room that is itself a whole
+ * building appears once, as that building; foods keep their own results. Venues without coordinates
  * are still returned.
  */
 export function searchExplore(
   { venues, buildings, links, stops }: ExploreSearchSources,
   query: string,
+  filter: ExploreResultFilter = 'all',
   limit = MAX_RESULTS,
 ): ExploreSearchResult[] {
   const normalizedQuery = normalizeSearchText(query)
-  if (!normalizedQuery) return []
+  if (!normalizedQuery && filter === 'all') return []
 
   const candidates: Candidate[] = []
 
@@ -59,6 +69,7 @@ export function searchExplore(
       result: { kind: 'stop', stop },
       fields: [stop.id, stop.longName, stop.shortName],
       kindOrder: KIND_ORDER.stop,
+      label: stop.longName,
       key: stop.id,
     })
   }
@@ -68,6 +79,7 @@ export function searchExplore(
       result: { kind: 'building', entry },
       fields: getBuildingSearchFields(entry, links.extraNamesByBuildingId),
       kindOrder: KIND_ORDER.building,
+      label: entry.name,
       key: entry.id,
     })
   }
@@ -78,12 +90,24 @@ export function searchExplore(
       result: { kind: 'venue', result: { code, venue } },
       fields: getVenueSearchFields(code, venue),
       kindOrder: KIND_ORDER.venue,
+      label: getVenueSearchPresentation(code, venue).title,
       key: code,
     })
   }
 
+  const filteredCandidates = candidates.filter((candidate) => matchesFilter(candidate, filter))
+  if (!normalizedQuery) {
+    return filteredCandidates
+      .sort((first, second) =>
+        compareText(normalizeSearchText(first.label), normalizeSearchText(second.label)) ||
+        compareText(first.key, second.key),
+      )
+      .slice(0, Math.max(0, limit))
+      .map((candidate) => candidate.result)
+  }
+
   const matches: Array<{ readonly candidate: Candidate; readonly priority: number }> = []
-  for (const candidate of candidates) {
+  for (const candidate of filteredCandidates) {
     const priority = getMatchPriority(candidate.fields, normalizedQuery)
     if (priority !== null) matches.push({ candidate, priority })
   }

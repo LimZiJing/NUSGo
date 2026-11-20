@@ -1,6 +1,10 @@
 import { useMemo, type MouseEvent, type RefObject } from 'react'
 import type { VenueSearchResult } from '../../../domain/venue/search'
-import { searchExplore, type ExploreSearchResult } from '../../../domain/venue/explore-search'
+import {
+  searchExplore,
+  type ExploreResultFilter,
+  type ExploreSearchResult,
+} from '../../../domain/venue/explore-search'
 import { getVenueSearchPresentation } from '../../../domain/venue/search'
 import { EMPTY_BUILDING_INDEX, describeBuildingEntry, type BuildingIndex } from '../../../domain/venue/building-index'
 import type { BuildingVenueLinks } from '../../../domain/venue/building-links'
@@ -12,6 +16,24 @@ import { Button, IconButton } from '../../../ui/button'
 import { ScrollArea } from '../../../ui/scroll-area'
 import { SearchField } from '../../../ui/search-field'
 import { VenueIcon } from '../../../ui/venue-icon'
+import { Selector } from '@astryxdesign/core/Selector'
+import { Icon as AstryxIcon } from '@astryxdesign/core/Icon'
+
+const FILTER_OPTIONS: { value: ExploreResultFilter; label: string }[] = [
+  { value: 'all', label: 'All places' },
+  { value: 'food', label: 'Food & beverage' },
+  { value: 'room', label: 'Rooms' },
+  { value: 'building', label: 'Buildings' },
+  { value: 'stop', label: 'Bus stops' },
+]
+
+function getFilterLabel(filter: ExploreResultFilter): string {
+  return FILTER_OPTIONS.find((option) => option.value === filter)?.label ?? 'All places'
+}
+
+function isExploreResultFilter(value: string): value is ExploreResultFilter {
+  return FILTER_OPTIONS.some((option) => option.value === value)
+}
 
 /** Short name and ID as secondary text, shown only when the short name differs from the ID. */
 function getStopSecondaryText(stop: TransitStop): string | null {
@@ -26,11 +48,13 @@ interface VenueSearchProps {
   readonly buildingLinks: BuildingVenueLinks
   readonly transitIndex?: TransitIndex | null
   readonly query: string
+  readonly filter: ExploreResultFilter
   readonly minimized: boolean
   readonly inputRef: RefObject<HTMLInputElement | null>
   readonly onRestore?: () => void
   readonly onSearchFocus?: () => void
   readonly onQueryChange: (query: string) => void
+  readonly onFilterChange: (filter: ExploreResultFilter) => void
   readonly onSelect: (result: VenueSearchResult, event: MouseEvent<HTMLButtonElement>) => void
   readonly onBuildingSelect: (buildingId: string, event: MouseEvent<HTMLButtonElement>) => void
   readonly onStopSelect?: (stopId: string, event: MouseEvent<HTMLButtonElement>) => void
@@ -42,11 +66,13 @@ export function VenueSearch({
   buildingLinks,
   transitIndex = null,
   query,
+  filter,
   minimized,
   inputRef,
   onRestore,
   onSearchFocus,
   onQueryChange,
+  onFilterChange,
   onSelect,
   onBuildingSelect,
   onStopSelect,
@@ -58,6 +84,7 @@ export function VenueSearch({
       const results = searchExplore(
         { venues, buildings: buildings ?? EMPTY_BUILDING_INDEX, links: buildingLinks, stops: transitIndex },
         query,
+        filter,
       )
       return {
         results,
@@ -68,43 +95,66 @@ export function VenueSearch({
       console.error('Venue search failed:', error)
       return { results: [], failed: true }
     }
-  }, [query, venues, buildings, buildingLinks, transitIndex])
+  }, [query, filter, venues, buildings, buildingLinks, transitIndex])
+  const hasQuery = query.trim().length > 0
 
   return (
     <div id="explore-content-panel" className="explore-content-panel">
       <div className="explore-content-search-row">
-        <SearchField
-          id="explore-venue-search-input"
-          aria-labelledby="explore-content-heading"
-          placeholder="Search places or bus stops"
-          value={query}
-          inputRef={inputRef}
-          onFocus={() => {
-            if (minimized) onRestore?.()
-            onSearchFocus?.()
-          }}
-          onChange={(event) => onQueryChange(event.target.value)}
-          autoComplete="off"
-        />
-        {query && (
-          <IconButton
-            variant="plain"
-            className="explore-content-search-clear"
-            label="Clear venue search"
-            icon={<CloseIcon />}
-            onClick={() => {
-              onQueryChange('')
-              inputRef.current?.focus()
+        <div className="explore-content-search-control">
+          <SearchField
+            id="explore-venue-search-input"
+            aria-labelledby="explore-content-heading"
+            placeholder="Search places or bus stops"
+            value={query}
+            inputRef={inputRef}
+            onFocus={() => {
+              if (minimized) onRestore?.()
+              onSearchFocus?.()
             }}
+            onChange={(event) => onQueryChange(event.target.value)}
+            autoComplete="off"
           />
-        )}
+          {query && (
+            <IconButton
+              variant="plain"
+              className="explore-content-search-clear"
+              label="Clear venue search"
+              icon={<CloseIcon />}
+              onClick={() => {
+                onQueryChange('')
+                inputRef.current?.focus()
+              }}
+            />
+          )}
+        </div>
+        <Selector
+          label={`Filter places: ${getFilterLabel(filter)}`}
+          isLabelHidden
+          options={FILTER_OPTIONS}
+          value={filter}
+          onChange={(value) => {
+            if (isExploreResultFilter(value)) onFilterChange(value)
+          }}
+          size="sm"
+          variant="secondary"
+          presentation="popover"
+          startIcon={<AstryxIcon icon="funnel" />}
+          renderValue={() => filter === 'all' ? null : <AstryxIcon icon="check" size="sm" color="accent" />}
+          containerClassName="explore-content-filter-trigger"
+          controlClassName={
+            filter === 'all'
+              ? 'explore-content-filter-control'
+              : 'explore-content-filter-control explore-content-filter-control--active'
+          }
+        />
       </div>
       <div className="navigation-panel-content explore-content-search-body">
         {!venues || searchState.failed ? (
           <p className="explore-content-status" role="status" aria-live="polite">
             Venue search is unavailable right now. Bus route browsing is still available.
           </p>
-        ) : query.trim() ? (
+        ) : hasQuery || filter !== 'all' ? (
           <ScrollArea className="navigation-panel-scroll-content explore-content-results" aria-label="Venue search results">
             {searchState.results.length > 0 ? (
               searchState.results.map((item) => {
@@ -172,7 +222,7 @@ export function VenueSearch({
               })
             ) : (
               <p className="explore-content-status" role="status" aria-live="polite">
-                No matching places or bus stops.
+                {hasQuery ? 'No matching places or bus stops.' : 'No results for this filter.'}
               </p>
             )}
           </ScrollArea>

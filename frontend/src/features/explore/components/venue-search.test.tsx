@@ -26,9 +26,10 @@ const venues: VenueMap = {
 }
 const transitIndex = createTransitIndex(createValidTransitNetwork())
 
-function renderSearch(query: string) {
+function renderSearch(query: string, filter: 'all' | 'food' | 'room' | 'building' | 'stop' = 'all') {
   const onSelect = vi.fn()
   const onStopSelect = vi.fn()
+  const onFilterChange = vi.fn()
   render(
     <VenueSearch
       venues={venues}
@@ -36,15 +37,17 @@ function renderSearch(query: string) {
       buildingLinks={linkVenuesToBuildings(venues, EMPTY_BUILDING_INDEX)}
       transitIndex={transitIndex}
       query={query}
+      filter={filter}
       minimized={false}
       inputRef={createRef<HTMLInputElement>()}
       onQueryChange={vi.fn()}
+      onFilterChange={onFilterChange}
       onSelect={onSelect as never}
       onBuildingSelect={vi.fn()}
       onStopSelect={onStopSelect as never}
     />,
   )
-  return { onSelect, onStopSelect }
+  return { onSelect, onStopSelect, onFilterChange }
 }
 
 describe('VenueSearch', () => {
@@ -79,10 +82,42 @@ describe('VenueSearch', () => {
     expect(food.querySelector(`.${iconClass}`)).not.toBeNull()
   })
 
-  it('does not show a FoodType filter', () => {
+  it('defaults the place filter to All places', () => {
     renderSearch('')
-    expect(screen.queryByLabelText('Place category')).toBeNull()
-    expect(screen.queryByRole('combobox')).toBeNull()
+    expect(screen.getByRole('combobox', { name: 'Filter places: All places' })).toBeTruthy()
     expect(screen.getByText('Search for a place or bus stop')).toBeTruthy()
+  })
+
+  it('shows the selected filter in the compact trigger name and active state', () => {
+    renderSearch('', 'food')
+    const trigger = screen.getByRole('combobox', { name: 'Filter places: Food & beverage' })
+    expect(trigger.parentElement?.className).toContain('explore-content-filter-control--active')
+    expect(trigger.parentElement?.querySelectorAll('svg')).toHaveLength(3)
+    expect(screen.getAllByRole('button', { name: /Canteen|Drinks & snacks|Restaurant/ })).toHaveLength(3)
+  })
+
+  it('lets a person choose a filter from the Astryx selector', () => {
+    const { onFilterChange } = renderSearch('')
+    fireEvent.click(screen.getByRole('combobox', { name: 'Filter places: All places' }))
+    fireEvent.click(screen.getByRole('option', { name: 'Food & beverage' }))
+    expect(onFilterChange).toHaveBeenCalledWith('food')
+  })
+
+  it('supports keyboard selection, Escape, and focus return', () => {
+    const { onFilterChange } = renderSearch('')
+    const trigger = screen.getByRole('combobox', { name: 'Filter places: All places' })
+
+    trigger.focus()
+    fireEvent.keyDown(trigger, { key: 'ArrowDown' })
+    expect(trigger.getAttribute('aria-expanded')).toBe('true')
+    fireEvent.keyDown(trigger, { key: 'Escape' })
+    expect(trigger.getAttribute('aria-expanded')).toBe('false')
+    expect(document.activeElement).toBe(trigger)
+
+    fireEvent.keyDown(trigger, { key: 'ArrowDown' })
+    fireEvent.keyDown(trigger, { key: 'ArrowDown' })
+    fireEvent.keyDown(trigger, { key: 'Enter' })
+    expect(onFilterChange).toHaveBeenCalledWith('food')
+    expect(document.activeElement).toBe(trigger)
   })
 })

@@ -1,6 +1,6 @@
 # Express live transit data
 
-Express owns provider calls and live transit state. HTTP routes and request validation live in `backend/src/http`. `backend/src/live-data/runtime.ts` composes the providers and manages snapshot lifecycle; provider-independent snapshot generations live in `live-data/bus-arrivals/snapshot.ts`. NUS authentication, mappings, bus-arrival parsing, and service-window loading live in `live-data/providers/nus`; LTA mappings, request selection, response parsing, arrivals, and service schedules live in `live-data/providers/lta`. Reusable concurrency, retry, and timeout controls live in `live-data/upstream`. Shared request and response types live in shared source.
+Express owns provider calls and live transit state. HTTP routes and request validation live in `backend/src/http`. `backend/src/live-data/runtime.ts` composes the providers and manages snapshot lifecycle; provider-independent snapshot generations live in `live-data/bus-arrivals/snapshot.ts`. NUS authentication, mappings, bus-arrival parsing, service-window loading, and ticker-tape announcements live in `live-data/providers/nus`; LTA mappings, request selection, response parsing, arrivals, and service schedules live in `live-data/providers/lta`. Reusable concurrency, retry, and timeout controls live in `live-data/upstream`. Shared request and response types live in shared source.
 
 During local development, Vite forwards `/api` requests to Express at `http://127.0.0.1:3001`; the proxy only forwards requests and contains no API handlers. The browser's arrival clients call the Express endpoints, and Express alone polls NUS or LTA. A separately served frontend uses its configured `VITE_API_ORIGIN` directly. See the [local services guide](local-services.md) for process and data setup.
 
@@ -32,6 +32,14 @@ Express publishes a generation only after the cycle settles. Successful stops re
 A stop that did not succeed in the latest cycle is listed in the snapshot's `unavailableStopIds`, whether it has no earlier data or only carried-over data. Carried-over routes and observation times stay in the snapshot, but the stop is reported as unavailable so that nothing presents stale arrivals as live. A stop leaves the list as soon as a later cycle succeeds for it. Journey planning treats a listed boarding stop as having no live wait and uses the timetable. The field is optional in the response, and `/api/shuttle-arrivals` returns only the listed IDs that were requested.
 
 NUS service-window results are cached for ten minutes. LTA stop results use their own short cache and distinguish an upstream failure from a valid response with no estimate.
+
+## Service announcements
+
+Push service notices are derived from the NUS ticker tape (`POST` to the configured bus-proxy `ticker-tapes` endpoint through the existing authenticated client, empty extra body). The response is a historic feed of hundreds of records in `data.TickerTape`; the provider keeps the fields NUSGo uses (id, message, priority, display interval, affected service ids) and drops the author, creation metadata and accident coordinates.
+
+There is no announcement poller. The ticker tape is requested from the arrival refresh-complete hook in `live-data/runtime.ts`, and only when the push publisher supplied `onServiceAnnouncementsRefreshed` — a deployment without push makes no ticker-tape request. The feed caches its result for one minute and shares one in-flight request, so the budget is at most one logical feed refresh per minute (with the configured provider retry policy) even though the arrival cycle runs every 30 seconds over 33 stops. A failed arrival batch still refreshes announcements, because the hook runs independently of whether a snapshot was published. An in-flight announcement request is aborted by `stop()`.
+
+A record is an announcement only when its `Display_From`/`Display_To` interval contains the current time and its status is `Enabled`; priority is `High`, `Medium` or `Low`. An empty affected-service list is a global notice. A non-empty list is matched case-insensitively against canonical route IDs, and a list that names only retired or unknown services resolves to no audience rather than becoming global.
 
 ## Live vehicle positions
 

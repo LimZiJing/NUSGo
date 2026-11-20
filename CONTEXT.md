@@ -37,6 +37,7 @@ This document defines the domain and product vocabulary used by NUSGo. It contai
 - **Live bus**: A bus currently in service on a Bus route, with a vehicle plate, a position, a heading and an observation time. It is distinct from a Bus route and from a scheduled or estimated arrival. A Live bus that has not been refreshed recently is not shown.
 - **Load level**: The crowding of a Live bus, one of low, medium, high or unknown. Unknown is used when no reliable level is available; it is never guessed.
 - **Load estimate**: A Load level presented to users as an estimate, because the upstream source does not document it as a live passenger count.
+- **Service notice**: A notice NUS publishes about bus operations, such as a public-holiday schedule. It applies to every service or to named Bus routes, and it is shown only within its published display interval. NUSGo delivers it as a push notification titled “Service notice,” and the notice is not a Live bus, a Bus route, or an announcement about a single stop.
 
 ## Map presentation
 
@@ -60,6 +61,8 @@ This document defines the domain and product vocabulary used by NUSGo. It contai
 - **Favourites**: The Stops list of bus stops saved by the person in their browser.
 - **Venue details**: The selected venue's identity and confirmed location information, with actions such as navigation.
 - **Stop details**: The selected bus stop's identity, services, and available arrival information.
+- **Alight reminder**: A one-shot push notification for one route at one stop. It is registered against a browser push endpoint with a lead time, expires two hours after registration, and is removed once a notification is delivered or the rider cancels it. It is distinct from service-update notifications and adds no location tracking.
+- **Lead time**: The remaining live-arrival estimate at which an Alight reminder fires, chosen by the rider from one, two or three minutes and two by default. It is a window entering the live estimate, not a clock time or a promise.
 
 ## Interface controls
 

@@ -1,5 +1,6 @@
 import { useLayoutEffect, useRef } from 'react'
 import { SegmentedControl } from '../../ui/segmented-control.tsx'
+import type { ReminderState } from '../../domain/push/push-notifications.ts'
 import type { StopDetailsModel } from './data/stop-details-model.ts'
 import type { StopListEntry } from './data/stop-list-data.ts'
 import { StopDetails } from './components/stop-details.tsx'
@@ -27,6 +28,8 @@ function resetScrollOwner(element: Element | null): void {
 interface StopsContentProps {
   readonly selectedStop: StopDetailsModel | null
   readonly backLabel?: string
+  /** Passed in from app composition so this feature never imports the push adapter. */
+  readonly reminder?: ReminderState | null
   readonly onBackToStops: () => void
   readonly onSelectOppositeStop: (stopId: string) => void
   readonly onSelectRoute: (routeId: string, stopId: string) => void
@@ -53,6 +56,7 @@ interface StopsContentProps {
 export function StopsContent({
   selectedStop,
   backLabel,
+  reminder = null,
   onBackToStops,
   onSelectOppositeStop,
   onSelectRoute,
@@ -93,6 +97,7 @@ export function StopsContent({
             stop={selectedStop}
             favorite={selectedStopFavorite}
             liveArrivalMessage={liveArrivalMessage}
+            reminder={reminder}
             backLabel={backLabel}
             onBackToStops={onBackToStops}
             onSelectOppositeStop={onSelectOppositeStop}

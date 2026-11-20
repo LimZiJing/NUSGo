@@ -5,6 +5,12 @@ import type { BackendLiveData } from '../live-data/runtime.ts'
 import { registerHealthRoutes } from './routes/health.ts'
 import { registerLiveDataRoutes } from './routes/live-data.ts'
 import { registerJourneyRoutes } from './routes/journeys.ts'
+import { registerPushRoutes } from './routes/push.ts'
+import { registerReminderRoutes } from './routes/reminders.ts'
+import type { PushSubscriptionStore } from '../push/subscription-store.ts'
+import type { AlightReminderRegistry } from '../push/reminder-registry.ts'
+import type { AlightReminderPublisher } from '../push/alight-reminders.ts'
+import type { NotificationCap } from '../push/notification-cap.ts'
 import {
   createPrivateSubmissionIssueWriter,
   registerCommunityWaypointSubmissionRoute,
@@ -29,7 +35,19 @@ type AppConfig = Pick<
   | 'journeyRequestTimeoutMs'
 > & {
   readonly environment?: BackendConfig['environment']
+  /** Absent when a caller does not register push routes. */
+  readonly push?: BackendConfig['push']
   readonly communityWaypointGithubToken?: string | null
+}
+
+/** Push collaborators wired by the process; omitted in tests that do not exercise push routes. */
+export interface AppPushDependencies {
+  readonly store: PushSubscriptionStore
+  readonly cap: NotificationCap
+  /** Absent in tests that only exercise the service-updates subscription routes. */
+  readonly reminderRegistry?: AlightReminderRegistry
+  /** Absent when the process did not compose a reminder publisher. */
+  readonly reminderPublisher?: AlightReminderPublisher | null
 }
 
 export function createApp(
@@ -40,6 +58,7 @@ export function createApp(
   submissionIssueWriter: PrivateSubmissionIssueWriter | null = createPrivateSubmissionIssueWriter(
     config.communityWaypointGithubToken ?? null,
   ),
+  pushDependencies: AppPushDependencies | null = null,
 ): Express {
   const app = express()
   app.disable('x-powered-by')
@@ -75,6 +94,27 @@ export function createApp(
     config,
   )
   registerCommunityWaypointSubmissionRoute(app, submissionIssueWriter)
+  if (pushDependencies) {
+    registerPushRoutes(app, {
+      push: config.push ?? null,
+      store: pushDependencies.store,
+      cap: pushDependencies.cap,
+      apiRateLimitWindowMs: config.apiRateLimitWindowMs,
+    })
+    if (pushDependencies.reminderRegistry) {
+      // Reminder ids must be real, so the canonical data this process loaded is the allow-list.
+      const canonicalStopIds = new Set(data?.network.stops.map((stop) => stop.id) ?? [])
+      const canonicalRouteIds = new Set(data?.network.routes.map((route) => route.id) ?? [])
+      registerReminderRoutes(app, {
+        push: config.push ?? null,
+        registry: pushDependencies.reminderRegistry,
+        reminders: pushDependencies.reminderPublisher ?? null,
+        apiRateLimitWindowMs: config.apiRateLimitWindowMs,
+        canonicalStopIds,
+        canonicalRouteIds,
+      })
+    }
+  }
 
   app.use('/api', (_request, response) => {
     sendApiError(response, 404, 'API route not found', 'invalid_request')

@@ -7,6 +7,7 @@ import {
 } from './stop-timing-data'
 
 export interface StopDetailsModel extends StopTimingData {
+  readonly reminderRoutes: readonly { readonly routeId: string; readonly routeName: string }[]
   readonly id: string
   readonly longName: string
   readonly oppositeStop: { readonly id: string; readonly longName: string } | null
@@ -21,6 +22,10 @@ export function getStopDetailsModel(
   const timingData = getStopTimingData(stop, index, timingOptions)
 
   return {
+    reminderRoutes: [...(index.routeIdsByStopId.get(stop.id) ?? [])].flatMap((routeId) => {
+      const route = index.routeById.get(routeId)
+      return route ? [{ routeId, routeName: route.name }] : []
+    }),
     id: stop.id,
     longName: stop.longName,
     oppositeStop: oppositeStop ? { id: oppositeStop.id, longName: oppositeStop.longName } : null,

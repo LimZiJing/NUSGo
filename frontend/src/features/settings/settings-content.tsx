@@ -6,9 +6,12 @@ import type { MinuteFormat } from '../../domain/trip/minute-format'
 import { AppearanceSection } from './components/appearance-section'
 import { FavouritesSection, type FavoriteStopSummary } from './components/favourites-section'
 import { AboutSection } from './components/about-section'
+import { PushNotificationsSection } from './components/push-notifications-section'
 import { WaypointsSection } from './components/waypoints-section'
-import { ChevronRightIcon, FavoriteIcon, InfoIcon, MapPinIcon, PaletteIcon } from '../../ui/icons'
+import { usePushNotifications } from './use-push-notifications'
+import { BellIcon, ChevronRightIcon, FavoriteIcon, InfoIcon, MapPinIcon, PaletteIcon } from '../../ui/icons'
 import { SETTINGS_SECTION_TITLES, type SettingsSectionId } from './settings-section'
+import type { PushNotificationService } from '../../domain/push/push-notifications'
 import type { BuildingCatalogueSource } from '@nusgo/shared/venue/buildings'
 import type { TransitNetworkMetadata } from '@nusgo/shared/transit/types'
 import './styles/settings-content.css'
@@ -26,6 +29,8 @@ interface SettingsContentProps {
   readonly buildingSource: BuildingCatalogueSource | null
   readonly communityWaypointDownloadUrl: string
   readonly dataVersion: string
+  /** Supplied by app composition so this feature never imports an infrastructure adapter. */
+  readonly pushNotifications: PushNotificationService
   readonly activeSection: SettingsSectionId | null
   readonly onActiveSectionChange: (section: SettingsSectionId | null) => void
 }
@@ -43,6 +48,12 @@ const SETTINGS_SECTIONS: readonly SettingsSectionConfig[] = [
     label: SETTINGS_SECTION_TITLES.appearance,
     searchTerms: 'theme themes palette palettes system light dark nus matcha sakura rainroom minute minutes format',
     icon: <PaletteIcon />,
+  },
+  {
+    id: 'notifications',
+    label: SETTINGS_SECTION_TITLES.notifications,
+    searchTerms: 'notification notifications push alert alerts delay delays service announcement announcements bell',
+    icon: <BellIcon />,
   },
   {
     id: 'favourites',
@@ -127,9 +138,11 @@ export function SettingsContent({
   buildingSource,
   communityWaypointDownloadUrl,
   dataVersion,
+  pushNotifications,
   activeSection,
   onActiveSectionChange,
 }: SettingsContentProps) {
+  const push = usePushNotifications(pushNotifications)
   const [searchQuery, setSearchQuery] = useState('')
   const [activeResult, setActiveResult] = useState({ query: '', index: 0 })
   const sectionListRef = useRef<HTMLUListElement>(null)
@@ -211,6 +224,17 @@ export function SettingsContent({
           onChange={onThemePreferenceChange}
           minuteFormat={minuteFormat}
           onMinuteFormatChange={onMinuteFormatChange}
+        />
+      )}
+      {section.id === 'notifications' && (
+        <PushNotificationsSection
+          availability={push.availability}
+          permission={push.permission}
+          enabled={push.enabled}
+          busy={push.busy}
+          errorMessage={push.errorMessage}
+          onEnable={push.enable}
+          onDisable={push.disable}
         />
       )}
       {section.id === 'favourites' && (

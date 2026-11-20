@@ -9,6 +9,7 @@
     "./transit/*": "./src/transit/*.ts",
     "./venue/*": "./src/venue/*.ts",
     "./routing/*": "./src/routing/*.ts",
+    "./push/*": "./src/push/*.ts",
     "./waypoints/*": "./src/waypoints/*.ts"
   },
   "scripts": {

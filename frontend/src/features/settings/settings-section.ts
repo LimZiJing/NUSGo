@@ -1,5 +1,6 @@
 export const SETTINGS_SECTION_TITLES = {
   appearance: 'Appearance',
+  notifications: 'Notifications',
   favourites: 'Favourites',
   about: 'About',
   waypoints: 'Waypoints',

@@ -31,6 +31,15 @@ function getSelectedStop(
 }
 
 describe('selected stop details model', () => {
+
+  it('keeps canonical reminder routes available before live data loads', () => {
+    const index = createTransitIndex(createValidTransitNetwork())
+    const stop = index.stopById.get('STOP-A')!
+    const model = getStopDetailsModel(stop, index, { favoriteStopIds: [], arrivalSnapshot: null, nowMs: Date.now() })
+    expect(model.departures).toEqual([])
+    expect(model.reminderRoutes).toEqual([{ routeId: 'A1', routeName: index.routeById.get('A1')!.name }])
+  })
+
   it('uses the selected minute format for timings in bus details', () => {
     const index = createTransitIndex(createValidTransitNetwork())
     const selection = getStopDetailsModel(index.stopById.get('STOP-A')!, index, {

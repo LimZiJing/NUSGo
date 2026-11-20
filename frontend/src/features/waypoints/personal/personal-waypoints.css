@@ -911,47 +911,32 @@
   width: 100%;
 }
 
-/* Astryx draws its own radio dot before the item's content. The swatch already shows selection with
-   a tick, so the dot is a second, redundant indicator — and at eight across it pushed the row off
-   the screen. Same treatment as the community form's option lists. */
+/* Astryx draws its own radio dot before the item's content, and its own row/grid layout for the item.
+   The dot is redundant (the swatch shows selection with a tick) and its layout columns pushed the
+   row off the screen. Everything about how these two pickers lay out is therefore set below, once,
+   against `.personal-waypoint-form` so no later Astryx rule of equal specificity can win on source
+   order. */
 .personal-waypoint-astryx-radio-list .astryx-radio-indicator { display: none; }
 
-/* Astryx nests the option's artwork inside `startContent`, which it wraps in a shrink-to-fit span,
-   and puts the hidden <input> in a separate 24x24 wrapper. A percentage width on the swatch resolved
-   against that shrink-to-fit span and collapsed, and making the wrapper `display: contents` instead
-   promoted the 24px input wrapper to a flex item that shoved the artwork off centre.
-   So the option stays a plain centring box and the artwork is centred by the option itself; the
-   input wrapper is taken out of the flow entirely, since the option already paints the target and
-   the input is invisible. */
-.personal-waypoint-astryx-radio-list .personal-waypoint-color-option,
-.personal-waypoint-astryx-radio-list .personal-waypoint-icon-option {
-  position: relative;
-  display: flex;
-  min-width: 0;
-  align-items: center;
-  justify-content: center;
-  padding: 0;
-  border: 0;
-  background: transparent;
-}
-/* The empty label. Hiding it removes the second flex item that used up width and `gap`. */
-.personal-waypoint-astryx-radio-list .personal-waypoint-color-option > span:last-child,
-.personal-waypoint-astryx-radio-list .personal-waypoint-icon-option > span:last-child {
+/* Astryx nests the option's artwork inside `startContent`, wrapped in a shrink-to-fit span, and puts
+   the hidden <input> in a separate 24x24 div beside it. Three things follow, and each has burned a
+   previous attempt:
+     - A percentage width on the artwork resolved against the shrink-to-fit span, which is itself
+       sized from the artwork, so the percentage collapsed. Hence fixed sizes below.
+     - `display: contents` on the wrapper dissolves it, which makes the artwork the option's flex
+       item, but it also promotes the 24px input div into a flex item and shoves the artwork right.
+       So the input div is the one taken out of flow, and the wrapper stays dissolved.
+     - The empty label is a second flex item; hiding it stops it consuming width and the `gap`. */
+.personal-waypoint-form .personal-waypoint-astryx-radio-list .personal-waypoint-color-option > span:last-child,
+.personal-waypoint-form .personal-waypoint-astryx-radio-list .personal-waypoint-icon-option > span:last-child {
   display: none;
 }
-/* The wrapper holding the input and the (hidden) dot: keep it out of layout so only the artwork
-   takes part in centring. */
-/* Astryx nests everything in `startContent` inside one wrapper span: the hidden <input> in a 24x24
-   div, then the artwork. `display: contents` dissolves the wrapper so the artwork becomes the
-   option's flex item — but it also promoted that 24px input box to a flex item, which consumed
-   24px plus the gap and pushed the artwork 16px to the right. The input box is the one that has to
-   leave the flow; the wrapper itself must stay dissolved or the artwork would leave with it. */
-.personal-waypoint-astryx-radio-list .personal-waypoint-color-option > span:first-child,
-.personal-waypoint-astryx-radio-list .personal-waypoint-icon-option > span:first-child {
+.personal-waypoint-form .personal-waypoint-astryx-radio-list .personal-waypoint-color-option > span:first-child,
+.personal-waypoint-form .personal-waypoint-astryx-radio-list .personal-waypoint-icon-option > span:first-child {
   display: contents;
 }
-.personal-waypoint-astryx-radio-list .personal-waypoint-color-option > span:first-child > div,
-.personal-waypoint-astryx-radio-list .personal-waypoint-icon-option > span:first-child > div {
+.personal-waypoint-form .personal-waypoint-astryx-radio-list .personal-waypoint-color-option > span:first-child > div,
+.personal-waypoint-form .personal-waypoint-astryx-radio-list .personal-waypoint-icon-option > span:first-child > div {
   position: absolute;
   inset: 0;
 }
@@ -964,27 +949,36 @@
   width: 100%;
 }
 
-/* Generous touch target, small visible swatch: the label fills the cell and centres a 22px circle. */
+/* Colour: a square tap target per cell, with the visible circle centred inside it.
+   `aspect-ratio: 1` keeps the cell square whatever the grid maths produces; the earlier version set
+   only a min-height, so cells came out 38.8 x 44 and the swatch stretched with them. */
 .personal-waypoint-form .personal-waypoint-color-option {
   position: relative;
-  display: grid;
+  display: flex;
   min-width: 0;
-  min-height: var(--control-height-lg);
-  place-items: center;
+  align-items: center;
+  justify-content: center;
+  aspect-ratio: 1;
   padding: 0;
+  border: 0;
   background: transparent;
   cursor: pointer;
 }
 
-/* Back to the original compact height. The tiles were never too small; the glyph inside them was,
-   so growing the button only made more empty border. The icon is sized to the tile instead. */
+/* Icon: a square tile at its original compact size.
+   The tile looked like a rectangle because the row is 338px over five columns (61px each) while only
+   a min-height of 40px was set, so width and height disagreed. Sizing the cell to `aspect-ratio: 1`
+   fixed the shape but made the tile 61x61, which is bigger than it should be — the row's width is
+   not a good guide to how tall these should be. So the tile is a fixed 44px square, centred in its
+   column: square, compact, and unchanged by the panel width. */
 .personal-waypoint-form .personal-waypoint-icon-option {
   position: relative;
   display: flex;
-  min-width: 0;
-  min-height: 40px;
+  width: 44px;
+  height: 44px;
   align-items: center;
   justify-content: center;
+  justify-self: center;
   padding: 4px;
   border: 1px solid var(--border-control);
   border-radius: var(--radius-control);
@@ -1020,12 +1014,14 @@
   outline-offset: 2px;
 }
 
-/* A generous touch target around a smaller visible circle. The swatch fills the option's inner space
-   up to 34px, so the colours stay visually smaller than the tap targets, which is the intent. */
-.personal-waypoint-astryx-radio-list .personal-waypoint-color-swatch {
-  flex: 0 1 auto;
-  width: min(100%, 34px);
-  aspect-ratio: 1;
+/* The visible circle. A fixed square rather than a percentage: the option is a flex centring box, so
+   a percentage width has nothing definite to resolve against and `aspect-ratio` had already been
+   losing to a stretched height, which is what made these ovals (18 x 21.8). The tap target stays the
+   full cell; only the painted circle is smaller. */
+.personal-waypoint-form .personal-waypoint-astryx-radio-list .personal-waypoint-color-swatch {
+  flex: 0 0 auto;
+  width: 26px;
+  height: 26px;
   border-radius: 50%;
 }
 

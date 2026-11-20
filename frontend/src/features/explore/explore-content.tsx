@@ -1,7 +1,8 @@
-import { useMemo, type ReactNode } from 'react'
+import { useMemo, useState, type ReactNode } from 'react'
 import type { VenueMap } from '@nusgo/shared/venue/types'
 import { EMPTY_BUILDING_INDEX, type BuildingIndex } from '../../domain/venue/building-index'
 import { linkVenuesToBuildings } from '../../domain/venue/building-links'
+import type { ExploreResultFilter } from '../../domain/venue/explore-search'
 import type { TransitIndex } from '../../domain/transit'
 import { BackButton } from '../../ui/back-button.tsx'
 import { SegmentedControl } from '../../ui/segmented-control.tsx'
@@ -112,6 +113,7 @@ export function ExploreContent({
     onFocusStop,
   },
 }: ExploreContentProps) {
+  const [searchFilter, setSearchFilter] = useState<ExploreResultFilter>('all')
   const buildingIndex = buildings ?? EMPTY_BUILDING_INDEX
   const buildingLinks = useMemo(
     () => linkVenuesToBuildings(venues ?? {}, buildingIndex),
@@ -178,6 +180,7 @@ export function ExploreContent({
         {!communityMode && (state.mode === 'venue-search' || state.mode === 'neutral') && (
           <VenueSearch
             query={state.query}
+            filter={searchFilter}
             venues={venues}
             buildings={buildingIndex}
             buildingLinks={buildingLinks}
@@ -187,6 +190,7 @@ export function ExploreContent({
             onRestore={onRestore}
             onSearchFocus={onSearchFocus}
             onQueryChange={onQueryChange}
+            onFilterChange={setSearchFilter}
             onSelect={onVenueSelect}
             onBuildingSelect={onBuildingSelect}
             onStopSelect={onStopSelect}

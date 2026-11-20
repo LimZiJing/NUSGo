@@ -26,9 +26,10 @@ const venues: VenueMap = {
 }
 const transitIndex = createTransitIndex(createValidTransitNetwork())
 
-function renderSearch(query: string) {
+function renderSearch(query: string, filter: 'all' | 'food' | 'room' | 'building' | 'stop' = 'all') {
   const onSelect = vi.fn()
   const onStopSelect = vi.fn()
+  const onFilterChange = vi.fn()
   render(
     <VenueSearch
       venues={venues}
@@ -36,15 +37,17 @@ function renderSearch(query: string) {
       buildingLinks={linkVenuesToBuildings(venues, EMPTY_BUILDING_INDEX)}
       transitIndex={transitIndex}
       query={query}
+      filter={filter}
       minimized={false}
       inputRef={createRef<HTMLInputElement>()}
       onQueryChange={vi.fn()}
+      onFilterChange={onFilterChange}
       onSelect={onSelect as never}
       onBuildingSelect={vi.fn()}
       onStopSelect={onStopSelect as never}
     />,
   )
-  return { onSelect, onStopSelect }
+  return { onSelect, onStopSelect, onFilterChange }
 }
 
 describe('VenueSearch', () => {
@@ -79,10 +82,9 @@ describe('VenueSearch', () => {
     expect(food.querySelector(`.${iconClass}`)).not.toBeNull()
   })
 
-  it('does not show a FoodType filter', () => {
+  it('defaults the place filter to All places', () => {
     renderSearch('')
-    expect(screen.queryByLabelText('Place category')).toBeNull()
-    expect(screen.queryByRole('combobox')).toBeNull()
+    expect(screen.getByRole('combobox', { name: 'Filter places: All places' })).toBeTruthy()
     expect(screen.getByText('Search for a place or bus stop')).toBeTruthy()
   })
 })

@@ -13,7 +13,7 @@ A one-page summary of what works, what doesn't and what's next. Detail lives in 
 
 | Area | Today | Detail |
 | --- | --- | --- |
-| Explore | Search 729 venue records and 249 buildings, browse 39 eateries by category, open place details, browse 8 shuttle routes and approved Community Waypoints | [UI behaviour](ui/behaviour.md#explore), [data](data-and-map.md) |
+| Explore | Search Rooms and 39 Food venues alongside 249 Buildings and bus stops, open place details, browse 8 shuttle routes and approved Community Waypoints | [UI behaviour](ui/behaviour.md#explore), [data](data-and-map.md) |
 | Stops | Nearby and favourite stops with live NUS and public-bus arrivals | [UI behaviour](ui/behaviour.md#stops) |
 | Plan | Walking and bus journeys with up to three bus options and one walking option, using Personal Waypoints as endpoints | [Pathfinding](pathfinding.md), [UI behaviour](ui/behaviour.md#plan) |
 | Location | Browser location, one-tap recentre, frozen Current location endpoint | [UI behaviour](ui/behaviour.md#location) |

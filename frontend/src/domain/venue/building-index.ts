@@ -1,4 +1,5 @@
 import type { Building, BuildingCatalogueSource } from '@nusgo/shared/venue/buildings'
+import type { WholeBuildingVenueAlias } from '@nusgo/shared/venue/types'
 import type { WaypointCoordinate } from '@nusgo/shared/waypoints/waypoint'
 import { getDistanceMeters } from '../location/coordinates'
 import { compareText, getMatchPriority, normalizeSearchText } from '../text-match'
@@ -42,9 +43,17 @@ export interface BuildingIndex {
   readonly byPartId: ReadonlyMap<string, { readonly entry: BuildingEntry; readonly part: Building }>
   /** Lower-case room-code prefix (for example "com1") to the entry whose rooms use it. */
   readonly byRoomCodePrefix: ReadonlyMap<string, BuildingEntry>
+  /** Venue source identities that are searchable as Buildings and provide NUSMods aliases. */
+  readonly wholeBuildingVenueAliases: readonly WholeBuildingVenueAlias[]
 }
 
-export const EMPTY_BUILDING_INDEX: BuildingIndex = Object.freeze({ entries: [], byId: new Map(), byPartId: new Map(), byRoomCodePrefix: new Map() })
+export const EMPTY_BUILDING_INDEX: BuildingIndex = Object.freeze({
+  entries: [],
+  byId: new Map(),
+  byPartId: new Map(),
+  byRoomCodePrefix: new Map(),
+  wholeBuildingVenueAliases: [],
+})
 
 function pickRepresentativePart(parts: readonly Building[]): Building {
   const centreX = parts.reduce((total, part) => total + part.location.x, 0) / parts.length
@@ -101,6 +110,7 @@ function toEntry(id: string, parts: readonly Building[]): BuildingEntry {
 export function buildBuildingIndex(
   buildings: readonly Building[],
   source?: BuildingCatalogueSource,
+  wholeBuildingVenueAliases: readonly WholeBuildingVenueAlias[] = [],
 ): BuildingIndex {
   const groups = new Map<string, Building[]>()
   const entries: BuildingEntry[] = []
@@ -133,6 +143,7 @@ export function buildBuildingIndex(
     byId: new Map(sorted.map((entry) => [entry.id, entry])),
     byPartId,
     byRoomCodePrefix,
+    wholeBuildingVenueAliases: Object.freeze(wholeBuildingVenueAliases.map((alias) => Object.freeze({ ...alias }))),
   }
 }
 

@@ -2,10 +2,10 @@ import { getDistanceMeters } from '../location/coordinates'
 import type { DeviceLocationFix } from '../location/types'
 import { hasVenueCoordinates } from './details'
 import type { VenueSearchResult } from './search'
-import type { VenueLocationMap } from '@nusgo/shared/venue/types'
+import type { VenueMap } from '@nusgo/shared/venue/types'
 
 export function findNearestVenue(
-  venues: VenueLocationMap,
+  venues: VenueMap,
   location: Pick<DeviceLocationFix, 'longitude' | 'latitude'>,
 ): VenueSearchResult | null {
   let nearest: { readonly code: string; readonly distanceMeters: number } | null = null

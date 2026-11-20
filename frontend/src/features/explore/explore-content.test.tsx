@@ -4,21 +4,33 @@ import { ExploreContentHarness as ExploreContent } from './components/explore-co
 import { createInitialExploreState } from './state/explore-state.ts'
 import { createTransitIndex } from '../../domain/transit'
 import { createValidTransitNetwork } from '../../domain/transit/test-fixtures.ts'
-import type { VenueLocationMap } from '@nusgo/shared/venue/types'
+import { buildBuildingIndex } from '../../domain/venue/building-index'
+import type { VenueMap } from '@nusgo/shared/venue/types'
 
 const transitIndex = createTransitIndex(createValidTransitNetwork())
+const buildings = buildBuildingIndex([{
+  id: 'com1',
+  name: 'Computing 1',
+  aliases: [],
+  elementId: 'way/com1',
+  location: { x: 103.77, y: 1.3 },
+  roomCodePrefixes: ['COM1'],
+  sourceRefs: [],
+}])
 
-const venues: VenueLocationMap = {
+const venues: VenueMap = {
   'COM1-0210': {
+    kind: 'room',
     roomName: 'Computing 1, Level 2',
     floor: 2,
     location: { x: 103.77, y: 1.3 },
+    buildingId: 'com1',
   },
 }
 
 function renderPanel(
   state = createInitialExploreState(),
-  venueData: VenueLocationMap | null = venues,
+  venueData: VenueMap | null = venues,
   mobileSheet = true,
 ) {
   return renderToStaticMarkup(
@@ -26,6 +38,7 @@ function renderPanel(
       state={state}
       mobileSheet={mobileSheet}
       venues={venueData}
+      buildings={buildings}
       transitIndex={transitIndex}
       selectedRouteId="A1"
       onRouteSelect={() => undefined}
@@ -75,7 +88,7 @@ describe('ExploreContent', () => {
     expect(markup).toContain('id="explore-venue-search-input"')
     expect(markup).toContain('>Find a venue</h2>')
     expect(markup).toContain('aria-labelledby="explore-content-heading"')
-    expect(markup).toContain('Search for a place or browse by category')
+    expect(markup).toContain('Search for a place or bus stop')
     expect(markup).toContain('>Bus routes</button>')
     expect(markup).not.toContain('ghost-back-button')
     expect(markup).not.toContain('Search by venue code or room name.')

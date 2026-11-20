@@ -1,27 +1,29 @@
 import { useState, type RefObject } from 'react'
 import type { VenueSearchResult } from '../../../domain/venue/search'
 import { findNearbyShuttleStops, type TransitIndex } from '../../../domain/transit'
-import { formatVenueFloorAndBuilding, getVenueBuildingName, hasVenueCoordinates } from '../../../domain/venue/details'
-import { getEateryCategoryLabel } from '../../../domain/venue/eatery'
+import { formatVenueFloorAndBuilding, hasVenueCoordinates } from '../../../domain/venue/details'
+import { getVenueSearchPresentation } from '../../../domain/venue/search'
 import { getRouteContrastTextColor } from '../../../domain/transit/route-color'
 import nusmodsLogoUrl from '../../../ui/brand-assets/nusmods-logo.svg'
 import { NavigateButton } from '../../../ui/navigate-button'
 import { Select } from '../../../ui/select'
-import type { BuildingEntry } from '../../../domain/venue/building-index'
-import type { VenueLocation } from '@nusgo/shared/venue/types'
-import { BuildingIcon, BusIcon, ChevronRightIcon, MapPinIcon, RoomIcon } from '../../../ui/icons'
+import type { BuildingEntry, BuildingIndex } from '../../../domain/venue/building-index'
+import type { Venue } from '@nusgo/shared/venue/types'
+import { BuildingIcon, BusIcon, ChevronRightIcon } from '../../../ui/icons'
 import { Button } from '../../../ui/button'
+import { VenueIcon } from '../../../ui/venue-icon'
 
 interface VenueDetailsProps {
   readonly venue: VenueSearchResult
   readonly transitIndex: TransitIndex | null
+  readonly buildings: BuildingIndex | null
   readonly headingRef: RefObject<HTMLHeadingElement | null>
   readonly onNavigateToVenue?: (venueCode: string) => void
   readonly onFocusStop: (stopId: string, focusTarget?: HTMLElement) => void
 }
 
 interface NearbyStopsProps {
-  readonly location: VenueLocation['location']
+  readonly location: Venue['location']
   readonly transitIndex: TransitIndex | null
   readonly onFocusStop: (stopId: string, focusTarget?: HTMLElement) => void
 }
@@ -99,19 +101,20 @@ function NusmodsLink({ venueCode }: { readonly venueCode: string }) {
 export function VenueDetails({
   venue,
   transitIndex,
+  buildings,
   headingRef,
   onNavigateToVenue,
   onFocusStop,
 }: VenueDetailsProps) {
   const hasCoordinates = hasVenueCoordinates(venue.venue)
-  const isEatery = venue.venue.category !== undefined
-  const displayName = venue.venue.displayName ?? venue.venue.roomName
-  const categoryLabel = venue.venue.category
-    ? getEateryCategoryLabel(venue.venue.category)
-    : null
-  const floorAndBuilding = isEatery
+  const isFood = venue.venue.kind === 'food'
+  const presentation = getVenueSearchPresentation(venue.code, venue.venue)
+  const buildingName = venue.venue.kind === 'room' && venue.venue.buildingId
+    ? buildings?.byId.get(venue.venue.buildingId)?.name
+    : undefined
+  const floorAndBuilding = venue.venue.kind === 'food'
     ? null
-    : formatVenueFloorAndBuilding(venue.venue.floor, getVenueBuildingName(venue.code))
+    : formatVenueFloorAndBuilding(venue.venue.floor, buildingName)
   const venueLocation = venue.venue.location
 
   return (
@@ -124,14 +127,12 @@ export function VenueDetails({
           id="explore-venue-detail-heading"
           ref={headingRef}
           tabIndex={-1}
-          aria-label={isEatery ? `${displayName}, ${categoryLabel}` : `${venue.code}, venue`}
+          aria-label={isFood ? `${presentation.title}, ${presentation.detail}` : `${venue.code}, room`}
         >
-          {isEatery
-            ? <MapPinIcon className="location-identity-icon location-identity-icon--eatery" />
-            : <RoomIcon className="location-identity-icon location-identity-icon--venue" />}
-          {isEatery ? displayName : venue.code}
+          <VenueIcon venue={venue.venue} />
+          {presentation.title}
         </h3>
-        <p className="venue-detail-name">{isEatery ? categoryLabel : venue.venue.roomName}</p>
+        <p className="venue-detail-name">{presentation.detail}</p>
       </div>
       {floorAndBuilding && (
         <p className="venue-detail-location">
@@ -144,7 +145,7 @@ export function VenueDetails({
           disabled={!hasCoordinates}
           onClick={() => onNavigateToVenue?.(venue.code)}
         />
-        {!isEatery && <NusmodsLink venueCode={venue.code} />}
+        {!isFood && <NusmodsLink venueCode={venue.code} />}
       </div>
       {hasCoordinates && venueLocation && (
         <NearbyStops location={venueLocation} transitIndex={transitIndex} onFocusStop={onFocusStop} />

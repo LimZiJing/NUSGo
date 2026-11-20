@@ -177,6 +177,7 @@ function createAdapterContext(fixtures, routeEngine, caseDefs, fixedNowMs, modul
   return {
     transit: fixtures.transit,
     venues: fixtures.venues,
+    buildings: fixtures.buildings,
     walkingGraph: fixtures.walkingGraph,
     routeEngine,
     now: () => fixedNowMs,
@@ -215,7 +216,7 @@ async function measureRun(runner, mode, routeEngine, benchmarkCase, fixtures, mo
     matrixRequests: mode === 'local' ? routeEngine.matrixRequests : [],
     walkingStopGraph: fixtures.walkingGraph,
     valhallaRequestCounts: routeEngine.requestCounts,
-  })
+  }, fixtures.buildings)
   const result = { elapsedMs, validation }
   if (mode === 'local') {
     const requestCounts = routeEngine.requestCounts

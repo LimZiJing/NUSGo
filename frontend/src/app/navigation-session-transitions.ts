@@ -2,7 +2,7 @@ import { exploreReducer, type ExploreAction, type ExploreState } from '../featur
 import type { VenueSearchResult } from '../domain/venue/search'
 import type { BuildingIndex } from '../domain/venue/building-index'
 import type { MapBuildingSelection } from './contracts/map'
-import type { VenueLocation, VenueLocationMap } from '@nusgo/shared/venue/types'
+import type { Venue, VenueMap } from '@nusgo/shared/venue/types'
 import {
   createVenueSearchResultSnapshot,
   venuesMatch,
@@ -49,9 +49,9 @@ interface NavigationSessionPanelHost {
   readonly isDisposed: () => boolean
   readonly enqueue: (transition: () => void) => void
   readonly getExploreState: () => ExploreState
-  readonly getVenues: () => VenueLocationMap | null
+  readonly getVenues: () => VenueMap | null
   readonly setExploreState: (panel: ExploreState) => void
-  readonly selectVenue: (venue: VenueLocation) => void
+  readonly selectVenue: (venue: Venue) => void
   readonly getBuildings: () => BuildingIndex | null
   readonly selectBuilding: (building: MapBuildingSelection) => void
   readonly clearVenue: () => void

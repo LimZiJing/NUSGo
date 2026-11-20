@@ -1,5 +1,5 @@
 import { Marker, type Map } from 'maplibre-gl'
-import type { VenueLocation } from '@nusgo/shared/venue/types'
+import type { Venue } from '@nusgo/shared/venue/types'
 
 export const BUILDING_PART_HIGHLIGHT_COLOR = '#1d4ed8'
 
@@ -9,7 +9,7 @@ export interface VenueMarker {
 
 export function createVenueMarker(
   map: Map,
-  venue: VenueLocation,
+  venue: Venue,
   color = '#64748b',
 ): VenueMarker | null {
   if (!venue.location) return null

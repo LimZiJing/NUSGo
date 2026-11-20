@@ -3,16 +3,16 @@ import type { LoadedTransitData, LoadedVenueData } from '../../app/contracts/dat
 import { validateTransitMapData } from '@nusgo/shared/transit/map-data'
 import {
   validateBuildingCatalogue,
-  validateVenueLocationMap,
-  validateEateryLocationMap,
-  mergeVenueAndEateryMaps,
+  validateVenueSourceMap,
+  validateFoodLocationMap,
+  composeVenueData,
   getVenueCount,
 } from '@nusgo/shared/venue/validation'
 import { validateShuttleTimingData } from '@nusgo/shared/transit/timing'
 import type { ShuttleTimingData } from '@nusgo/shared/transit/timing'
 import type { BuildingCatalogue } from '@nusgo/shared/venue/buildings'
 import type { TransitNetwork } from '@nusgo/shared/transit/types'
-import { buildBuildingIndex, EMPTY_BUILDING_INDEX, type BuildingIndex } from '../../domain/venue/building-index'
+import { buildBuildingIndex, EMPTY_BUILDING_INDEX } from '../../domain/venue/building-index'
 import { fetchJson } from './json'
 
 export type JsonFetcher = (
@@ -26,36 +26,36 @@ export async function loadVenueData(
   fetcher: JsonFetcher = fetchJson,
 ): Promise<LoadedVenueData> {
   const venueInput = await fetcher('data/venues.json', signal, 'Venue data')
-  const venueMap = validateVenueLocationMap(venueInput)
-  let eateryMap = validateEateryLocationMap({})
+  const roomSources = validateVenueSourceMap(venueInput)
+  let foodMap = validateFoodLocationMap({})
   try {
-    eateryMap = validateEateryLocationMap(
-      await fetcher('data/eateries.json', signal, 'Eatery data'),
+    foodMap = validateFoodLocationMap(
+      await fetcher('data/food.json', signal, 'Food data'),
     )
   } catch (error) {
     if (signal.aborted || (error instanceof Error && error.name === 'AbortError')) throw error
-    console.error('Eatery data unavailable; continuing without eateries:', error)
+    console.error('Food data unavailable; continuing without Food locations:', error)
   }
-  const venues = mergeVenueAndEateryMaps(
-    venueMap,
-    eateryMap,
-  )
-  return {
-    venues,
-    venueCount: getVenueCount(venues),
-    buildings: await loadBuildingIndex(signal, fetcher),
-  }
-}
-
-// Buildings supplement venues, so a missing or invalid catalogue must not take venue search down.
-async function loadBuildingIndex(signal: AbortSignal, fetcher: JsonFetcher): Promise<BuildingIndex> {
+  let buildingCatalogue: BuildingCatalogue | undefined
   try {
-    const catalogue = await loadBuildingCatalogue(signal, fetcher)
-    return buildBuildingIndex(catalogue.buildings, catalogue.source)
+    buildingCatalogue = await loadBuildingCatalogue(signal, fetcher)
   } catch (error) {
     if (signal.aborted || (error instanceof Error && error.name === 'AbortError')) throw error
     console.error('Building catalogue unavailable; continuing without buildings:', error)
-    return EMPTY_BUILDING_INDEX
+  }
+
+  const venueData = composeVenueData(roomSources, foodMap, buildingCatalogue)
+  const buildings = buildingCatalogue
+    ? buildBuildingIndex(
+      buildingCatalogue.buildings,
+      buildingCatalogue.source,
+      venueData.wholeBuildingVenueAliases,
+    )
+    : EMPTY_BUILDING_INDEX
+  return {
+    venues: venueData.venues,
+    venueCount: getVenueCount(venueData.venues),
+    buildings,
   }
 }
 

@@ -24,6 +24,7 @@ describe('manifest Path correctness cases', () => {
         benchmarkCase.transit,
         fixtures.venues,
         { mode: 'offline', valhallaRequestCounts: { matrix: 0, route: 0 } },
+        fixtures.buildings,
       ))
       const validation = validations.find((candidate) => candidate.valid) ?? (
         result.candidates.length === 0
@@ -33,6 +34,7 @@ describe('manifest Path correctness cases', () => {
             benchmarkCase.transit,
             fixtures.venues,
             { mode: 'offline', valhallaRequestCounts: { matrix: 0, route: 0 } },
+            fixtures.buildings,
           )
           : validations[0]!
       )

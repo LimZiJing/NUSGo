@@ -4,7 +4,7 @@ import type { TransitIndex } from '@nusgo/shared/transit/index'
 import type { TransitNetwork, BusRouteGeometry } from '@nusgo/shared/transit/types'
 import type { ShuttleTimingData } from '@nusgo/shared/transit/timing'
 import type { JourneyEndpoint } from '@nusgo/shared/routing/path'
-import type { VenueLocationMap } from '@nusgo/shared/venue/types'
+import type { VenueMap } from '@nusgo/shared/venue/types'
 import type {
   WalkingConnection,
   WalkingConnectionProvider,
@@ -26,7 +26,7 @@ interface TestTripRequest {
 
 interface TestRequest {
   readonly tripRequest: TestTripRequest
-  readonly venues: VenueLocationMap
+  readonly venues: VenueMap
   readonly transit: TestTransitData
   readonly signal: AbortSignal
 }

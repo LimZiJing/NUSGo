@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import type { VenueLocationMap } from '@nusgo/shared/venue/types'
+import type { RoomVenueSourceMap } from '@nusgo/shared/venue/types'
 import { buildCatalogue, type BuildCatalogueInput } from './catalogue'
 import type { ApiBuilding } from './snapshot'
 
@@ -48,7 +48,7 @@ describe('buildCatalogue rule chain', () => {
         'BIZ1-0301': room('Seminar Room', 1.2925, 103.7741),
         'S1A-0217': room('Lab', 1.2961, 103.7783),
         'LT32-01': room('Lecture Theatre 32', 1.2961, 103.7783),
-      } satisfies VenueLocationMap,
+      } satisfies RoomVenueSourceMap,
     })
 
     expect(prefixesById(result)).toEqual({

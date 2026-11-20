@@ -841,6 +841,7 @@ function App() {
       const stop = transitIndex.stopById.get(stopId)
       return stop
         ? [{
+          kind: 'stop' as const,
           endpoint: { kind: 'stop' as const, id: stop.id },
           label: stop.longName,
           detail: stop.shortName.trim().toLowerCase() === stop.id.trim().toLowerCase()

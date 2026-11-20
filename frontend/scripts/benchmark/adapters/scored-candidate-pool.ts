@@ -63,7 +63,7 @@ export const createPathfindingBenchmarkAdapter: PathfindingBenchmarkAdapterFacto
     }
   },
 
-  createPathRunner({ benchmarkCase, venues, transit, walkingGraph, routeEngine, now, createArrivalClient, createServiceHoursClient }) {
+  createPathRunner({ benchmarkCase, venues, buildings, transit, walkingGraph, routeEngine, now, createArrivalClient, createServiceHoursClient }) {
     const walkingConnectionProvider = createWalkingConnectionProvider({
       routeEngine,
       loadGraph: async () => walkingGraph,
@@ -89,6 +89,7 @@ export const createPathfindingBenchmarkAdapter: PathfindingBenchmarkAdapterFacto
           origin: benchmarkCase.origin,
           destination: benchmarkCase.destination,
           venues,
+          buildings,
           transit: {
             index: transit.index,
             geometry: transit.geometry,

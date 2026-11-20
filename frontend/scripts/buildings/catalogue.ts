@@ -3,7 +3,7 @@ import type {
   BuildingCatalogue,
   BuildingCatalogueSource,
 } from '../../../shared/src/venue/buildings.ts'
-import type { VenueLocationMap } from '../../../shared/src/venue/types.ts'
+import type { RoomVenueSourceMap } from '../../../shared/src/venue/types.ts'
 import type { BuildingAlias } from './aliases.ts'
 import { candidateCodes, compactName, normaliseName, roomBuildingToken, slugify } from './normalise.ts'
 import type { BuildingOverride, BuildingOverrides } from './overrides.ts'
@@ -89,7 +89,7 @@ export type MergedRecord = {
 
 export type BuildCatalogueInput = {
   readonly apiBuildings: readonly ApiBuilding[]
-  readonly venues: VenueLocationMap
+  readonly venues: RoomVenueSourceMap
   readonly aliases: readonly BuildingAlias[]
   readonly overrides: BuildingOverrides
   /** Prefixes deliberately left unlinked, with the reason (from the overrides file). */
@@ -245,7 +245,7 @@ function createDrafts(input: BuildCatalogueInput, merges: readonly MergeAway[], 
   }))
 }
 
-function groupRoomsByPrefix(venues: VenueLocationMap): PrefixRooms[] {
+function groupRoomsByPrefix(venues: RoomVenueSourceMap): PrefixRooms[] {
   const groups = new Map<string, string[]>()
   for (const code of Object.keys(venues).sort(byString)) {
     const prefix = roomBuildingToken(code)
@@ -291,7 +291,7 @@ function linkPrefix(
   rooms: PrefixRooms,
   drafts: readonly Draft[],
   aliases: ReadonlyMap<string, BuildingAlias>,
-  venues: VenueLocationMap,
+  venues: RoomVenueSourceMap,
 ): RuleOutcome {
   const compact = compactName(rooms.prefix)
   const overridden = drafts.filter((draft) => (
@@ -390,7 +390,7 @@ function nearestBuilding(point: Point, drafts: readonly Draft[]): UnlinkedPrefix
   return best && { buildingId: best.buildingId, metres: Math.round(best.metres) }
 }
 
-function findStandaloneCandidates(venues: VenueLocationMap, drafts: readonly Draft[]): StandaloneCandidate[] {
+function findStandaloneCandidates(venues: RoomVenueSourceMap, drafts: readonly Draft[]): StandaloneCandidate[] {
   const buildingCodes = new Set(drafts.flatMap((draft) => draft.codes))
   const prefixCounts = new Map<string, number>()
   for (const code of Object.keys(venues)) {

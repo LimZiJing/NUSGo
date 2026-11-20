@@ -6,7 +6,7 @@ import type { TripRequest } from '../domain/trip/types'
 import { getTripEndpointCoordinate, type TripEndpointLocationSources } from '../domain/trip/endpoint-location'
 import type { BuildingIndex } from '../domain/venue/building-index'
 import type { VenueSearchResult } from '../domain/venue/search'
-import type { VenueLocationMap } from '@nusgo/shared/venue/types'
+import type { VenueMap } from '@nusgo/shared/venue/types'
 import type {
   MapCoordinate,
   MapResetTarget,
@@ -52,7 +52,7 @@ export interface ResetTargetContext {
   readonly selectedVenue: VenueSearchResult | null
   readonly selectedRouteId: string | null
   readonly tripRequest: TripRequest
-  readonly venues: VenueLocationMap | null
+  readonly venues: VenueMap | null
   readonly buildings?: BuildingIndex | null
   readonly transitIndex: TransitIndex | null
 }

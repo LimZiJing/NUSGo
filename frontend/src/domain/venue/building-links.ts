@@ -1,4 +1,4 @@
-import type { VenueLocationMap } from '@nusgo/shared/venue/types'
+import type { VenueMap } from '@nusgo/shared/venue/types'
 import type { BuildingEntry, BuildingIndex } from './building-index'
 
 /** How venues relate to the building catalogue. Computed once per data load. */
@@ -26,13 +26,8 @@ export const EMPTY_BUILDING_VENUE_LINKS: BuildingVenueLinks = {
   nusmodsVenueCodeByBuildingId: new Map<string, string>(),
 }
 
-/** The building token of a venue code: the part before the first "-" or "_". */
-function roomBuildingToken(venueCode: string): string {
-  return venueCode.split(/[-_]/)[0].toLowerCase()
-}
-
 export function linkVenuesToBuildings(
-  venues: VenueLocationMap,
+  venues: VenueMap,
   buildings: BuildingIndex,
 ): BuildingVenueLinks {
   const buildingByVenueCode = new Map<string, BuildingEntry>()
@@ -41,27 +36,27 @@ export function linkVenuesToBuildings(
   const extraNamesByBuildingId = new Map<string, string[]>()
   const nusmodsVenueCodeByBuildingId = new Map<string, string>()
 
+  for (const alias of buildings.wholeBuildingVenueAliases) {
+    const building = buildings.byId.get(alias.buildingId)
+    if (!building) continue
+    buildingByVenueCode.set(alias.venueCode, building)
+    wholeBuildingVenueCodes.add(alias.venueCode)
+    nusmodsVenueCodeByBuildingId.set(building.id, alias.venueCode)
+    extraNamesByBuildingId.set(building.id, [
+      ...(extraNamesByBuildingId.get(building.id) ?? []),
+      alias.name,
+    ])
+  }
+
   for (const [code, venue] of Object.entries(venues)) {
     if (!venue || typeof venue !== 'object') continue
-    // New eatery IDs must not become rooms just because they start with a building prefix.
-    if (venue.category && venue.isStandaloneEatery) continue
-    const wholeBuilding = buildings.byRoomCodePrefix.get(code.toLowerCase())
-    // Only a building's first prefix is its own code; the others (LT15 under AS6) are rooms inside it.
-    const isWholeBuilding = wholeBuilding?.parts.some(
-      (part) => part.roomCodePrefixes[0]?.toLowerCase() === code.toLowerCase(),
-    )
-    if (wholeBuilding && isWholeBuilding) {
-      buildingByVenueCode.set(code, wholeBuilding)
-      wholeBuildingVenueCodes.add(code)
-      nusmodsVenueCodeByBuildingId.set(wholeBuilding.id, code)
-      extraNamesByBuildingId.set(wholeBuilding.id, [
-        ...(extraNamesByBuildingId.get(wholeBuilding.id) ?? []),
-        venue.roomName,
-      ])
+    if (venue.kind === 'food') {
+      const building = venue.buildingId ? buildings.byId.get(venue.buildingId) : undefined
+      if (building) buildingByVenueCode.set(code, building)
       continue
     }
 
-    const building = buildings.byRoomCodePrefix.get(roomBuildingToken(code))
+    const building = venue.buildingId ? buildings.byId.get(venue.buildingId) : undefined
     if (!building) continue
     buildingByVenueCode.set(code, building)
     roomCountByBuildingId.set(building.id, (roomCountByBuildingId.get(building.id) ?? 0) + 1)

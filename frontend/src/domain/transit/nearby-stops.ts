@@ -1,4 +1,4 @@
-import type { VenueLocation } from '@nusgo/shared/venue/types'
+import type { Venue } from '@nusgo/shared/venue/types'
 import { getDistanceMeters } from '../location/coordinates'
 import type { TransitIndex } from './index'
 import type { BusRoute, TransitStop } from '@nusgo/shared/transit/types'
@@ -19,7 +19,7 @@ function getInternalServices(stop: TransitStop, transitIndex: TransitIndex): Bus
 }
 
 export function findNearbyShuttleStops(
-  venueLocation: VenueLocation['location'] | null | undefined,
+  venueLocation: Venue['location'] | null | undefined,
   transitIndex: TransitIndex,
 ): NearbyShuttleStop[] {
   if (!venueLocation || !Number.isFinite(venueLocation.x) || !Number.isFinite(venueLocation.y)) return []

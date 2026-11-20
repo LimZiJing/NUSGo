@@ -39,13 +39,25 @@ function renderPanel(
 }
 
 describe('ExploreContent', () => {
-  it('starts on the mobile Find venue segment', () => {
+  it('opens on the Bus routes segment with Bus routes to the left of Find venue', () => {
     const markup = renderPanel()
 
-    expect(markup).toContain('Find venue</button>')
-    expect(markup).toContain('>Bus routes</button>')
+    const busRoutesAt = markup.indexOf('>Bus routes</button>')
+    const findVenueAt = markup.indexOf('Find venue</button>')
+    expect(busRoutesAt).toBeGreaterThan(-1)
+    expect(findVenueAt).toBeGreaterThan(-1)
+    expect(busRoutesAt).toBeLessThan(findVenueAt)
+    expect(markup).toContain('aria-pressed="true">Bus routes</button>')
+    expect(markup).toContain('aria-pressed="false">Find venue</button>')
+    expect(markup).not.toContain('id="explore-venue-search-input"')
+  })
+
+  it('shows venue search when the rider chooses Find venue', () => {
+    const markup = renderPanel({ ...createInitialExploreState(), mode: 'venue-search' })
+
     expect(markup).toContain('id="explore-venue-search-input"')
-    expect(markup).not.toContain('Browse bus routes')
+    expect(markup).toContain('aria-pressed="false">Bus routes</button>')
+    expect(markup).toContain('aria-pressed="true">Find venue</button>')
   })
 
   it('uses the shared Explore segments on desktop', () => {
@@ -63,7 +75,7 @@ describe('ExploreContent', () => {
     expect(markup).toContain('id="explore-venue-search-input"')
     expect(markup).toContain('>Find a venue</h2>')
     expect(markup).toContain('aria-labelledby="explore-content-heading"')
-    expect(markup).toContain('Search for a venue')
+    expect(markup).toContain('Search for a place or browse by category')
     expect(markup).toContain('>Bus routes</button>')
     expect(markup).not.toContain('ghost-back-button')
     expect(markup).not.toContain('Search by venue code or room name.')

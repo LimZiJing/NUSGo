@@ -1,5 +1,10 @@
 import { describe, expect, it } from 'vitest'
-import { VenueValidationError, validateVenueLocationMap } from '@nusgo/shared/venue/validation'
+import {
+  mergeVenueAndEateryMaps,
+  validateEateryLocationMap,
+  VenueValidationError,
+  validateVenueLocationMap,
+} from '@nusgo/shared/venue/validation'
 
 describe('validateVenueLocationMap', () => {
   it('returns an immutable validated snapshot', () => {
@@ -49,5 +54,29 @@ describe('validateVenueLocationMap', () => {
     expect(() => validateVenueLocationMap({
       'A-1': { roomName: 'Room', floor },
     })).toThrow(VenueValidationError)
+  })
+})
+
+describe('mergeVenueAndEateryMaps', () => {
+  it('keeps the floor and venue identity when an eatery reuses a venue code', () => {
+    const venues = validateVenueLocationMap({
+      'COM1-0210': { roomName: 'Seminar Room 10', floor: 2, location: { x: 103.77, y: 1.3 } },
+    })
+    const eateries = validateEateryLocationMap({
+      'COM1-0210': { name: 'Seminar Cafe', category: 'canteen', location: { x: 103.771, y: 1.301 } },
+      'new-cafe': { name: 'New Cafe', category: 'restaurant', location: { x: 103.772, y: 1.302 } },
+    })
+
+    const merged = mergeVenueAndEateryMaps(venues, eateries)
+
+    expect(merged['COM1-0210']).toMatchObject({
+      roomName: 'Seminar Room 10',
+      displayName: 'Seminar Cafe',
+      category: 'canteen',
+      floor: 2,
+      isStandaloneEatery: false,
+      location: { x: 103.771, y: 1.301 },
+    })
+    expect(merged['new-cafe']).toMatchObject({ isStandaloneEatery: true })
   })
 })

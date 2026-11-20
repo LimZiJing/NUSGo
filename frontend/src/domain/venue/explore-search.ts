@@ -1,5 +1,5 @@
 import type { TransitStop } from '@nusgo/shared/transit/types'
-import type { VenueLocationMap } from '@nusgo/shared/venue/types'
+import type { EateryCategory, VenueLocationMap } from '@nusgo/shared/venue/types'
 import type { TransitIndex } from '../transit'
 import { compareText, getMatchPriority, normalizeSearchText } from '../text-match'
 import { getBuildingSearchFields, type BuildingEntry, type BuildingIndex } from './building-index'
@@ -10,6 +10,29 @@ export type ExploreSearchResult =
   | { readonly kind: 'stop'; readonly stop: TransitStop }
   | { readonly kind: 'building'; readonly entry: BuildingEntry }
   | { readonly kind: 'venue'; readonly result: VenueSearchResult }
+
+export function searchEateries(
+  venues: VenueLocationMap,
+  category: EateryCategory,
+  query: string,
+): VenueSearchResult[] {
+  const normalizedQuery = normalizeSearchText(query)
+  return Object.entries(venues)
+    .filter(([, venue]) => venue.category === category)
+    .filter(([code, venue]) => (
+      !normalizedQuery || getMatchPriority(getVenueSearchFields(code, venue), normalizedQuery) !== null
+    ))
+    .sort(([firstCode, firstVenue], [secondCode, secondVenue]) => {
+      if (!normalizedQuery) {
+        return compareText(firstVenue.displayName ?? firstVenue.roomName, secondVenue.displayName ?? secondVenue.roomName)
+      }
+      const priorityDifference =
+        (getMatchPriority(getVenueSearchFields(firstCode, firstVenue), normalizedQuery) ?? Number.POSITIVE_INFINITY) -
+        (getMatchPriority(getVenueSearchFields(secondCode, secondVenue), normalizedQuery) ?? Number.POSITIVE_INFINITY)
+      return priorityDifference || compareText(firstCode, secondCode)
+    })
+    .map(([code, venue]) => ({ code, venue }))
+}
 
 export interface ExploreSearchSources {
   readonly venues: VenueLocationMap
@@ -38,10 +61,11 @@ function getStops(source: ExploreSearchSources['stops']): readonly TransitStop[]
 }
 
 /**
- * Find-a-venue search over bus stops, buildings and rooms, returned as one ranked list.
+ * Find-a-venue search over bus stops, buildings, rooms and named eateries, returned as one ranked list.
  * Results rank by match quality first (exact, then prefix, then partial), then stops before
- * buildings before rooms, then by key. A venue that is itself a whole building appears once,
- * as that building. Venues without coordinates are still returned.
+ * buildings before rooms and eateries, then by key. A venue that is itself a whole building appears once,
+ * as that building; a categorised venue also keeps its own eatery result. Venues without coordinates
+ * are still returned.
  */
 export function searchExplore(
   { venues, buildings, links, stops }: ExploreSearchSources,
@@ -72,7 +96,8 @@ export function searchExplore(
   }
 
   for (const [code, venue] of Object.entries(venues)) {
-    if (links.wholeBuildingVenueCodes.has(code)) continue
+    // A reused venue can still be linked as a whole building and also needs its eatery result.
+    if (links.wholeBuildingVenueCodes.has(code) && !venue.category) continue
     candidates.push({
       result: { kind: 'venue', result: { code, venue } },
       fields: getVenueSearchFields(code, venue),

@@ -32,8 +32,9 @@ before(async () => {
   async function readJson(filename: string): Promise<unknown> {
     return JSON.parse(await readFile(resolve(sourceDataDirectory, filename), 'utf8')) as unknown
   }
-  const [venues, buildings, network, routeGeometry, walkingStopGraph] = await Promise.all([
+  const [venues, eateries, buildings, network, routeGeometry, walkingStopGraph] = await Promise.all([
     readJson('venues.json'),
+    readJson('eateries.json'),
     readJson('buildings.json'),
     readJson('shuttle-network.json'),
     readJson('shuttle-routes.geojson'),
@@ -42,6 +43,7 @@ before(async () => {
   const transit = validateTransitMapData(network, routeGeometry)
   backendData = validateCanonicalData({
     venues,
+    eateries,
     buildings,
     network,
     routeGeometry,

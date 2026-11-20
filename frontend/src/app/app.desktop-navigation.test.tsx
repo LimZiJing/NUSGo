@@ -21,6 +21,8 @@ const appHarness = vi.hoisted(() => {
     locateUser: vi.fn(),
     enableLocationTracking: vi.fn(),
     suspendMobileRoutes: vi.fn(),
+    enterMobileRoutes: vi.fn(),
+    selectMobileRoute: vi.fn(),
     setPersonalWaypoints: vi.fn(),
     setWaypointPlacement: vi.fn(),
     setCommunityWaypoints: vi.fn(),
@@ -250,6 +252,8 @@ afterEach(() => {
   appHarness.commands.locateUser.mockReset()
   appHarness.commands.enableLocationTracking.mockReset()
   appHarness.commands.suspendMobileRoutes.mockReset()
+  appHarness.commands.enterMobileRoutes.mockReset()
+  appHarness.commands.selectMobileRoute.mockReset()
   appHarness.commands.setPersonalWaypoints.mockReset()
   appHarness.commands.setWaypointPlacement.mockReset()
   appHarness.commands.setCommunityWaypoints.mockReset()
@@ -396,7 +400,7 @@ describe('desktop shared navigation shell', () => {
 
     expect(await screen.findByText(/^Correction for/)).toBeTruthy()
     expect(screen.queryByLabelText(/Waypoint name/)).toBeNull()
-    await user.type(screen.getByLabelText('What needs correcting?'), 'It has moved to the next floor.')
+    await user.type(screen.getByLabelText(/What needs correcting\?/), 'It has moved to the next floor.')
     await user.click(screen.getByRole('button', { name: 'Send suggestion' }))
 
     expect(await screen.findByRole('heading', { name: 'Correction received' })).toBeTruthy()
@@ -434,6 +438,9 @@ describe('desktop shared navigation shell', () => {
     await user.click(screen.getByRole('button', { name: 'Adjust on map' }))
 
     expect(screen.getByRole('region', { name: 'Adjust waypoint location' })).toBeTruthy()
+    const unavailableCurrentLocation = screen.getByRole('button', { name: 'Use current location' })
+    expect(unavailableCurrentLocation.getAttribute('aria-disabled')).toBe('true')
+    expect(unavailableCurrentLocation.getAttribute('aria-describedby')).toBeTruthy()
     expect(document.querySelector('.navigation-column')?.hasAttribute('hidden')).toBe(true)
     const placementCall = appHarness.commands.setWaypointPlacement.mock.calls.at(-1)
     expect(placementCall?.[1]).toBe(true)
@@ -487,6 +494,48 @@ describe('desktop shared navigation shell', () => {
     await user.click(screen.getByRole('switch', { name: 'Show Water cooler on map' }))
     await waitFor(() => expect(appHarness.commands.setCommunityWaypoints)
       .toHaveBeenLastCalledWith([], expect.any(Function)))
+  })
+
+  it('opens the selected route from stop timings after leaving Community mode', async () => {
+    const user = userEvent.setup()
+    appHarness.arrivalsClient.getArrivals.mockResolvedValue({
+      observedAt: new Date().toISOString(),
+      expiresAt: new Date(Date.now() + 60_000).toISOString(),
+      stops: {
+        'STOP-A': {
+          A1: {
+            nextArrivalSeconds: 300,
+            upcomingArrivalSeconds: [300, 600],
+            headwaySeconds: { min: 300, median: 300, max: 300 },
+          },
+        },
+      },
+    })
+    appHarness.commands.enterMobileRoutes.mockImplementation(() => {
+      const current = appHarness.state as ReturnType<typeof createInitialNavigationSessionState>
+      appHarness.state = {
+        ...current,
+        exploreState: { ...current.exploreState, mode: 'bus-routes' },
+      }
+    })
+    appHarness.commands.selectMobileRoute.mockImplementation((routeId: string) => {
+      const current = appHarness.state as ReturnType<typeof createInitialNavigationSessionState>
+      appHarness.state = { ...current, selectedRouteId: routeId }
+    })
+
+    render(<App />)
+
+    await user.click(screen.getByRole('button', { name: 'Explore' }))
+    await user.click(screen.getByRole('button', { name: 'Community' }))
+    expect(screen.getByRole('group', { name: 'Categories' })).toBeTruthy()
+
+    await user.click(screen.getByRole('button', { name: 'Stops' }))
+    act(() => expect(appHarness.onStopSelected?.('STOP-A')).toBe(true))
+    await user.click(await screen.findByRole('button', { name: 'View A1 route details' }))
+
+    expect(await screen.findByRole('button', { name: 'Bus routes', pressed: true })).toBeTruthy()
+    expect(screen.getByRole('button', { name: 'Route A1', pressed: true })).toBeTruthy()
+    expect(screen.queryByRole('group', { name: 'Categories' })).toBeNull()
   })
 
   it('has no Fit routes button for a retained Journey in Plan', async () => {
@@ -648,15 +697,50 @@ describe('desktop shared navigation shell', () => {
     expect(screen.getByRole('button', { name: 'Explore' }).getAttribute('aria-current')).toBe('page')
   })
 
-  it('switches to the unified Explore tab from the shared navigation', async () => {
+  it('switches to the unified Explore tab opening on Bus routes', async () => {
     const user = userEvent.setup()
     render(<App />)
 
     await user.click(screen.getByRole('button', { name: 'Explore' }))
 
-    expect(screen.getByRole('region', { name: 'Find a venue' })).toBeTruthy()
+    expect(screen.getByRole('region', { name: 'Bus routes' })).toBeTruthy()
     expect(screen.getByRole('button', { name: 'Bus routes' })).toBeTruthy()
+    expect(screen.getByRole('button', { name: 'Find venue' })).toBeTruthy()
     expect(document.getElementById('stops-panel')?.hasAttribute('hidden')).toBe(true)
+  })
+
+  it('starts the route session when desktop Explore opens on Bus routes', async () => {
+    const user = userEvent.setup()
+    render(<App />)
+
+    // Explore opens on Bus routes, and a route chip only works while a route session is active.
+    // Nothing else starts one on desktop, so entering the tab must.
+    await user.click(screen.getByRole('button', { name: 'Explore' }))
+
+    expect(appHarness.commands.enterMobileRoutes).toHaveBeenCalled()
+  })
+
+  it('preserves a manual Explore view when switching top-level tabs on desktop', async () => {
+    const user = userEvent.setup()
+    // A view the rider chose earlier in the session; the initial view is Bus routes.
+    appHarness.state = {
+      ...createInitialNavigationSessionState(),
+      transitIndex: createTransitIndex(createValidTransitNetwork()),
+      exploreState: {
+        ...createInitialNavigationSessionState().exploreState,
+        mode: 'venue-search',
+      },
+    }
+    render(<App />)
+
+    await user.click(screen.getByRole('button', { name: 'Explore' }))
+    expect(screen.getByRole('searchbox', { name: 'Find a venue' })).toBeTruthy()
+
+    await user.click(screen.getByRole('button', { name: 'Stops' }))
+    await user.click(screen.getByRole('button', { name: 'Explore' }))
+
+    expect(screen.getByRole('searchbox', { name: 'Find a venue' })).toBeTruthy()
+    expect(screen.getByRole('button', { name: 'Find venue' }).getAttribute('aria-pressed')).toBe('true')
   })
 
   it('requests location on initial desktop Stops activation', async () => {
@@ -691,7 +775,8 @@ describe('desktop shared navigation shell', () => {
     await waitFor(() => expect(screen.getByRole('heading', { name: 'Stop A, bus stop' })).toBeTruthy())
     expect(screen.getByRole('button', { name: 'Stops' }).getAttribute('aria-current')).toBe('page')
 
-    await user.click(screen.getByRole('button', { name: 'Back to Find venue' }))
+    // Explore opens on Bus routes, so that is the view this stop returns to.
+    await user.click(screen.getByRole('button', { name: 'Back to bus routes' }))
     await waitFor(() => expect(document.activeElement).toBe(mapMarker))
     expect(screen.getByRole('button', { name: 'Explore' }).getAttribute('aria-current')).toBe('page')
     mapMarker.remove()
@@ -1573,7 +1658,7 @@ describe('More surface', () => {
 
     await user.click(screen.getByRole('button', { name: 'Adjust on map' }))
     act(() => appHarness.onMapMovingChange?.(true))
-    expect((screen.getByRole('button', { name: 'Use map centre' }) as HTMLButtonElement).disabled).toBe(true)
+    expect(screen.getByRole('button', { name: 'Use map centre' }).getAttribute('aria-disabled')).toBe('true')
     act(() => {
       appHarness.onMapCenterChange?.([105, 2])
       appHarness.onMapMovingChange?.(false)
@@ -1589,6 +1674,28 @@ describe('More surface', () => {
     expect(updatedLocation.textContent).toContain('Latitude2.000000°')
     expect(updatedLocation.textContent).toContain('Longitude105.000000°')
     expect((screen.getByLabelText('Name') as HTMLInputElement).value).toBe('Quiet bench')
+  })
+
+  it('uses the latest current-location fix for a Community Waypoint placement', async () => {
+    mockDesktopViewport()
+    setActiveLocationFix()
+    const user = userEvent.setup()
+    render(<App />)
+
+    await user.click(screen.getByRole('button', { name: 'More' }))
+    await user.click(screen.getByRole('button', { name: 'Suggest a waypoint' }))
+    await user.click(screen.getByRole('button', { name: 'Adjust on map' }))
+
+    const currentLocationButton = screen.getByRole('button', { name: 'Use current location' })
+    expect(currentLocationButton.getAttribute('aria-disabled')).toBeNull()
+    await user.click(currentLocationButton)
+    expect(screen.getByText('1.293300° N · 103.784400° E')).toBeTruthy()
+
+    await user.click(screen.getByRole('button', { name: 'Done adjusting location' }))
+    const location = screen.getByRole('group', { name: 'Location' })
+    expect(location.textContent).toContain('Latitude1.293300°')
+    expect(location.textContent).toContain('Longitude103.784400°')
+    expect(location.textContent).toContain('Using current location')
   })
 
   it('applies a pasted coordinate, pans the map to it and returns it to the form', async () => {
@@ -1890,6 +1997,7 @@ describe('More surface', () => {
     await user.click(screen.getByRole('button', { name: 'Settings' }))
     const settingsPanel = document.querySelector<HTMLElement>('.more-panel-content-scroll')
     if (!settingsPanel) throw new Error('Settings panel is missing')
+    await user.click(within(settingsPanel).getByRole('button', { name: 'Favourites' }))
     expect(within(settingsPanel).queryByRole('button', { name: /More actions for/ })).toBeNull()
     await user.click(within(settingsPanel).getByRole('button', { name: 'Edit list' }))
     await user.click(within(settingsPanel).getByRole('button', { name: 'Move Stop B up' }))
@@ -1900,12 +2008,12 @@ describe('More surface', () => {
     render(<App />)
     await user.click(screen.getByRole('button', { name: 'More' }))
     await user.click(screen.getByRole('button', { name: 'Settings' }))
+    const reloadedSettingsPanel = document.querySelector<HTMLElement>('.more-panel-content-scroll')
+    if (!reloadedSettingsPanel) throw new Error('Settings panel is missing after reload')
+    await user.click(within(reloadedSettingsPanel).getByRole('button', { name: 'Favourites' }))
     const reloadedFavorites = screen.getByRole('list', { name: 'Favourite bus stops' })
     expect(within(reloadedFavorites).getAllByRole('listitem').map((row) => row.textContent?.trim()))
       .toEqual(['Stop B', 'Stop A'])
-    const reloadedSettingsPanel = document.querySelector<HTMLElement>('.more-panel-content-scroll')
-    if (!reloadedSettingsPanel) throw new Error('Settings panel is missing after reload')
-
     await user.click(within(reloadedSettingsPanel).getByRole('button', { name: 'Edit list' }))
     await user.click(within(reloadedSettingsPanel).getByRole('button', { name: 'Remove Stop A from favourites' }))
     await waitFor(() => expect(JSON.parse(localStorage.getItem('navus:favorite-stops:v1') ?? '[]'))
@@ -1918,8 +2026,8 @@ describe('More surface', () => {
     await waitFor(() => expect(JSON.parse(localStorage.getItem('navus:favorite-stops:v1') ?? '[]'))
       .toEqual([]))
 
-    expect(screen.getByRole('heading', { name: 'Settings' })).toBeTruthy()
-    expect(screen.getByText('Star a stop in Stops to add it to your favourites.')).toBeTruthy()
+    expect(screen.getByRole('heading', { name: 'Favourites' })).toBeTruthy()
+    expect(screen.getByText('No favourites yet.')).toBeTruthy()
     expect(screen.queryByRole('button', { name: 'Manage in Stops' })).toBeNull()
   })
 
@@ -1952,6 +2060,103 @@ describe('More surface', () => {
     expect(screen.getByRole('button', { name: 'Explore' }).getAttribute('aria-current')).toBe('page')
   })
 
+  it('returns from Settings to More and then back to the previous view', async () => {
+    mockDesktopViewport()
+    const user = userEvent.setup()
+    render(<App />)
+
+    await user.click(screen.getByRole('button', { name: 'More' }))
+    await user.click(screen.getByRole('button', { name: 'Settings' }))
+    expect(document.querySelector('.more-panel-surface')?.getAttribute('data-page')).toBe('settings')
+    expect(screen.getByRole('heading', { name: 'Settings' })).toBeTruthy()
+
+    await user.click(screen.getByRole('button', { name: 'Appearance' }))
+    expect(screen.getByRole('heading', { name: 'Appearance' })).toBeTruthy()
+    await user.click(screen.getByRole('button', { name: 'Back to Settings' }))
+    expect(screen.getByRole('heading', { name: 'Settings' })).toBeTruthy()
+
+    await user.click(screen.getByRole('button', { name: 'Back to previous view' }))
+    expect(document.querySelector('.more-panel-surface')?.getAttribute('data-page')).toBe('menu')
+    expect(screen.getByRole('heading', { name: 'More' })).toBeTruthy()
+
+    await user.click(screen.getByRole('button', { name: 'Back to previous view' }))
+    expect(document.querySelector('.more-panel-surface')?.getAttribute('data-open')).toBe('false')
+    expect(screen.queryByRole('heading', { name: 'More' })).toBeNull()
+    expect(screen.getByRole('button', { name: 'Stops' }).getAttribute('aria-current')).toBe('page')
+  })
+
+  it('clears Settings search before Escape returns to More', async () => {
+    mockDesktopViewport()
+    const user = userEvent.setup()
+    render(<App />)
+
+    await user.click(screen.getByRole('button', { name: 'More' }))
+    await user.click(screen.getByRole('button', { name: 'Settings' }))
+    const search = screen.getByRole('combobox', { name: 'Search settings' })
+    await user.type(search, 'waypoint')
+    await user.keyboard('{Escape}')
+
+    expect(search).toHaveProperty('value', '')
+    expect(screen.getByRole('heading', { name: 'Settings' })).toBeTruthy()
+
+    await user.keyboard('{Escape}')
+    expect(screen.getByRole('heading', { name: 'More' })).toBeTruthy()
+  })
+
+  it('clears Settings search with Escape when the clear button has focus', async () => {
+    mockDesktopViewport()
+    const user = userEvent.setup()
+    render(<App />)
+
+    await user.click(screen.getByRole('button', { name: 'More' }))
+    await user.click(screen.getByRole('button', { name: 'Settings' }))
+    const search = screen.getByRole('combobox', { name: 'Search settings' })
+    await user.type(search, 'waypoint')
+    const clearButton = screen.getByRole('button', { name: 'Clear Search settings' })
+    await user.tab()
+    expect(document.activeElement).toBe(clearButton)
+
+    await user.keyboard('{Escape}')
+
+    expect(search).toHaveProperty('value', '')
+    expect(screen.getByRole('heading', { name: 'Settings' })).toBeTruthy()
+    await user.keyboard('{Escape}')
+    expect(screen.getByRole('heading', { name: 'More' })).toBeTruthy()
+  })
+
+  it('clears mobile Settings search without collapsing the full sheet', async () => {
+    mockMobileViewport()
+    const user = userEvent.setup()
+    render(<App />)
+
+    await user.click(screen.getByRole('button', { name: 'More' }))
+    await user.click(screen.getByRole('button', { name: 'Settings' }))
+    const settingsSheet = document.querySelector<HTMLElement>('.more-panel-surface')
+    expect(settingsSheet?.getAttribute('data-detent')).toBe('full')
+    expect(settingsSheet?.querySelector('.mobile-sheet-handle-row')).toBeNull()
+    expect(screen.getByRole('list', { name: 'Settings categories' })).toBeTruthy()
+    expect(screen.queryByRole('region', { name: 'Appearance' })).toBeNull()
+
+    const search = screen.getByRole('combobox', { name: 'Search settings' })
+    await user.type(search, 'theme')
+    await user.keyboard('{Escape}')
+
+    expect(search).toHaveProperty('value', '')
+    expect(settingsSheet?.getAttribute('data-page')).toBe('settings')
+    expect(settingsSheet?.getAttribute('data-detent')).toBe('full')
+    expect(screen.getByRole('heading', { name: 'Settings' })).toBeTruthy()
+
+    await user.click(screen.getByRole('button', { name: 'Appearance' }))
+    expect(screen.getByRole('heading', { name: 'Appearance' })).toBeTruthy()
+    expect(settingsSheet?.getAttribute('data-detent')).toBe('full')
+    expect(settingsSheet?.querySelector('.mobile-sheet-handle-row')).toBeNull()
+    await user.click(screen.getByRole('button', { name: 'Back to Settings' }))
+    expect(screen.getByRole('list', { name: 'Settings categories' })).toBeTruthy()
+
+    await user.keyboard('{Escape}')
+    expect(settingsSheet?.getAttribute('data-page')).toBe('menu')
+    expect(screen.getByRole('heading', { name: 'More' })).toBeTruthy()
+  })
   it('applies and remembers a chosen theme after remount', async () => {
     mockDesktopViewport()
     const user = userEvent.setup()
@@ -1959,6 +2164,7 @@ describe('More surface', () => {
 
     await user.click(screen.getByRole('button', { name: 'More' }))
     await user.click(screen.getByRole('button', { name: 'Settings' }))
+    await user.click(screen.getByRole('button', { name: 'Appearance' }))
     await user.click(screen.getByRole('radio', { name: 'Dark' }))
     expect(document.documentElement.dataset.theme).toBe('dark')
     expect(localStorage.getItem('navus:theme-preference:v1')).toBe('dark')
@@ -1968,7 +2174,8 @@ describe('More surface', () => {
 
     await user.click(screen.getByRole('button', { name: 'More' }))
     await user.click(screen.getByRole('button', { name: 'Settings' }))
-    expect((screen.getByRole('radio', { name: 'Dark' }) as HTMLInputElement).checked).toBe(true)
+    await user.click(screen.getByRole('button', { name: 'Appearance' }))
+    expect(screen.getByRole('radio', { name: 'Dark' }).getAttribute('aria-checked')).toBe('true')
     expect(document.documentElement.dataset.theme).toBe('dark')
   })
 
@@ -1979,13 +2186,15 @@ describe('More surface', () => {
 
     await user.click(screen.getByRole('button', { name: 'More' }))
     await user.click(screen.getByRole('button', { name: 'Settings' }))
-    await user.click(screen.getByRole('button', { name: /Other themes Choose/ }))
+    await user.click(screen.getByRole('button', { name: 'Appearance' }))
+    const paletteSelector = screen.getByRole('button', { name: /Other themes Choose/ })
+    await user.click(paletteSelector)
     expect(screen.getByRole('listbox', { name: 'Other themes' })).toBeTruthy()
 
     await user.keyboard('{Escape}')
 
     expect(screen.queryByRole('listbox', { name: 'Other themes' })).toBeNull()
-    expect(screen.getByRole('heading', { name: 'Settings' })).toBeTruthy()
+    expect(screen.getByRole('heading', { name: 'Appearance' })).toBeTruthy()
     expect(screen.getByRole('button', { name: /Other themes Choose/ })).toBeTruthy()
   })
 

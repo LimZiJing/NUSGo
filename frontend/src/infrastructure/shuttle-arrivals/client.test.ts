@@ -67,6 +67,30 @@ describe('createShuttleArrivalClient', () => {
     expect(requestUrl.pathname).toBe('/api/shuttle-arrivals')
     expect(JSON.parse(requestUrl.searchParams.get('stops') ?? '')).toEqual(['PGP'])
   })
+
+  it('retries after a shared request is aborted while a second caller is waiting', async () => {
+    const firstController = new AbortController()
+    const fetcher = vi.fn<typeof fetch>()
+      .mockImplementationOnce((_input, init) => new Promise<Response>((_resolve, reject) => {
+        init?.signal?.addEventListener('abort', () => {
+          reject(new DOMException('The request was aborted', 'AbortError'))
+        }, { once: true })
+      }))
+      .mockImplementationOnce(async () => responseFor('PGP'))
+    const client = createShuttleArrivalClient({ fetcher, now: () => nowMs })
+    const stop = [{ stopId: 'PGP', stopName: 'PGP' }]
+
+    const firstRequest = client.getArrivals(stop, firstController.signal)
+    const firstRejection = expect(firstRequest).rejects.toMatchObject({ name: 'AbortError' })
+    const resumedRequest = client.getArrivals(stop, new AbortController().signal)
+    firstController.abort()
+
+    await firstRejection
+    const result = await resumedRequest
+
+    expect(fetcher).toHaveBeenCalledTimes(2)
+    expect(result.stops.PGP).toBeDefined()
+  })
   it('requests more than 16 stops in one snapshot read', async () => {
     const stops = Array.from({ length: 17 }, (_, index) => ({
       stopId: `STOP-${index}`,

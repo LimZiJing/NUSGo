@@ -1,7 +1,13 @@
 import { createTransitNetworkIndex } from '../../domain/transit'
 import type { LoadedTransitData, LoadedVenueData } from '../../app/contracts/data'
 import { validateTransitMapData } from '@nusgo/shared/transit/map-data'
-import { validateBuildingCatalogue, validateVenueLocationMap, getVenueCount } from '@nusgo/shared/venue/validation'
+import {
+  validateBuildingCatalogue,
+  validateVenueLocationMap,
+  validateEateryLocationMap,
+  mergeVenueAndEateryMaps,
+  getVenueCount,
+} from '@nusgo/shared/venue/validation'
 import { validateShuttleTimingData } from '@nusgo/shared/transit/timing'
 import type { ShuttleTimingData } from '@nusgo/shared/transit/timing'
 import type { BuildingCatalogue } from '@nusgo/shared/venue/buildings'
@@ -19,8 +25,20 @@ export async function loadVenueData(
   signal: AbortSignal,
   fetcher: JsonFetcher = fetchJson,
 ): Promise<LoadedVenueData> {
-  const venues = validateVenueLocationMap(
-    await fetcher('data/venues.json', signal, 'Venue data'),
+  const venueInput = await fetcher('data/venues.json', signal, 'Venue data')
+  const venueMap = validateVenueLocationMap(venueInput)
+  let eateryMap = validateEateryLocationMap({})
+  try {
+    eateryMap = validateEateryLocationMap(
+      await fetcher('data/eateries.json', signal, 'Eatery data'),
+    )
+  } catch (error) {
+    if (signal.aborted || (error instanceof Error && error.name === 'AbortError')) throw error
+    console.error('Eatery data unavailable; continuing without eateries:', error)
+  }
+  const venues = mergeVenueAndEateryMaps(
+    venueMap,
+    eateryMap,
   )
   return {
     venues,

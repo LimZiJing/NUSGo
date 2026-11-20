@@ -21,7 +21,7 @@ describe('Appearance settings', () => {
       />,
     )
 
-    expect((screen.getByRole('radio', { name: 'System' }) as HTMLInputElement).checked).toBe(true)
+    expect(screen.getByRole('radio', { name: 'System' }).getAttribute('aria-checked')).toBe('true')
     expect(screen.getByRole('radio', { name: 'Light' })).toBeTruthy()
     expect(screen.getByRole('radio', { name: 'Dark' })).toBeTruthy()
     expect(screen.getByRole('button', { name: /Other themes Choose/ })).toBeTruthy()
@@ -33,7 +33,7 @@ describe('Appearance settings', () => {
   it('shows the selected palette in a dropdown and exposes choices in a listbox', async () => {
     const user = userEvent.setup()
     const onChange = vi.fn()
-    const { container } = render(
+    render(
       <AppearanceSection
         preference="matcha"
         onChange={onChange}
@@ -48,8 +48,6 @@ describe('Appearance settings', () => {
     expect(trigger.getAttribute('data-size')).toBe('lg')
     expect(trigger.querySelector('[data-theme-choice="matcha"]')).toBeTruthy()
     expect(screen.queryByRole('listbox')).toBeNull()
-    expect(container.querySelector('.settings-theme-disclosure')).toBeNull()
-
     await user.click(trigger)
     const choices = screen.getByRole('listbox', { name: 'Other themes' })
     expect(choices.querySelectorAll('[role="option"]')).toHaveLength(4)

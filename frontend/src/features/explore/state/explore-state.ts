@@ -32,9 +32,17 @@ export type ExploreAction =
   | { type: 'close-to-root' }
   | { type: 'map-click' }
 
+/**
+ * Explore opens on Bus routes, so the route list is available the moment someone enters it.
+ *
+ * `neutral` remains the root a rider returns to: leaving Bus routes or closing map context lands
+ * there, and it shows venue search. Neither the initial choice nor a later manual one is reset by
+ * switching top-level tabs or crossing the mobile/desktop breakpoint, because they live in this
+ * session state rather than in either layout.
+ */
 export function createInitialExploreState(): ExploreState {
   return {
-    mode: 'neutral',
+    mode: 'bus-routes',
     query: '',
     selectedVenue: null,
     selectedBuildingId: null,

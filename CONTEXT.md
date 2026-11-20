@@ -5,6 +5,7 @@ This document defines the domain and product vocabulary used by NUSGo. It contai
 ## Campus navigation
 
 - **Venue**: A campus location that a person may want to find, such as a building, room, lecture hall, or facility.
+- **Eatery**: A named campus destination for food or drink, categorized as a canteen, restaurant, or drinks & snacks. An Eatery is a place-level destination, not an individual stall or kiosk inside a shared dining place.
 - **Venue floor**: A signed integer relative to ground level. Negative values identify basement floors, zero identifies the ground floor, and positive values identify floors above ground.
 - **Building**: A named NUS structure in the building catalogue, distinct from the rooms inside it and from bus stops, with its own stable identity. A Building is a kind of Venue. Its location is an API centroid, or an accepted but unverified entrance, until a pedestrian entrance has been verified; a Building is never merged with a nearby bus stop.
 - **Transit network**: The set of bus routes, bus stops, and service associations available for campus travel.
@@ -54,7 +55,7 @@ This document defines the domain and product vocabulary used by NUSGo. It contai
 - **Plan**: The product area for choosing trip endpoints and viewing a recommended journey or its planning status.
 - **Website release**: A frontend version that has completed a production deployment to nusgo.app. Its identity is separate from the transit-data compatibility version.
 - **Segmented control**: An in-feature selector. Find venue and Bus routes are Explore choices; Nearby and Favourites are Stops choices.
-- **Find venue**: The Explore workflow for searching venues and opening venue details.
+- **Find venue**: The Explore workflow for searching venues and eateries and opening their details.
 - **Bus routes**: The Explore workflow for browsing internal routes and their ordered stops.
 - **Nearby**: The Stops list of bus stops near the visible map centre, ordered by distance from that centre.
 - **Favourites**: The Stops list of bus stops saved by the person in their browser.

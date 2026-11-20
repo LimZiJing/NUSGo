@@ -22,7 +22,8 @@ Use MUST for safety, correctness, and required checks. Use SHOULD for judgment-b
 - MUST NOT create WIP, fixup, temporary, or checkpoint commits.
 - MUST NOT amend or rewrite a commit after reporting it to another agent or reviewer. Do not force-push.
 - MUST preserve unrelated commits and user changes. Do not use broad staging or destructive Git commands to clean a worktree.
-- A pull request MUST tell one coherent story. Include the linked issue, user-visible summary, scope boundaries, commit summary, exact check results, manual verification steps for affected UI, useful screenshots for visual changes, known risks, and follow-up work.
+- A pull request MUST tell one coherent story and follow the [pull request template](../../.github/pull_request_template.md): linked issue, where the design was agreed, a plain-words summary, local test steps for visual changes, and exact check results. Keep it short; implementation detail belongs in commit bodies.
+- MUST NOT approve, request changes, merge, or enable auto-merge on a pull request without explicit go-ahead from a human maintainer who is not the author. Agents comment only until then. See [pull request review](pr-review.md).
 - There is no universal hard line or file limit. As a warning signal, reconsider splitting work around 10 files or 400 changed lines, with reasonable exceptions for data, fixtures, generated output explicitly required by the feature, or necessary migrations.
 - If review reveals a broader improvement, include it only when required for correctness, safety, or the stated scope. Otherwise record a follow-up issue.
 
@@ -123,7 +124,8 @@ Stop and surface the question, with a recommendation, instead of choosing silent
 - reduces or hides attribution or licence credit (for example OpenStreetMap, OpenMapTiles or OpenFreeMap on the map);
 - changes what is stored, sent to a backend, or shown about a user's location or Personal Waypoints;
 - removes or reverses a behaviour that an issue or earlier review explicitly agreed;
-- amends an accepted ADR, or changes existing wording or behaviour that the issue does not ask to change.
+- amends an accepted ADR, or changes existing wording or behaviour that the issue does not ask to change;
+- adds a domain concept, changes a shared type or data-file schema, or adds or reshapes a top-level UI element (see [pull request review](pr-review.md#1-design-before-code)).
 
 Record the outcome in the issue or epic, so a later reviewer can see what was decided and why.
 

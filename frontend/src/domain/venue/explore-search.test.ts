@@ -145,7 +145,57 @@ describe('searchExplore with bus stops', () => {
     expect(forward).toHaveLength(8)
     expect(forward.map(label).slice(0, 3)).toEqual(['stop:G-01', 'stop:G-02', 'stop:G-03'])
     expect(reversed).toEqual(forward)
-    expect(searchExplore(withStops(gates), 'gate', 3).map(label)).toEqual(['stop:G-01', 'stop:G-02', 'stop:G-03'])
+    expect(searchExplore(withStops(gates), 'gate', 'all', 3).map(label)).toEqual(['stop:G-01', 'stop:G-02', 'stop:G-03'])
+  })
+})
+
+describe('searchExplore result filters', () => {
+  const matchingStop = stop('BS-COM1', 'Computing Gate', 'COM1')
+  const sources = withStops([matchingStop])
+
+  it.each([
+    ['food', 'terrace', ['venue:the-terrace-canteen']],
+    ['room', 'com1', ['venue:COM1-0210']],
+    ['building', 'com1', ['building:com1']],
+    ['stop', 'com1', ['stop:BS-COM1']],
+  ] as const)('limits a %s query to that result kind', (filter, query, expected) => {
+    expect(searchExplore(sources, query, filter).map(label)).toEqual(expected)
+  })
+
+  it('applies the filter before the result limit', () => {
+    const terraceStop = stop('TERRACE-GATE', 'Terrace Gate')
+    const mixedSources = withStops([terraceStop])
+
+    expect(searchExplore(mixedSources, 'terrace', 'all', 1).map(label)).toEqual(['stop:TERRACE-GATE'])
+    expect(searchExplore(mixedSources, 'terrace', 'food', 1).map(label)).toEqual(['venue:the-terrace-canteen'])
+  })
+
+  it('browses the selected kind alphabetically when the query is empty', () => {
+    expect(searchExplore(sources, '', 'room').map(label)).toEqual([
+      'venue:COM1-0210',
+      'venue:Pinnacle',
+      'venue:Y-CR3',
+    ])
+    expect(searchExplore(sources, '', 'all')).toEqual([])
+  })
+
+  it('breaks equal display-name ties by stable result key', () => {
+    const browseVenues: VenueMap = {
+      'Z-CAFE': { kind: 'food', name: 'Cafe', foodType: 'drinks & snacks', location: { x: 103.77, y: 1.29 } },
+      'A-CAFE': { kind: 'food', name: 'Cafe', foodType: 'drinks & snacks', location: { x: 103.77, y: 1.29 } },
+      BENTO: { kind: 'food', name: 'Bento', foodType: 'restaurant', location: { x: 103.77, y: 1.29 } },
+    }
+    const browseSources = {
+      venues: browseVenues,
+      buildings,
+      links: linkVenuesToBuildings(browseVenues, buildings),
+    }
+
+    expect(searchExplore(browseSources, '', 'food').map(label)).toEqual([
+      'venue:BENTO',
+      'venue:A-CAFE',
+      'venue:Z-CAFE',
+    ])
   })
 })
 

@@ -96,4 +96,11 @@ describe('VenueSearch', () => {
     expect(screen.getAllByRole('button', { name: /Canteen|Drinks & snacks|Restaurant/ })).toHaveLength(3)
   })
 
+  it('lets a person choose a filter from the Astryx selector', () => {
+    const { onFilterChange } = renderSearch('')
+    fireEvent.click(screen.getByRole('combobox', { name: 'Filter places: All places' }))
+    fireEvent.click(screen.getByRole('option', { name: 'Food & beverage' }))
+    expect(onFilterChange).toHaveBeenCalledWith('food')
+  })
+
 })

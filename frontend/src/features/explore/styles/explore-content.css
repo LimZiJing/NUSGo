@@ -80,9 +80,33 @@
 }
 
 .explore-content-search-row {
+  display: flex;
+  align-items: center;
+  gap: var(--space-1);
+}
+
+.explore-content-search-control {
   position: relative;
   display: flex;
-  gap: var(--space-1);
+  flex: 1;
+  min-width: 0;
+}
+
+.explore-content-filter-trigger {
+  flex: none;
+  width: max-content;
+}
+
+.explore-content-filter-control {
+  min-height: var(--control-height-sm);
+}
+
+.explore-content-filter-control [role='combobox'] {
+  min-height: var(--control-height-sm);
+}
+
+.explore-content-filter-control--active [role='combobox'] {
+  background-color: var(--accent-selected);
 }
 
 .explore-content-search-row input {

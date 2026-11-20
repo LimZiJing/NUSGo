@@ -103,4 +103,21 @@ describe('VenueSearch', () => {
     expect(onFilterChange).toHaveBeenCalledWith('food')
   })
 
+  it('supports keyboard selection, Escape, and focus return', () => {
+    const { onFilterChange } = renderSearch('')
+    const trigger = screen.getByRole('combobox', { name: 'Filter places: All places' })
+
+    trigger.focus()
+    fireEvent.keyDown(trigger, { key: 'ArrowDown' })
+    expect(trigger.getAttribute('aria-expanded')).toBe('true')
+    fireEvent.keyDown(trigger, { key: 'Escape' })
+    expect(trigger.getAttribute('aria-expanded')).toBe('false')
+    expect(document.activeElement).toBe(trigger)
+
+    fireEvent.keyDown(trigger, { key: 'ArrowDown' })
+    fireEvent.keyDown(trigger, { key: 'ArrowDown' })
+    fireEvent.keyDown(trigger, { key: 'Enter' })
+    expect(onFilterChange).toHaveBeenCalledWith('food')
+    expect(document.activeElement).toBe(trigger)
+  })
 })

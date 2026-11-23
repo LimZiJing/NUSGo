@@ -2,7 +2,7 @@ import { renderToStaticMarkup } from 'react-dom/server'
 import { describe, expect, it } from 'vitest'
 import type { Building } from '@nusgo/shared/venue/buildings'
 import type { TransitNetworkInput } from '@nusgo/shared/transit/types'
-import type { VenueLocationMap } from '@nusgo/shared/venue/types'
+import type { VenueMap } from '@nusgo/shared/venue/types'
 import { createTransitIndex } from '../../domain/transit'
 import { createValidTransitNetwork } from '../../domain/transit/test-fixtures.ts'
 import { buildBuildingIndex } from '../../domain/venue/building-index'
@@ -32,12 +32,11 @@ const buildings = buildBuildingIndex([
   building({ id: 'helix-house', name: 'Helix House', groupKey: 'helix-house', groupRole: 'entrance', address: "37 Prince George's Park" }),
   building({ id: 'helix-15-17', name: 'Helix House', groupKey: 'helix-house', partLabel: 'Blocks 15-17', blocks: ['15', '16', '17'], address: "37 Prince George's Park" }),
   building({ id: 'helix-18-19', name: 'Helix House', groupKey: 'helix-house', partLabel: 'Blocks 18-19', blocks: ['18', '19'], address: "37 Prince George's Park" }),
-])
-const venues: VenueLocationMap = {
-  'COM1-0210': { roomName: 'Seminar Room 10', floor: 2, location: { x: 103.77, y: 1.3 } },
-  'COM1-0211': { roomName: 'Seminar Room 11', floor: 2, location: { x: 103.77, y: 1.3 } },
-  LT17: { roomName: 'Lecture Theatre 17', location: { x: 103.77, y: 1.3 } },
-  'RC1-01-01': { roomName: 'Saga classroom', floor: 1, location: { x: 103.77, y: 1.3 } },
+], undefined, [{ venueCode: 'LT17', name: 'Lecture Theatre 17', buildingId: 'lt-17' }])
+const venues: VenueMap = {
+  'COM1-0210': { kind: 'room', roomName: 'Seminar Room 10', floor: 2, location: { x: 103.77, y: 1.3 }, buildingId: 'com1' },
+  'COM1-0211': { kind: 'room', roomName: 'Seminar Room 11', floor: 2, location: { x: 103.77, y: 1.3 }, buildingId: 'com1' },
+  'RC1-01-01': { kind: 'room', roomName: 'Saga classroom', floor: 1, location: { x: 103.77, y: 1.3 }, buildingId: 'saga' },
 }
 
 function createNearbyTransitIndex() {
@@ -90,7 +89,7 @@ describe('ExploreContent search with buildings', () => {
 
     expect(markup).toContain('aria-label="COM1, building, 13 Computing Drive"')
     expect(markup.indexOf('building-result-com1')).toBeLessThan(markup.indexOf('venue-result-COM1-0210'))
-    expect(markup).toContain('aria-label="COM1-0210, venue, Seminar Room 10"')
+    expect(markup).toContain('aria-label="COM1-0210, room, Seminar Room 10"')
   })
 
   it('marks buildings and rooms with different icons', () => {
@@ -151,7 +150,7 @@ describe('ExploreContent building details', () => {
       { type: 'select-venue', result: { code: 'COM1-0210', venue: venues['COM1-0210'] } },
     )
     const markup = render(state)
-    const heading = markup.slice(markup.indexOf('aria-label="COM1-0210, venue"'))
+    const heading = markup.slice(markup.indexOf('aria-label="COM1-0210, room"'))
 
     expect(heading.slice(0, heading.indexOf('</h3>'))).toContain('lucide-door-open')
     expect(heading).toContain('lucide-building-2')

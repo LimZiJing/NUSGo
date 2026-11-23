@@ -1,5 +1,6 @@
 export type TripCoordinate = import('@nusgo/shared/routing/path').TripCoordinate
 type CanonicalTripEndpoint = import('@nusgo/shared/routing/path').TripEndpoint
+import type { FoodVenue, RoomVenue } from '@nusgo/shared/venue/types'
 
 export interface PersonalWaypointTripEndpoint {
   readonly kind: 'personal-waypoint'
@@ -17,8 +18,11 @@ export interface TripRequest {
   readonly destination: TripEndpoint | null
 }
 
-export type TripLocationSearchResult = {
-  endpoint: TripEndpoint
-  label: string
-  detail: string
-}
+type VenueEndpoint = Extract<CanonicalTripEndpoint, { readonly kind: 'venue' }>
+
+export type TripLocationSearchResult =
+  | { readonly kind: 'room'; readonly endpoint: VenueEndpoint; readonly venue: RoomVenue; readonly label: string; readonly detail: string }
+  | { readonly kind: 'food'; readonly endpoint: VenueEndpoint; readonly venue: FoodVenue; readonly label: string; readonly detail: string }
+  | { readonly kind: 'building'; readonly endpoint: Extract<CanonicalTripEndpoint, { readonly kind: 'building' }>; readonly label: string; readonly detail: string }
+  | { readonly kind: 'stop'; readonly endpoint: Extract<CanonicalTripEndpoint, { readonly kind: 'stop' }>; readonly label: string; readonly detail: string }
+  | { readonly kind: 'personal-waypoint'; readonly endpoint: PersonalWaypointTripEndpoint; readonly label: string; readonly detail: string }

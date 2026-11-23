@@ -7,7 +7,8 @@ import type { Path, PathGeometry } from '../../../backend/src/pathfinding/path.j
 import type { ShuttleTimingRecord } from '@nusgo/shared/transit/timing'
 import type { JourneyEndpoint } from '@nusgo/shared/routing/path'
 import { createCurrentLocationTripEndpoint, getTripEndpointKey } from '../../src/domain/trip/endpoints.js'
-import type { VenueLocationMap } from '@nusgo/shared/venue/types'
+import type { VenueMap } from '@nusgo/shared/venue/types'
+import type { BuildingIndex } from '../../../backend/src/pathfinding/endpoints.js'
 import type { WalkingStopGraph } from '@nusgo/shared/routing/walking-stop-graph'
 import type {
   PathfindingBenchmarkCase,
@@ -29,6 +30,12 @@ export interface PathfindingBenchmarkOutcomeEvidence {
   readonly matrixRequests?: readonly PathfindingBenchmarkMatrixResult[]
   readonly walkingStopGraph?: Pick<WalkingStopGraph, 'connections'>
   readonly valhallaRequestCounts?: { readonly matrix: number; readonly route: number }
+}
+
+interface PathfindingBenchmarkSources {
+  readonly transit: LoadedTransitData
+  readonly venues: VenueMap
+  readonly buildings: BuildingIndex
 }
 
 function isRecord(value: unknown): value is Record<string, unknown> {
@@ -57,7 +64,7 @@ function isEndpoint(value: unknown): value is JourneyEndpoint {
   if (value.kind === 'current-location' || value.kind === 'waypoint-coordinate') {
     return createCurrentLocationTripEndpoint(value.coordinate) !== null
   }
-  return (value.kind === 'venue' || value.kind === 'stop') &&
+  return (value.kind === 'venue' || value.kind === 'building' || value.kind === 'stop') &&
     typeof value.id === 'string' &&
     value.id.length > 0
 }
@@ -83,19 +90,20 @@ function isLineString(value: unknown): value is PathGeometry {
 
 function endpointCoordinate(
   endpoint: JourneyEndpoint,
-  transit: LoadedTransitData,
-  venues: VenueLocationMap,
+  sources: PathfindingBenchmarkSources,
 ): readonly [number, number] | null {
   if (endpoint.kind === 'current-location' || endpoint.kind === 'waypoint-coordinate') {
     return [endpoint.coordinate.longitude, endpoint.coordinate.latitude]
   }
   if (endpoint.kind === 'stop') {
-    const stop = transit.index.stopById.get(endpoint.id)
+    const stop = sources.transit.index.stopById.get(endpoint.id)
     return stop && Number.isFinite(stop.longitude) && Number.isFinite(stop.latitude)
       ? [stop.longitude, stop.latitude]
       : null
   }
-  const location = venues[endpoint.id]?.location
+  const location = endpoint.kind === 'building'
+    ? sources.buildings.byId.get(endpoint.id)?.location
+    : sources.venues[endpoint.id]?.location
   return location && Number.isFinite(location.x) && Number.isFinite(location.y)
     ? [location.x, location.y]
     : null
@@ -118,8 +126,7 @@ function validateLegGeometry(
   from: JourneyEndpoint,
   to: JourneyEndpoint,
   mode: unknown,
-  transit: LoadedTransitData,
-  venues: VenueLocationMap,
+  sources: PathfindingBenchmarkSources,
   label: string,
   errors: string[],
 ): void {
@@ -127,8 +134,8 @@ function validateLegGeometry(
     errors.push(`${label} geometry must be a valid LineString`)
     return
   }
-  const fromCoordinate = endpointCoordinate(from, transit, venues)
-  const toCoordinate = endpointCoordinate(to, transit, venues)
+  const fromCoordinate = endpointCoordinate(from, sources)
+  const toCoordinate = endpointCoordinate(to, sources)
   if (!fromCoordinate || !toCoordinate) {
     errors.push(`${label} geometry endpoints cannot be checked against fixture coordinates`)
     return
@@ -150,15 +157,16 @@ function validateLegGeometry(
 
 function validateEndpointReference(
   endpoint: JourneyEndpoint,
-  transit: LoadedTransitData,
-  venues: VenueLocationMap,
+  sources: PathfindingBenchmarkSources,
   label: string,
   errors: string[],
 ): void {
-  if (endpoint.kind === 'stop' && !transit.index.stopById.has(endpoint.id)) {
+  if (endpoint.kind === 'stop' && !sources.transit.index.stopById.has(endpoint.id)) {
     errors.push(`${label} references unknown stop ${endpoint.id}`)
-  } else if (endpoint.kind === 'venue' && !venues[endpoint.id]) {
+  } else if (endpoint.kind === 'venue' && !sources.venues[endpoint.id]) {
     errors.push(`${label} references unknown venue ${endpoint.id}`)
+  } else if (endpoint.kind === 'building' && !sources.buildings.byId.has(endpoint.id)) {
+    errors.push(`${label} references unknown building ${endpoint.id}`)
   }
 }
 
@@ -183,8 +191,7 @@ function matchesCoordinate(
 
 function walkingConnectionsForValidation(
   benchmarkCase: PathfindingBenchmarkCase,
-  transit: LoadedTransitData,
-  venues: VenueLocationMap,
+  sources: PathfindingBenchmarkSources,
   evidence: PathfindingBenchmarkOutcomeEvidence | undefined,
   label: string,
   errors: string[],
@@ -202,11 +209,11 @@ function walkingConnectionsForValidation(
   for (const endpoint of [
     benchmarkCase.origin,
     benchmarkCase.destination,
-    ...transit.index.stops.map(({ id }) => ({ kind: 'stop' as const, id })),
+    ...sources.transit.index.stops.map(({ id }) => ({ kind: 'stop' as const, id })),
   ]) endpointByKey.set(endpointKey(endpoint), endpoint)
   const locations = [...endpointByKey.values()].map((endpoint) => ({
     endpoint,
-    coordinate: endpointCoordinate(endpoint, transit, venues),
+    coordinate: endpointCoordinate(endpoint, sources),
   }))
   const getEndpointKeysAtCoordinate = (coordinate: { readonly longitude: number; readonly latitude: number }) => (
     locations.filter(({ coordinate: candidate }) => (
@@ -244,15 +251,15 @@ function walkingConnectionsForValidation(
   for (const connection of evidence.walkingStopGraph?.connections ?? []) {
     const fromStopId = connection.fromKey.slice('stop:'.length)
     const toStopId = connection.toKey.slice('stop:'.length)
-    const from = transit.index.stopById.has(fromStopId)
+    const from = sources.transit.index.stopById.has(fromStopId)
       ? { kind: 'stop' as const, id: fromStopId }
       : null
-    const to = transit.index.stopById.has(toStopId)
+    const to = sources.transit.index.stopById.has(toStopId)
       ? { kind: 'stop' as const, id: toStopId }
       : null
     if (!from || !to) continue
-    const fromStop = transit.index.stopById.get(from.id)
-    const toStop = transit.index.stopById.get(to.id)
+    const fromStop = sources.transit.index.stopById.get(from.id)
+    const toStop = sources.transit.index.stopById.get(to.id)
     const isOppositePair = fromStop?.opposite === to.id || toStop?.opposite === from.id
     if (connection.durationSeconds > 180 && !isOppositePair) continue
     const key = `${endpointKey(from)}\u0000${endpointKey(to)}`
@@ -322,16 +329,14 @@ function validateWalkingMetrics(
   durationSeconds: unknown,
   distanceMeters: unknown,
   benchmarkCase: PathfindingBenchmarkCase,
-  transit: LoadedTransitData,
-  venues: VenueLocationMap,
+  sources: PathfindingBenchmarkSources,
   evidence: PathfindingBenchmarkOutcomeEvidence | undefined,
   label: string,
   errors: string[],
 ): void {
   const connections = walkingConnectionsForValidation(
     benchmarkCase,
-    transit,
-    venues,
+    sources,
     evidence,
     label,
     errors,
@@ -376,8 +381,7 @@ function findCaseRideTiming(
 function validatePath(
   value: unknown,
   benchmarkCase: PathfindingBenchmarkCase,
-  transit: LoadedTransitData,
-  venues: VenueLocationMap,
+  sources: PathfindingBenchmarkSources,
   evidence: PathfindingBenchmarkOutcomeEvidence | undefined,
   errors: string[],
 ): Path | null {
@@ -421,8 +425,8 @@ function validatePath(
       errors.push(`leg ${index + 1} endpoints must be valid trip endpoints`)
       return
     }
-    validateEndpointReference(from, transit, venues, `leg ${index + 1} from`, errors)
-    validateEndpointReference(to, transit, venues, `leg ${index + 1} to`, errors)
+    validateEndpointReference(from, sources, `leg ${index + 1} from`, errors)
+    validateEndpointReference(to, sources, `leg ${index + 1} to`, errors)
     if (endpointKey(from) !== endpointKey(expectedFrom)) {
       errors.push(`leg ${index + 1} does not continue from the previous endpoint`)
     }
@@ -442,8 +446,7 @@ function validatePath(
       from,
       to,
       legValue.mode,
-      transit,
-      venues,
+      sources,
       `leg ${index + 1}`,
       errors,
     )
@@ -456,8 +459,7 @@ function validatePath(
         legValue.durationSeconds,
         legValue.distanceMeters,
         benchmarkCase,
-        transit,
-        venues,
+        sources,
         evidence,
         `walking leg ${index + 1}`,
         errors,
@@ -476,7 +478,7 @@ function validatePath(
       return
     }
     const routeId = legValue.routeId
-    const route = typeof routeId === 'string' ? transit.index.routeById.get(routeId) : undefined
+    const route = typeof routeId === 'string' ? sources.transit.index.routeById.get(routeId) : undefined
     if (!route) {
       errors.push(`shuttle leg ${index + 1} references an unknown route`)
       return
@@ -495,7 +497,7 @@ function validatePath(
     } else if (legValue.durationSeconds !== legValue.waitingSeconds + legValue.rideSeconds) {
       errors.push(`shuttle leg ${index + 1} duration must equal waiting plus ride time`)
     }
-    const timing = findCaseRideTiming(benchmarkCase, transit, route.id, from.id, to.id)
+    const timing = findCaseRideTiming(benchmarkCase, sources.transit, route.id, from.id, to.id)
     if (!timing || timing.status !== 'estimated' || !isNonNegativeInteger(timing.rideSeconds)) {
       errors.push(`shuttle leg ${index + 1} has no estimated ride timing in the benchmark case`)
       return
@@ -551,11 +553,13 @@ export function validatePathfindingBenchmarkOutcome(
   input: unknown,
   benchmarkCase: PathfindingBenchmarkCase,
   transit: LoadedTransitData,
-  venues: VenueLocationMap,
+  venues: VenueMap,
   evidence?: PathfindingBenchmarkOutcomeEvidence,
+  buildings: BuildingIndex = { byId: new Map() },
 ): PathfindingBenchmarkValidation {
   const errors: string[] = []
   let result: Readonly<Record<string, unknown>> = { kind: 'invalid' }
+  const sources: PathfindingBenchmarkSources = { transit, venues, buildings }
 
   if (!isRecord(input)) {
     errors.push('benchmark outcome must be an object')
@@ -573,7 +577,7 @@ export function validatePathfindingBenchmarkOutcome(
     }
   } else if (input.kind === 'path') {
     if (benchmarkCase.expected.outcome !== 'path') errors.push('expected no-route; got path')
-    const path = validatePath(input.path, benchmarkCase, transit, venues, evidence, errors)
+    const path = validatePath(input.path, benchmarkCase, sources, evidence, errors)
     if (path) {
       result = {
         kind: 'path',

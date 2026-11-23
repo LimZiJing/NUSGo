@@ -11,11 +11,18 @@ import type {
 } from '../../../backend/src/pathfinding/search/search-path-candidates.js'
 import type { ShuttleArrivalSnapshot } from '../../src/domain/transit/arrivals.js'
 import { createTransitIndex } from '../../src/domain/transit/index.js'
+import { buildBuildingLocations } from '../../../backend/src/pathfinding/endpoints.js'
 import { validateTransitMapData } from '@nusgo/shared/transit/map-data'
 import { evaluateShuttleService } from '../../src/domain/transit/service-hours.js'
 import { generateShuttleTimingData } from '@nusgo/shared/transit/timing'
-import type { VenueLocationMap } from '@nusgo/shared/venue/types'
-import { validateVenueLocationMap } from '@nusgo/shared/venue/validation'
+import type { VenueMap } from '@nusgo/shared/venue/types'
+import {
+  composeVenueData,
+  validateBuildingCatalogue,
+  validateFoodLocationMap,
+  validateVenueSourceMap,
+} from '@nusgo/shared/venue/validation'
+import type { BuildingIndex as PathfindingBuildingIndex } from '../../../backend/src/pathfinding/endpoints.js'
 import { validateWalkingStopGraph } from '@nusgo/shared/routing/walking-stop-graph'
 import type {
   PathfindingBenchmarkManifest,
@@ -30,7 +37,8 @@ import {
 
 export interface PathfindingBenchmarkFixtures {
   readonly transit: LoadedTransitData
-  readonly venues: VenueLocationMap
+  readonly venues: VenueMap
+  readonly buildings: PathfindingBuildingIndex
   readonly walkingGraph: ReturnType<typeof validateWalkingStopGraph>
 }
 
@@ -49,13 +57,21 @@ async function readJson(root: string, path: string): Promise<unknown> {
 export async function loadPathfindingBenchmarkFixtures(
   root = process.cwd(),
 ): Promise<PathfindingBenchmarkFixtures> {
-  const [networkInput, geometryInput, venuesInput, walkingGraphInput] = await Promise.all([
+  const [networkInput, geometryInput, venuesInput, foodInput, buildingsInput, walkingGraphInput] = await Promise.all([
     readJson(root, 'public/data/shuttle-network.json'),
     readJson(root, 'public/data/shuttle-routes.geojson'),
     readJson(root, 'public/data/venues.json'),
+    readJson(root, 'public/data/food.json'),
+    readJson(root, 'public/data/buildings.json'),
     readJson(root, 'public/data/walking-stop-graph.json'),
   ])
   const { network, geometry } = validateTransitMapData(networkInput, geometryInput)
+  const buildingCatalogue = validateBuildingCatalogue(buildingsInput)
+  const venueData = composeVenueData(
+    validateVenueSourceMap(venuesInput),
+    validateFoodLocationMap(foodInput),
+    buildingCatalogue,
+  )
   const index = createTransitIndex(network)
   const transit = {
     network: index.network,
@@ -65,14 +81,16 @@ export async function loadPathfindingBenchmarkFixtures(
   }
   return {
     transit,
-    venues: validateVenueLocationMap(venuesInput),
+    venues: venueData.venues,
+    buildings: buildBuildingLocations(buildingCatalogue),
     walkingGraph: validateWalkingStopGraph(walkingGraphInput),
   }
 }
 
 function endpointCoordinate(
   endpoint: PathfindingBenchmarkManifestCase['origin'],
-  venues: VenueLocationMap,
+  venues: VenueMap,
+  buildings: PathfindingBuildingIndex,
   transit: LoadedTransitData,
 ): { readonly longitude: number; readonly latitude: number } {
   if (endpoint.kind === 'stop') {
@@ -80,9 +98,13 @@ function endpointCoordinate(
     if (!stop) throw new Error(`Unknown benchmark stop: ${endpoint.id}`)
     return { longitude: stop.longitude, latitude: stop.latitude }
   }
-  const venue = venues[endpoint.id]
-  if (!venue?.location) throw new Error(`Unknown benchmark venue: ${endpoint.id}`)
-  return { longitude: venue.location.x, latitude: venue.location.y }
+  const location = endpoint.kind === 'building'
+    ? buildings.byId.get(endpoint.id)?.location
+    : endpoint.kind === 'venue'
+      ? venues[endpoint.id]?.location
+      : undefined
+  if (!location) throw new Error(`Unknown benchmark ${endpoint.kind}: ${endpoint.id}`)
+  return { longitude: location.x, latitude: location.y }
 }
 
 function distanceMeters(
@@ -123,7 +145,7 @@ function createOfflineWalkingConnections(
   benchmarkCase: PathfindingBenchmarkManifestCase,
   fixtures: PathfindingBenchmarkFixtures,
 ): readonly PathWalkingConnection[] {
-  const { transit, venues, walkingGraph } = fixtures
+  const { transit, venues, buildings, walkingGraph } = fixtures
   const originStopId = benchmarkCase.origin.kind === 'stop' ? benchmarkCase.origin.id : null
   const destinationStopId = benchmarkCase.destination.kind === 'stop' ? benchmarkCase.destination.id : null
   const connections: PathWalkingConnection[] = walkingGraph.connections.flatMap((connection) => {
@@ -147,9 +169,11 @@ function createOfflineWalkingConnections(
     }]
   })
 
-  const originCoordinate = endpointCoordinate(benchmarkCase.origin, venues, transit)
-  const destinationCoordinate = endpointCoordinate(benchmarkCase.destination, venues, transit)
-  if (benchmarkCase.origin.kind === 'venue') {
+  const originCoordinate = endpointCoordinate(benchmarkCase.origin, venues, buildings, transit)
+  const destinationCoordinate = endpointCoordinate(benchmarkCase.destination, venues, buildings, transit)
+  const originIsPlace = benchmarkCase.origin.kind === 'venue' || benchmarkCase.origin.kind === 'building'
+  const destinationIsPlace = benchmarkCase.destination.kind === 'venue' || benchmarkCase.destination.kind === 'building'
+  if (originIsPlace) {
     for (const stop of transit.index.stops) {
       const toCoordinate = { longitude: stop.longitude, latitude: stop.latitude }
       const connection = toWalkingConnection(
@@ -161,7 +185,7 @@ function createOfflineWalkingConnections(
       if (connection.durationSeconds <= 300) connections.push(connection)
     }
   }
-  if (benchmarkCase.destination.kind === 'venue') {
+  if (destinationIsPlace) {
     for (const stop of transit.index.stops) {
       const fromCoordinate = { longitude: stop.longitude, latitude: stop.latitude }
       const connection = toWalkingConnection(
@@ -173,7 +197,7 @@ function createOfflineWalkingConnections(
       if (connection.durationSeconds <= 300) connections.push(connection)
     }
   }
-  if (benchmarkCase.origin.kind === 'venue' || benchmarkCase.destination.kind === 'venue') {
+  if (originIsPlace || destinationIsPlace) {
     connections.push(toWalkingConnection(
       benchmarkCase.origin,
       benchmarkCase.destination,
@@ -210,11 +234,11 @@ export function createPathfindingBenchmarkCases(
     }
     const origin: PathEndpointLocation = {
       endpoint: definition.origin,
-      coordinate: endpointCoordinate(definition.origin, fixtures.venues, fixtures.transit),
+      coordinate: endpointCoordinate(definition.origin, fixtures.venues, fixtures.buildings, fixtures.transit),
     }
     const destination: PathEndpointLocation = {
       endpoint: definition.destination,
-      coordinate: endpointCoordinate(definition.destination, fixtures.venues, fixtures.transit),
+      coordinate: endpointCoordinate(definition.destination, fixtures.venues, fixtures.buildings, fixtures.transit),
     }
     const windows = createBenchmarkServiceWindows(profile, fixedNowMs)(
       fixtures.transit.index.routes.map(({ id }) => id),

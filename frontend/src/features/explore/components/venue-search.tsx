@@ -1,17 +1,17 @@
 import { useMemo, type MouseEvent, type RefObject } from 'react'
 import type { VenueSearchResult } from '../../../domain/venue/search'
-import { searchEateries, searchExplore, type ExploreSearchResult } from '../../../domain/venue/explore-search'
-import { getEateryCategoryFilterLabel, getEateryCategoryLabel } from '../../../domain/venue/eatery'
+import { searchExplore, type ExploreSearchResult } from '../../../domain/venue/explore-search'
+import { getVenueSearchPresentation } from '../../../domain/venue/search'
 import { EMPTY_BUILDING_INDEX, describeBuildingEntry, type BuildingIndex } from '../../../domain/venue/building-index'
 import type { BuildingVenueLinks } from '../../../domain/venue/building-links'
 import type { TransitIndex } from '../../../domain/transit'
 import type { TransitStop } from '@nusgo/shared/transit/types'
-import { EATERY_CATEGORIES, type EateryCategory, type VenueLocationMap } from '@nusgo/shared/venue/types'
-import { BuildingIcon, BusIcon, CloseIcon, MapPinIcon, RoomIcon, SearchIcon } from '../../../ui/icons'
+import type { VenueMap } from '@nusgo/shared/venue/types'
+import { BuildingIcon, BusIcon, CloseIcon, SearchIcon } from '../../../ui/icons'
 import { Button, IconButton } from '../../../ui/button'
 import { ScrollArea } from '../../../ui/scroll-area'
 import { SearchField } from '../../../ui/search-field'
-import { Select } from '../../../ui/select'
+import { VenueIcon } from '../../../ui/venue-icon'
 
 /** Short name and ID as secondary text, shown only when the short name differs from the ID. */
 function getStopSecondaryText(stop: TransitStop): string | null {
@@ -21,18 +21,16 @@ function getStopSecondaryText(stop: TransitStop): string | null {
 }
 
 interface VenueSearchProps {
-  readonly venues: VenueLocationMap | null
+  readonly venues: VenueMap | null
   readonly buildings: BuildingIndex | null
   readonly buildingLinks: BuildingVenueLinks
   readonly transitIndex?: TransitIndex | null
   readonly query: string
-  readonly eateryCategory: 'all' | EateryCategory
   readonly minimized: boolean
   readonly inputRef: RefObject<HTMLInputElement | null>
   readonly onRestore?: () => void
   readonly onSearchFocus?: () => void
   readonly onQueryChange: (query: string) => void
-  readonly onEateryCategoryChange: (category: 'all' | EateryCategory) => void
   readonly onSelect: (result: VenueSearchResult, event: MouseEvent<HTMLButtonElement>) => void
   readonly onBuildingSelect: (buildingId: string, event: MouseEvent<HTMLButtonElement>) => void
   readonly onStopSelect?: (stopId: string, event: MouseEvent<HTMLButtonElement>) => void
@@ -44,13 +42,11 @@ export function VenueSearch({
   buildingLinks,
   transitIndex = null,
   query,
-  eateryCategory,
   minimized,
   inputRef,
   onRestore,
   onSearchFocus,
   onQueryChange,
-  onEateryCategoryChange,
   onSelect,
   onBuildingSelect,
   onStopSelect,
@@ -59,12 +55,10 @@ export function VenueSearch({
     if (!venues) return { results: [], failed: false }
 
     try {
-      const results = eateryCategory === 'all'
-        ? searchExplore(
-          { venues, buildings: buildings ?? EMPTY_BUILDING_INDEX, links: buildingLinks, stops: transitIndex },
-          query,
-        )
-        : searchEateries(venues, eateryCategory, query).map((result) => ({ kind: 'venue' as const, result }))
+      const results = searchExplore(
+        { venues, buildings: buildings ?? EMPTY_BUILDING_INDEX, links: buildingLinks, stops: transitIndex },
+        query,
+      )
       return {
         results,
         failed: false,
@@ -74,7 +68,7 @@ export function VenueSearch({
       console.error('Venue search failed:', error)
       return { results: [], failed: true }
     }
-  }, [query, venues, buildings, buildingLinks, transitIndex, eateryCategory])
+  }, [query, venues, buildings, buildingLinks, transitIndex])
 
   return (
     <div id="explore-content-panel" className="explore-content-panel">
@@ -105,26 +99,12 @@ export function VenueSearch({
           />
         )}
       </div>
-      <Select
-        className="explore-eatery-category"
-        label="Place category"
-        hideLabel
-        value={eateryCategory}
-        options={[
-          { value: 'all', label: 'All places' },
-          ...EATERY_CATEGORIES.map((category) => ({
-            value: category,
-            label: getEateryCategoryFilterLabel(category),
-          })),
-        ]}
-        onChange={(value) => onEateryCategoryChange(value as 'all' | EateryCategory)}
-      />
       <div className="navigation-panel-content explore-content-search-body">
         {!venues || searchState.failed ? (
           <p className="explore-content-status" role="status" aria-live="polite">
             Venue search is unavailable right now. Bus route browsing is still available.
           </p>
-        ) : query.trim() || eateryCategory !== 'all' ? (
+        ) : query.trim() ? (
           <ScrollArea className="navigation-panel-scroll-content explore-content-results" aria-label="Venue search results">
             {searchState.results.length > 0 ? (
               searchState.results.map((item) => {
@@ -169,11 +149,8 @@ export function VenueSearch({
                   )
                 }
                 const { result } = item
-                const isEatery = result.venue.category !== undefined
-                const displayName = result.venue.displayName ?? result.venue.roomName
-                const categoryLabel = result.venue.category
-                  ? getEateryCategoryLabel(result.venue.category)
-                  : null
+                const presentation = getVenueSearchPresentation(result.code, result.venue)
+                const isFood = result.venue.kind === 'food'
                 return (
                   <Button
                     className="explore-content-result"
@@ -181,30 +158,28 @@ export function VenueSearch({
                     type="button"
                     key={`venue:${result.code}`}
                     onClick={(event) => onSelect(result, event)}
-                    ariaLabel={isEatery
-                      ? `${displayName}, ${categoryLabel}`
-                      : `${result.code}, venue, ${result.venue.roomName}`}
+                    ariaLabel={isFood
+                      ? `${presentation.title}, ${presentation.detail}`
+                      : `${result.code}, room, ${result.venue.kind === 'room' ? result.venue.roomName : ''}`}
                   >
                     <span className="explore-content-result-identity">
-                      {isEatery
-                        ? <MapPinIcon className="location-identity-icon location-identity-icon--eatery" />
-                        : <RoomIcon className="location-identity-icon location-identity-icon--venue" />}
-                      <strong>{isEatery ? displayName : result.code}</strong>
+                      <VenueIcon venue={result.venue} />
+                      <strong>{presentation.title}</strong>
                     </span>
-                    <span>{isEatery ? categoryLabel : result.venue.roomName}</span>
+                    <span>{presentation.detail}</span>
                   </Button>
                 )
               })
             ) : (
               <p className="explore-content-status" role="status" aria-live="polite">
-                {eateryCategory === 'all' ? 'No matching places or bus stops.' : 'No matching eateries in this category.'}
+                No matching places or bus stops.
               </p>
             )}
           </ScrollArea>
         ) : (
           <div className="explore-content-search-prompt">
             <SearchIcon />
-            <p>Search for a place or browse by category</p>
+            <p>Search for a place or bus stop</p>
           </div>
         )}
       </div>

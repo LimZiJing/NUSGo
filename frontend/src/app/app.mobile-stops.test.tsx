@@ -454,6 +454,7 @@ describe('mobile Stops tab state', () => {
   it('opens a nearby stop from venue details and restores venue context and focus', async () => {
     const initialState = appHarness.state as ReturnType<typeof createInitialNavigationSessionState>
     const venue = {
+      kind: 'room' as const,
       roomName: 'Seminar Room 3',
       floor: 2,
       location: { x: 103, y: 1 },
@@ -482,7 +483,7 @@ describe('mobile Stops tab state', () => {
     await user.click(screen.getByRole('button', { name: 'Back to Find venue' }))
 
     await waitFor(() => expect(screen.getByRole('button', { name: 'Explore' }).getAttribute('aria-current')).toBe('page'))
-    expect(screen.getByRole('heading', { name: 'COM1-0212, venue' })).toBeTruthy()
+    expect(screen.getByRole('heading', { name: 'COM1-0212, room' })).toBeTruthy()
     expect(screen.getByRole('button', {
       name: /Nearby bus stop Stop A, code STOP-A/,
     })).toBe(nearbyStop)

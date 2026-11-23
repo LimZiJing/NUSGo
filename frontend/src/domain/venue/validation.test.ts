@@ -1,12 +1,12 @@
 import { describe, expect, it } from 'vitest'
 import {
-  mergeVenueAndEateryMaps,
-  validateEateryLocationMap,
+  composeVenueData,
+  validateFoodLocationMap,
   VenueValidationError,
-  validateVenueLocationMap,
+  validateVenueSourceMap,
 } from '@nusgo/shared/venue/validation'
 
-describe('validateVenueLocationMap', () => {
+describe('validateVenueSourceMap', () => {
   it('returns an immutable validated snapshot', () => {
     const source = {
       'COM1-0210': {
@@ -16,7 +16,7 @@ describe('validateVenueLocationMap', () => {
       },
     }
 
-    const venues = validateVenueLocationMap(source)
+    const venues = validateVenueSourceMap(source)
     source['COM1-0210'].roomName = 'Changed'
 
     expect(venues['COM1-0210'].roomName).toBe('Computing 1, Level 2')
@@ -28,7 +28,7 @@ describe('validateVenueLocationMap', () => {
   it('reports malformed fields in stable venue and field order', () => {
     let error: unknown
     try {
-      validateVenueLocationMap({
+      validateVenueSourceMap({
         'A-1': {
           roomName: ' ',
           floor: Number.NaN,
@@ -51,32 +51,35 @@ describe('validateVenueLocationMap', () => {
   })
 
   it.each(['Ground', 1.5])('rejects non-integer floor values such as %s', (floor) => {
-    expect(() => validateVenueLocationMap({
+    expect(() => validateVenueSourceMap({
       'A-1': { roomName: 'Room', floor },
     })).toThrow(VenueValidationError)
   })
 })
 
-describe('mergeVenueAndEateryMaps', () => {
-  it('keeps the floor and venue identity when an eatery reuses a venue code', () => {
-    const venues = validateVenueLocationMap({
+describe('composeVenueData', () => {
+  it('composes Room and Food records into the runtime venue union', () => {
+    const venues = validateVenueSourceMap({
       'COM1-0210': { roomName: 'Seminar Room 10', floor: 2, location: { x: 103.77, y: 1.3 } },
     })
-    const eateries = validateEateryLocationMap({
-      'COM1-0210': { name: 'Seminar Cafe', category: 'canteen', location: { x: 103.771, y: 1.301 } },
-      'new-cafe': { name: 'New Cafe', category: 'restaurant', location: { x: 103.772, y: 1.302 } },
+    const foods = validateFoodLocationMap({
+      'COM1-0210': { name: 'Seminar Cafe', foodType: 'canteen', location: { x: 103.771, y: 1.301 } },
+      'new-cafe': { name: 'New Cafe', foodType: 'restaurant', location: { x: 103.772, y: 1.302 } },
     })
 
-    const merged = mergeVenueAndEateryMaps(venues, eateries)
+    const composed = composeVenueData(venues, foods)
 
-    expect(merged['COM1-0210']).toMatchObject({
-      roomName: 'Seminar Room 10',
-      displayName: 'Seminar Cafe',
-      category: 'canteen',
-      floor: 2,
-      isStandaloneEatery: false,
+    expect(composed.venues['COM1-0210']).toEqual({
+      kind: 'food',
+      name: 'Seminar Cafe',
+      foodType: 'canteen',
       location: { x: 103.771, y: 1.301 },
     })
-    expect(merged['new-cafe']).toMatchObject({ isStandaloneEatery: true })
+    expect(composed.venues['new-cafe']).toEqual({
+      kind: 'food',
+      name: 'New Cafe',
+      foodType: 'restaurant',
+      location: { x: 103.772, y: 1.302 },
+    })
   })
 })

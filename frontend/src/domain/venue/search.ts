@@ -1,33 +1,34 @@
-import type { VenueLocation, VenueLocationMap } from '@nusgo/shared/venue/types'
-import { normalizeSearchText } from '../text-match'
+import type { Venue, VenueMap } from '@nusgo/shared/venue/types'
+import { getFoodTypeLabel } from './food'
+import { compareText, getMatchPriority, normalizeSearchText } from '../text-match'
 
 export interface VenueSearchResult {
   readonly code: string
-  readonly venue: VenueLocation
+  readonly venue: Venue
 }
 
-/** Every name a venue can be found by: its code, display name and existing room name. */
-export function getVenueSearchFields(code: string, venue: VenueLocation): string[] {
-  const names = [...new Set([venue.displayName, venue.roomName].filter(
-    (name): name is string => Boolean(name),
-  ))]
-  return [code, ...names]
+export interface VenueSearchPresentation {
+  readonly title: string
+  readonly detail: string
+}
+
+/** Shared titles and details for Find venue and Plan. */
+export function getVenueSearchPresentation(code: string, venue: Venue): VenueSearchPresentation {
+  if (venue.kind === 'food') {
+    return { title: venue.name, detail: getFoodTypeLabel(venue.foodType) }
+  }
+  return { title: code, detail: venue.roomName }
+}
+
+/** Every venue is searchable by its stable ID and its public Room or Food name. */
+export function getVenueSearchFields(code: string, venue: Venue): string[] {
+  return venue.kind === 'food' ? [code, venue.name] : [code, venue.roomName]
 }
 
 const MAX_RESULTS = 8
 
-function resultPriority(fields: readonly string[], query: string): number {
-  const [code, ...names] = fields
-  const normalizedCode = normalizeSearchText(code ?? '')
-
-  if (normalizedCode === query) return 0
-  if (normalizedCode.startsWith(query)) return 1
-  if (names.some((name) => normalizeSearchText(name).startsWith(query))) return 2
-  return 3
-}
-
 export function searchVenues(
-  venues: VenueLocationMap,
+  venues: VenueMap,
   query: string,
   limit = MAX_RESULTS,
 ): VenueSearchResult[] {
@@ -35,12 +36,15 @@ export function searchVenues(
   if (!normalizedQuery) return []
 
   return Object.entries(venues)
-    .map(([code, venue]) => ({ code, venue, fields: getVenueSearchFields(code, venue) }))
-    .filter(({ fields }) => fields.some((field) => normalizeSearchText(field).includes(normalizedQuery)))
+    .map(([code, venue]) => ({
+      code,
+      venue,
+      fields: getVenueSearchFields(code, venue),
+      priority: getMatchPriority(getVenueSearchFields(code, venue), normalizedQuery),
+    }))
+    .filter((result): result is typeof result & { priority: number } => result.priority !== null)
     .sort((first, second) => {
-      const priorityDifference =
-        resultPriority(first.fields, normalizedQuery) - resultPriority(second.fields, normalizedQuery)
-      return priorityDifference || first.code.localeCompare(second.code)
+      return first.priority - second.priority || compareText(first.code, second.code)
     })
     .slice(0, limit)
     .map(({ code, venue }) => ({ code, venue }))

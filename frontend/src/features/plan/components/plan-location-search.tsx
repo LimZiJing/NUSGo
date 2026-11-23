@@ -7,7 +7,7 @@ import type {
   TripEndpointRole,
   TripLocationSearchResult,
 } from '../../../domain/trip/types'
-import type { VenueLocationMap } from '@nusgo/shared/venue/types'
+import type { VenueMap } from '@nusgo/shared/venue/types'
 import type { BuildingIndex } from '../../../domain/venue/building-index'
 import type { PersonalWaypoint } from '../../../domain/waypoints/personal/personal-waypoint'
 import { BackButton } from '../../../ui/back-button'
@@ -18,12 +18,13 @@ import { EndpointKindIcon } from './plan-endpoint-display'
 import { getEndpointKindLabel } from './plan-endpoint-labels'
 import type { OriginLocationRequestState } from './plan-trip-card'
 
-type ResultKind = Exclude<TripEndpoint['kind'], 'current-location'>
+type ResultKind = TripLocationSearchResult['kind']
 type KindFilter = 'all' | ResultKind
 
 const FILTERS: readonly { readonly id: KindFilter; readonly label: string }[] = [
   { id: 'all', label: 'All' },
-  { id: 'venue', label: 'Rooms' },
+  { id: 'room', label: 'Rooms' },
+  { id: 'food', label: 'Food' },
   { id: 'building', label: 'Buildings' },
   { id: 'stop', label: 'Bus stops' },
   { id: 'personal-waypoint', label: 'Personal Waypoints' },
@@ -31,14 +32,15 @@ const FILTERS: readonly { readonly id: KindFilter; readonly label: string }[] = 
 
 const GROUPS: readonly { readonly kind: ResultKind; readonly heading: string }[] = [
   { kind: 'building', heading: 'Buildings' },
-  { kind: 'venue', heading: 'Rooms' },
+  { kind: 'room', heading: 'Rooms' },
+  { kind: 'food', heading: 'Food' },
   { kind: 'stop', heading: 'Bus stops' },
   { kind: 'personal-waypoint', heading: 'Personal Waypoints' },
 ]
 
 interface PlanLocationSearchProps {
   role: TripEndpointRole
-  venues: VenueLocationMap | null
+  venues: VenueMap | null
   buildings?: BuildingIndex | null
   networkIndex: TransitIndex | null
   searchQuery: string
@@ -63,10 +65,7 @@ function isSameText(first: string, second: string): boolean {
 }
 
 function getResultLabel(result: TripLocationSearchResult): string {
-  // A building's stable ID is a slug, so its name is the meaningful title.
-  return result.endpoint.kind === 'current-location' || result.endpoint.kind === 'building' || result.endpoint.kind === 'personal-waypoint'
-    ? result.label
-    : result.endpoint.id
+  return result.kind === 'room' ? result.endpoint.id : result.label
 }
 
 // Hides any subtitle text that only repeats the row title or label, such as a code shown twice.
@@ -82,8 +81,11 @@ function getVisibleResultDetail(result: TripLocationSearchResult): string | null
 }
 
 function getResultIdentityLabel(result: TripLocationSearchResult): string {
-  if (result.endpoint.kind === 'current-location') return 'Current location'
-  const kindLabel = getEndpointKindLabel(result.endpoint)
+  const kindLabel = result.kind === 'room'
+    ? 'room'
+    : result.kind === 'food'
+      ? result.venue.foodType
+      : getEndpointKindLabel(result.endpoint)
   const stableId = result.endpoint.kind === 'stop' ? `, ${result.endpoint.id}` : ''
   return `${result.label}, ${kindLabel}${stableId}`
 }
@@ -143,15 +145,15 @@ export function PlanLocationSearch({
         personalWaypoints,
       )
       : [
-        ...suggestions.filter((result) => filter === 'all' || result.endpoint.kind === filter),
+        ...suggestions.filter((result) => filter === 'all' || result.kind === filter),
         ...getPersonalWaypointSearchResults(personalWaypoints)
-          .filter((result) => filter === 'all' || result.endpoint.kind === filter),
+          .filter((result) => filter === 'all' || result.kind === filter),
       ],
     [hasQuery, searchQuery, networkIndex, venues, buildings, filter, suggestions, personalWaypoints],
   )
 
   const groups = GROUPS
-    .map((group) => ({ ...group, rows: results.filter((result) => result.endpoint.kind === group.kind) }))
+    .map((group) => ({ ...group, rows: results.filter((result) => result.kind === group.kind) }))
     .filter((group) => group.rows.length > 0)
   const showHeadings = filter === 'all' && groups.length > 1
 
@@ -270,7 +272,7 @@ export function PlanLocationSearch({
                       ariaLabel={`Set ${roleLabel.toLocaleLowerCase()} to ${getResultIdentityLabel(result)}`}
                     >
                       <span className="plan-search-result-icon" aria-hidden="true">
-                        <EndpointKindIcon kind={result.endpoint.kind} />
+                        <EndpointKindIcon kind={result.endpoint.kind} venue={result.kind === 'room' || result.kind === 'food' ? result.venue : undefined} />
                       </span>
                       <span className="plan-search-result-text">
                         <strong><Highlighted text={getResultLabel(result)} query={searchQuery} /></strong>

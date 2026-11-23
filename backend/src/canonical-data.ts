@@ -5,9 +5,9 @@ import {
   validateShuttleTimingData,
   validateTransitMapData,
   validateBuildingCatalogue,
-  validateVenueLocationMap,
-  validateEateryLocationMap,
-  mergeVenueAndEateryMaps,
+  validateVenueSourceMap,
+  validateFoodLocationMap,
+  composeVenueData,
   validateWalkingStopGraph,
 } from '@nusgo/shared'
 import type {
@@ -15,13 +15,13 @@ import type {
   ShuttleTimingData,
   TransitNetwork,
   BusRouteGeometry,
-  VenueLocationMap,
+  VenueMap,
   WalkingStopGraph,
 } from '@nusgo/shared'
 
 export interface CanonicalDataInputs {
   readonly venues: unknown
-  readonly eateries: unknown
+  readonly foods: unknown
   readonly buildings: unknown
   readonly network: unknown
   readonly routeGeometry: unknown
@@ -31,7 +31,7 @@ export interface CanonicalDataInputs {
 
 export interface BackendData {
   readonly dataVersion: string
-  readonly venues: VenueLocationMap
+  readonly venues: VenueMap
   readonly buildings: BuildingCatalogue
   readonly network: TransitNetwork
   readonly routeGeometry: BusRouteGeometry
@@ -66,11 +66,13 @@ export function validateCanonicalData(
   dataVersion: string,
 ): BackendData {
   const version = parseDataVersion(dataVersion)
-  const venues = mergeVenueAndEateryMaps(
-    validateVenueLocationMap(inputs.venues),
-    validateEateryLocationMap(inputs.eateries),
-  )
   const buildings = validateBuildingCatalogue(inputs.buildings)
+  const venueData = composeVenueData(
+    validateVenueSourceMap(inputs.venues),
+    validateFoodLocationMap(inputs.foods),
+    buildings,
+  )
+  const venues = venueData.venues
   const transit = validateTransitMapData(inputs.network, inputs.routeGeometry)
   const shuttleTiming = validateShuttleTimingData(inputs.shuttleTiming, transit.network)
   const walkingStopGraph = validateWalkingStopGraph(inputs.walkingStopGraph)
@@ -108,9 +110,9 @@ export async function loadCanonicalData(
   directory: string,
   dataVersion: string,
 ): Promise<BackendData> {
-  const [venues, eateries, buildings, network, routeGeometry, shuttleTiming, walkingStopGraph] = await Promise.all([
+  const [venues, foods, buildings, network, routeGeometry, shuttleTiming, walkingStopGraph] = await Promise.all([
     readJson(directory, 'venues.json'),
-    readJson(directory, 'eateries.json'),
+    readJson(directory, 'food.json'),
     readJson(directory, 'buildings.json'),
     readJson(directory, 'shuttle-network.json'),
     readJson(directory, 'shuttle-routes.geojson'),
@@ -120,7 +122,7 @@ export async function loadCanonicalData(
 
   return validateCanonicalData({
     venues,
-    eateries,
+    foods,
     buildings,
     network,
     routeGeometry,

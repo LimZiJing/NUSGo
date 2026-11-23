@@ -8,6 +8,7 @@ import type { VenueSearchResult } from '../../../domain/venue/search'
 const selectedVenue: VenueSearchResult = {
   code: 'COM1-0210',
   venue: {
+    kind: 'room',
     roomName: 'Computing 1, Level 2',
     floor: 2,
     location: { x: 103.77, y: 1.3 },

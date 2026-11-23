@@ -11,6 +11,7 @@ import { generateShuttleTimingData } from '@nusgo/shared/transit/timing'
 import { TransitValidationError, validateTransitNetwork } from '@nusgo/shared/transit/model'
 import { validateBusRouteGeometry } from '@nusgo/shared/transit/geometry'
 import { VenueValidationError } from '@nusgo/shared/venue/validation'
+import { linkVenuesToBuildings } from '../../domain/venue/building-links'
 
 function readJson(path: string): unknown {
   return JSON.parse(readFileSync(new URL(path, import.meta.url), 'utf8'))
@@ -19,7 +20,7 @@ function readJson(path: string): unknown {
 const network = readJson('../../../public/data/shuttle-network.json')
 const geometry = readJson('../../../public/data/shuttle-routes.geojson')
 const venues = readJson('../../../public/data/venues.json')
-const eateries = readJson('../../../public/data/eateries.json')
+const foods = readJson('../../../public/data/food.json')
 const buildings = readJson('../../../public/data/buildings.json')
 const validatedNetwork = validateTransitNetwork(network)
 const validatedGeometry = validateBusRouteGeometry(validatedNetwork, geometry)
@@ -54,32 +55,30 @@ describe('data loaders', () => {
   it('validates venue JSON before exposing it to consumers', async () => {
     const result = await loadVenueData(
       new AbortController().signal,
-      createFetcher({ 'data/venues.json': venues, 'data/eateries.json': eateries }),
+      createFetcher({ 'data/venues.json': venues, 'data/food.json': foods, 'data/buildings.json': buildings }),
     )
 
     expect(result.venueCount).toBeGreaterThan(0)
     expect(result.venues['yih-central-square']).toMatchObject({
-      displayName: 'YIH (Central Square)',
-      category: 'canteen',
+      kind: 'food',
+      name: 'YIH (Central Square)',
+      foodType: 'canteen',
       location: { x: 103.77477, y: 1.2985 },
     })
-    expect(result.venues.Frontier).toMatchObject({
-      roomName: 'Frontier',
-      floor: 4,
-      location: { x: 103.77651999858904, y: 1.2921935771660125 },
-    })
-    expect(result.venues.Frontier?.category).toBeUndefined()
+    expect(result.venues.Frontier).toBeUndefined()
+    expect(linkVenuesToBuildings(result.venues, result.buildings!).wholeBuildingVenueCodes.has('Frontier')).toBe(true)
     expect(result.venues['frontier-canteen']).toMatchObject({
-      displayName: 'Frontier',
-      category: 'canteen',
+      kind: 'food',
+      name: 'Frontier',
+      foodType: 'canteen',
       location: { x: 103.78067, y: 1.29647 },
     })
-    expect(result.venues['COM1-0210']?.roomName).toBe('Seminar Room 10 (Active Learning Room)')
-    expect(result.venues['Y-DanceStu']?.floor).toBe(0)
-    expect(result.venues['Y-Studio3']?.floor).toBe(0)
-    expect(result.venues['Y-Studio5']?.floor).toBe(0)
-    expect(result.venues['S13-M-08']?.floor).toBe(1)
-    expect(result.venues['AS4-B107']?.floor).toBe(-1)
+    expect(result.venues['COM1-0210']).toMatchObject({ kind: 'room', roomName: 'Seminar Room 10 (Active Learning Room)' })
+    expect(result.venues['Y-DanceStu']).toMatchObject({ kind: 'room', floor: 0 })
+    expect(result.venues['Y-Studio3']).toMatchObject({ kind: 'room', floor: 0 })
+    expect(result.venues['Y-Studio5']).toMatchObject({ kind: 'room', floor: 0 })
+    expect(result.venues['S13-M-08']).toMatchObject({ kind: 'room', floor: 1 })
+    expect(result.venues['AS4-B107']).toMatchObject({ kind: 'room', floor: -1 })
   })
 
   it('loads the building catalogue with the venues and indexes it for search', async () => {
@@ -87,7 +86,7 @@ describe('data loaders', () => {
       new AbortController().signal,
       createFetcher({
         'data/venues.json': venues,
-        'data/eateries.json': eateries,
+        'data/food.json': foods,
         'data/buildings.json': buildings,
       }),
     )
@@ -98,7 +97,7 @@ describe('data loaders', () => {
 
   it('still loads venues when the building catalogue is unavailable or invalid', async () => {
     const errors = vi.spyOn(console, 'error').mockImplementation(() => undefined)
-    const venueInputs = { 'data/venues.json': venues, 'data/eateries.json': eateries }
+    const venueInputs = { 'data/venues.json': venues, 'data/food.json': foods }
     const unavailable = await loadVenueData(new AbortController().signal, createFetcher(venueInputs))
     const invalid = await loadVenueData(
       new AbortController().signal,
@@ -111,7 +110,7 @@ describe('data loaders', () => {
     expect(invalid.buildings?.entries).toEqual([])
   })
 
-  it('still loads validated venues when the eatery catalogue is unavailable or invalid', async () => {
+  it('still loads validated venues when the food catalogue is unavailable or invalid', async () => {
     const errors = vi.spyOn(console, 'error').mockImplementation(() => undefined)
     const unavailable = await loadVenueData(
       new AbortController().signal,
@@ -121,8 +120,8 @@ describe('data loaders', () => {
       new AbortController().signal,
       createFetcher({
         'data/venues.json': venues,
-        'data/eateries.json': {
-          broken: { name: 'Broken', category: 'cafe', location: { x: 103, y: 1 } },
+        'data/food.json': {
+          broken: { name: 'Broken', foodType: 'cafe', location: { x: 103, y: 1 } },
         },
         'data/buildings.json': buildings,
       }),
@@ -140,7 +139,7 @@ describe('data loaders', () => {
     const controller = new AbortController()
     const fetcher: JsonFetcher = async (path) => {
       if (path === 'data/venues.json') return venues
-      if (path === 'data/eateries.json') return eateries
+      if (path === 'data/food.json') return foods
       controller.abort()
       throw new DOMException('Aborted', 'AbortError')
     }
@@ -148,7 +147,7 @@ describe('data loaders', () => {
     await expect(loadVenueData(controller.signal, fetcher)).rejects.toMatchObject({ name: 'AbortError' })
   })
 
-  it('does not swallow an abort while loading the eatery catalogue', async () => {
+  it('does not swallow an abort while loading the food catalogue', async () => {
     const controller = new AbortController()
     const fetcher: JsonFetcher = async (path) => {
       if (path === 'data/venues.json') return venues
@@ -247,7 +246,7 @@ describe('data loaders', () => {
       new AbortController().signal,
       createFetcher({
         'data/venues.json': malformedVenues,
-        'data/eateries.json': eateries,
+        'data/food.json': foods,
       }),
     )).rejects.toBeInstanceOf(VenueValidationError)
 

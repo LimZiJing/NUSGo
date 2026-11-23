@@ -2,12 +2,12 @@ import type { TransitIndex } from '../domain/transit'
 import type { TripEndpoint, TripEndpointRole } from '../domain/trip/types'
 import type { BuildingIndex } from '../domain/venue/building-index'
 import type { VenueSearchResult } from '../domain/venue/search'
-import type { VenueLocation, VenueLocationMap } from '@nusgo/shared/venue/types'
+import type { Venue, VenueMap } from '@nusgo/shared/venue/types'
 import { createCurrentLocationTripEndpoint } from '../domain/trip/endpoints'
 import { createPersonalWaypointTripEndpoint } from '../domain/trip/personal-waypoint-endpoints'
 import type { PersonalWaypoint } from '../domain/waypoints/personal/personal-waypoint'
 
-type MappedVenue = VenueLocation & {
+type MappedVenue = Venue & {
   readonly location: { readonly x: number; readonly y: number }
 }
 
@@ -15,7 +15,7 @@ function isRecord(value: unknown): value is Record<string, unknown> {
   return typeof value === 'object' && value !== null && !Array.isArray(value)
 }
 
-export function hasMappedLocation(venue: VenueLocation | undefined): venue is MappedVenue {
+export function hasMappedLocation(venue: Venue | undefined): venue is MappedVenue {
   const location = venue?.location
   return location !== undefined && Number.isFinite(location.x) && Number.isFinite(location.y)
 }
@@ -26,7 +26,7 @@ export function isTripEndpointRole(value: unknown): value is TripEndpointRole {
 
 export function canonicalizeTripEndpoint(
   endpoint: unknown,
-  venues: VenueLocationMap | null,
+  venues: VenueMap | null,
   transitIndex: TransitIndex | null,
   buildings: BuildingIndex | null = null,
   personalWaypoints: ReadonlyMap<string, PersonalWaypoint> | null = null,
@@ -53,15 +53,19 @@ export function canonicalizeTripEndpoint(
   return null
 }
 
-export function venuesMatch(first: VenueLocation, second: VenueLocation): boolean {
+export function venuesMatch(first: Venue, second: Venue): boolean {
+  if (first.kind !== second.kind || first.buildingId !== second.buildingId) return false
   const firstLocation = first.location
   const secondLocation = second.location
   const locationsMatch = firstLocation === undefined || secondLocation === undefined
     ? firstLocation === secondLocation
     : firstLocation.x === secondLocation.x && firstLocation.y === secondLocation.y
-  return first.roomName === second.roomName && first.floor === second.floor && locationsMatch
+  const identityMatches = first.kind === 'food'
+    ? second.kind === 'food' && first.name === second.name && first.foodType === second.foodType
+    : second.kind === 'room' && first.roomName === second.roomName && first.floor === second.floor
+  return identityMatches && locationsMatch
 }
 
-export function createVenueSearchResultSnapshot(code: string, venue: VenueLocation): VenueSearchResult {
+export function createVenueSearchResultSnapshot(code: string, venue: Venue): VenueSearchResult {
   return Object.freeze({ code, venue })
 }

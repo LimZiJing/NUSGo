@@ -1,11 +1,11 @@
-import type { VenueLocationMap } from '@nusgo/shared/venue/types'
+import type { VenueMap } from '@nusgo/shared/venue/types'
 import type { TransitIndex } from '../transit'
 import { isValidLocationCoordinates } from '../location/coordinates'
 import { resolveBuildingLocation, type BuildingIndex } from '../venue/building-index'
 import type { TripCoordinate, TripEndpoint } from './types'
 
 export interface TripEndpointLocationSources {
-  readonly venues: VenueLocationMap | null
+  readonly venues: VenueMap | null
   readonly buildings: BuildingIndex | null
   readonly transitIndex: Pick<TransitIndex, 'stopById'> | null
 }

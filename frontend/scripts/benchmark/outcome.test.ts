@@ -51,8 +51,8 @@ const transit = {
 } as unknown as LoadedTransitData
 
 const venues = {
-  V: { roomName: 'Venue V', location: { x: 103.769, y: 1.289 } },
-  W: { roomName: 'Venue W', location: { x: 103.773, y: 1.293 } },
+  V: { kind: 'room' as const, roomName: 'Venue V', location: { x: 103.769, y: 1.289 } },
+  W: { kind: 'room' as const, roomName: 'Venue W', location: { x: 103.773, y: 1.293 } },
 }
 
 function createSnapshot(stops: ShuttleArrivalSnapshot['stops']): ShuttleArrivalSnapshot {

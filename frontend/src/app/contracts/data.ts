@@ -5,10 +5,10 @@ import type {
   BusRouteGeometry,
 } from '@nusgo/shared/transit/types'
 import type { BuildingIndex } from '../../domain/venue/building-index'
-import type { VenueLocationMap } from '@nusgo/shared/venue/types'
+import type { VenueMap } from '@nusgo/shared/venue/types'
 
 export interface LoadedVenueData {
-  readonly venues: VenueLocationMap
+  readonly venues: VenueMap
   readonly venueCount: number
   /** Supplemental buildings; empty when the catalogue could not be loaded. */
   readonly buildings?: BuildingIndex

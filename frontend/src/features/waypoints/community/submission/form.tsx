@@ -4,7 +4,7 @@ import type {
   CommunityWaypoint,
   CommunityWaypointSubmission,
 } from '@nusgo/shared'
-import type { VenueLocationMap } from '@nusgo/shared/venue/types'
+import type { VenueMap } from '@nusgo/shared/venue/types'
 import type { WaypointCoordinate } from '@nusgo/shared/waypoints/waypoint'
 import { createBuildingFloorLookup } from '../../../../domain/venue/building-floors'
 import { findNearestBuilding, type BuildingIndex } from '../../../../domain/venue/building-index'
@@ -42,7 +42,7 @@ export function CommunityWaypointSubmissionForm({
   readonly locationStatus: LocationStatus
   readonly locationAccuracy: number | null
   readonly buildingIndex: BuildingIndex | null
-  readonly venues: VenueLocationMap | null
+  readonly venues: VenueMap | null
   readonly onAdjustLocation: (trigger: HTMLButtonElement) => void
   readonly onSubmit: (submission: CommunityWaypointSubmission, signal: AbortSignal) => Promise<void>
   readonly onBack: () => void

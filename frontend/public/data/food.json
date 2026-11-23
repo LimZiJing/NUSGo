@@ -1,7 +1,7 @@
 {
   "yih-central-square": {
     "name": "YIH (Central Square)",
-    "category": "canteen",
+    "foodType": "canteen",
     "location": {
       "x": 103.77477,
       "y": 1.2985
@@ -9,7 +9,7 @@
   },
   "pgpr": {
     "name": "PGPR",
-    "category": "canteen",
+    "foodType": "canteen",
     "location": {
       "x": 103.78215,
       "y": 1.29078
@@ -17,7 +17,7 @@
   },
   "btc-cafeteria": {
     "name": "BTC Cafeteria",
-    "category": "canteen",
+    "foodType": "canteen",
     "location": {
       "x": 103.8165951,
       "y": 1.3189899
@@ -25,7 +25,7 @@
   },
   "frontier-canteen": {
     "name": "Frontier",
-    "category": "canteen",
+    "foodType": "canteen",
     "location": {
       "x": 103.78067,
       "y": 1.29647
@@ -33,7 +33,7 @@
   },
   "techno-edge-canteen": {
     "name": "Techno Edge",
-    "category": "canteen",
+    "foodType": "canteen",
     "location": {
       "x": 103.77153,
       "y": 1.29795
@@ -41,7 +41,7 @@
   },
   "the-deck-canteen": {
     "name": "The Deck",
-    "category": "canteen",
+    "foodType": "canteen",
     "location": {
       "x": 103.77249,
       "y": 1.29467
@@ -49,7 +49,7 @@
   },
   "the-terrace-canteen": {
     "name": "The Terrace",
-    "category": "canteen",
+    "foodType": "canteen",
     "location": {
       "x": 103.77458,
       "y": 1.29458
@@ -57,7 +57,7 @@
   },
   "fine-food": {
     "name": "Fine Food",
-    "category": "canteen",
+    "foodType": "canteen",
     "location": {
       "x": 103.77398,
       "y": 1.3039
@@ -65,7 +65,7 @@
   },
   "flavours-utown": {
     "name": "Flavours @ UTown",
-    "category": "canteen",
+    "foodType": "canteen",
     "location": {
       "x": 103.77252,
       "y": 1.30462
@@ -73,7 +73,7 @@
   },
   "sloppy-b": {
     "name": "Sloppy B",
-    "category": "restaurant",
+    "foodType": "restaurant",
     "location": {
       "x": 103.77546,
       "y": 1.29971
@@ -81,7 +81,7 @@
   },
   "south-and-east": {
     "name": "South & East",
-    "category": "restaurant",
+    "foodType": "restaurant",
     "location": {
       "x": 103.7736,
       "y": 1.29325
@@ -89,7 +89,7 @@
   },
   "bismillah-biryani": {
     "name": "Bismillah Biryani",
-    "category": "restaurant",
+    "foodType": "restaurant",
     "location": {
       "x": 103.77252,
       "y": 1.30462
@@ -97,7 +97,7 @@
   },
   "hwangs-korean-restaurant": {
     "name": "Hwang's Korean Restaurant",
-    "category": "restaurant",
+    "foodType": "restaurant",
     "location": {
       "x": 103.77398,
       "y": 1.3039
@@ -105,7 +105,7 @@
   },
   "jollibee-utown": {
     "name": "Jollibee",
-    "category": "restaurant",
+    "foodType": "restaurant",
     "location": {
       "x": 103.77398,
       "y": 1.3039
@@ -113,7 +113,7 @@
   },
   "makan-malah": {
     "name": "Makan Malah!",
-    "category": "restaurant",
+    "foodType": "restaurant",
     "location": {
       "x": 103.77398,
       "y": 1.3039
@@ -121,7 +121,7 @@
   },
   "royals-bistro": {
     "name": "The Royals Bistro",
-    "category": "restaurant",
+    "foodType": "restaurant",
     "location": {
       "x": 103.77398,
       "y": 1.3039
@@ -129,7 +129,7 @@
   },
   "sapore": {
     "name": "Sapore",
-    "category": "restaurant",
+    "foodType": "restaurant",
     "location": {
       "x": 103.77252,
       "y": 1.30462
@@ -137,7 +137,7 @@
   },
   "the-spread": {
     "name": "The Spread",
-    "category": "restaurant",
+    "foodType": "restaurant",
     "location": {
       "x": 103.774387,
       "y": 1.2925203
@@ -145,7 +145,7 @@
   },
   "subway-utown": {
     "name": "Subway (UTown)",
-    "category": "restaurant",
+    "foodType": "restaurant",
     "location": {
       "x": 103.7729295,
       "y": 1.3044341
@@ -153,7 +153,7 @@
   },
   "udon-don-bar": {
     "name": "Udon Don Bar",
-    "category": "restaurant",
+    "foodType": "restaurant",
     "location": {
       "x": 103.7742248,
       "y": 1.30378
@@ -161,7 +161,7 @@
   },
   "waa-cow-utown": {
     "name": "Waa Cow",
-    "category": "restaurant",
+    "foodType": "restaurant",
     "location": {
       "x": 103.7723663,
       "y": 1.3048253
@@ -169,7 +169,7 @@
   },
   "a-hot-hideout-pgp": {
     "name": "A Hot Hideout (PGP)",
-    "category": "restaurant",
+    "foodType": "restaurant",
     "location": {
       "x": 103.78140180319333,
       "y": 1.2905257818111904
@@ -177,7 +177,7 @@
   },
   "wild-skew": {
     "name": "Wild Skew",
-    "category": "restaurant",
+    "foodType": "restaurant",
     "location": {
       "x": 103.7748075,
       "y": 1.2985636
@@ -185,7 +185,7 @@
   },
   "arise-and-shine": {
     "name": "Arise and Shine",
-    "category": "drinks & snacks",
+    "foodType": "drinks & snacks",
     "location": {
       "x": 103.7715671,
       "y": 1.2992078
@@ -193,7 +193,7 @@
   },
   "nami": {
     "name": "Nami",
-    "category": "drinks & snacks",
+    "foodType": "drinks & snacks",
     "location": {
       "x": 103.775718,
       "y": 1.2943392
@@ -201,7 +201,7 @@
   },
   "chagee-yih": {
     "name": "CHAGEE",
-    "category": "drinks & snacks",
+    "foodType": "drinks & snacks",
     "location": {
       "x": 103.7747763,
       "y": 1.2986524
@@ -209,7 +209,7 @@
   },
   "cafe-delight": {
     "name": "Cafe Delight",
-    "category": "drinks & snacks",
+    "foodType": "drinks & snacks",
     "location": {
       "x": 103.7701913,
       "y": 1.2950996
@@ -217,7 +217,7 @@
   },
   "good-day-cafe": {
     "name": "Good Day Cafe",
-    "category": "drinks & snacks",
+    "foodType": "drinks & snacks",
     "location": {
       "x": 103.7816129,
       "y": 1.2969695
@@ -225,7 +225,7 @@
   },
   "he-by-he-brews": {
     "name": "He by He Brews",
-    "category": "drinks & snacks",
+    "foodType": "drinks & snacks",
     "location": {
       "x": 103.77077,
       "y": 1.30055
@@ -233,7 +233,7 @@
   },
   "poonsti-cafe": {
     "name": "Poonsti Café",
-    "category": "drinks & snacks",
+    "foodType": "drinks & snacks",
     "location": {
       "x": 103.7736,
       "y": 1.29325
@@ -241,7 +241,7 @@
   },
   "starbucks-s9": {
     "name": "Starbucks (S9)",
-    "category": "drinks & snacks",
+    "foodType": "drinks & snacks",
     "location": {
       "x": 103.77999,
       "y": 1.29594
@@ -249,7 +249,7 @@
   },
   "coffee-roaster-as8": {
     "name": "The Coffee Roaster",
-    "category": "drinks & snacks",
+    "foodType": "drinks & snacks",
     "location": {
       "x": 103.77229,
       "y": 1.29603
@@ -257,7 +257,7 @@
   },
   "tomoro-coffee-hss": {
     "name": "TOMORO COFFEE (HSSML)",
-    "category": "drinks & snacks",
+    "foodType": "drinks & snacks",
     "location": {
       "x": 103.7747466,
       "y": 1.2931313
@@ -265,7 +265,7 @@
   },
   "wonderful-cafe-s16": {
     "name": "Wonderful Cafe (S16)",
-    "category": "drinks & snacks",
+    "foodType": "drinks & snacks",
     "location": {
       "x": 103.7802176,
       "y": 1.2965938
@@ -273,7 +273,7 @@
   },
   "starbucks-erc": {
     "name": "Starbucks (ERC)",
-    "category": "drinks & snacks",
+    "foodType": "drinks & snacks",
     "location": {
       "x": 103.77291,
       "y": 1.30598
@@ -281,7 +281,7 @@
   },
   "starbucks-cde": {
     "name": "Starbucks (CDE)",
-    "category": "drinks & snacks",
+    "foodType": "drinks & snacks",
     "location": {
       "x": 103.7715256,
       "y": 1.2978334
@@ -289,7 +289,7 @@
   },
   "supersnacks-pgpr": {
     "name": "Supersnacks (PGPR)",
-    "category": "drinks & snacks",
+    "foodType": "drinks & snacks",
     "location": {
       "x": 103.78021707152946,
       "y": 1.2914363973686294
@@ -297,7 +297,7 @@
   },
   "supersnacks-utown": {
     "name": "Supersnacks (UTown)",
-    "category": "drinks & snacks",
+    "foodType": "drinks & snacks",
     "location": {
       "x": 103.7728128575921,
       "y": 1.304799870389044
@@ -305,7 +305,7 @@
   },
   "cool-spot": {
     "name": "Cool Spot",
-    "category": "drinks & snacks",
+    "foodType": "drinks & snacks",
     "location": {
       "x": 103.7740902,
       "y": 1.294305

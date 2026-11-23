@@ -87,8 +87,8 @@ function scoreJourney(candidatePath: Path, candidateKey = 'test-candidate'): Sco
 }
 
 const venues = {
-  ORIGIN: { roomName: 'Origin venue', location: { x: 103, y: 1 } },
-  DESTINATION: { roomName: 'Destination venue', location: { x: 103.1, y: 1.1 } },
+  ORIGIN: { kind: 'room' as const, roomName: 'Origin venue', location: { x: 103, y: 1 } },
+  DESTINATION: { kind: 'room' as const, roomName: 'Destination venue', location: { x: 103.1, y: 1.1 } },
 }
 
 // Cards start collapsed, so open the selected one before reading its timeline markup.

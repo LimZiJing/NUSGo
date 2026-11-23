@@ -2,16 +2,24 @@ import { renderToStaticMarkup } from 'react-dom/server'
 import { describe, expect, it } from 'vitest'
 import { createTransitIndex } from '../../../domain/transit'
 import { createValidTransitNetwork } from '../../../domain/transit/test-fixtures'
+import { buildBuildingIndex } from '../../../domain/venue/building-index'
 import type { TransitNetworkInput } from '@nusgo/shared/transit/types'
-import type { VenueLocation, VenueLocationMap } from '@nusgo/shared/venue/types'
+import type { Venue, VenueMap } from '@nusgo/shared/venue/types'
 import { exploreReducer, createInitialExploreState } from '../state/explore-state'
 import { ExploreContentHarness as ExploreContent } from './explore-content-harness'
 
-const venue: VenueLocation = {
+const venue: Venue = {
+  kind: 'room',
   roomName: 'Seminar Room 3',
   floor: 2,
   location: { x: 103.77, y: 1.3 },
+  buildingId: 'com1',
 }
+
+const buildings = buildBuildingIndex([
+  { id: 'com1', name: 'Computing 1', aliases: [], elementId: 'way/com1', location: { x: 103.77, y: 1.3 }, roomCodePrefixes: ['COM1'], sourceRefs: [] },
+  { id: 'as7', name: 'The Shaw Foundation Building', aliases: [], elementId: 'way/as7', location: { x: 103.77, y: 1.3 }, roomCodePrefixes: ['AS7'], sourceRefs: [] },
+])
 
 function createNearbyTransitIndex() {
   const network: TransitNetworkInput = createValidTransitNetwork()
@@ -48,7 +56,7 @@ function createNearbyTransitIndex() {
   return createTransitIndex(network)
 }
 
-function createVenueDetailState(code: string, selectedVenue: VenueLocation) {
+function createVenueDetailState(code: string, selectedVenue: Venue) {
   return exploreReducer(createInitialExploreState(), {
     type: 'select-venue',
     result: { code, venue: selectedVenue },
@@ -63,8 +71,8 @@ function renderVenueDetails({
   mobileSheet = true,
 }: {
   code?: string
-  selectedVenue?: VenueLocation
-  venues?: VenueLocationMap
+  selectedVenue?: Venue
+  venues?: VenueMap
   transitIndex?: ReturnType<typeof createNearbyTransitIndex> | null
   mobileSheet?: boolean
 } = {}): string {
@@ -72,6 +80,7 @@ function renderVenueDetails({
     <ExploreContent
       state={createVenueDetailState(code, selectedVenue)}
       venues={venues}
+      buildings={buildings}
       transitIndex={transitIndex}
       onRouteSelect={() => undefined}
       mobileSheet={mobileSheet}
@@ -92,7 +101,7 @@ describe('ExploreContent venue details', () => {
 
     expect(markup).toContain('Nearby bus stops within 250 m')
     expect(markup).toContain('<h3 id="explore-venue-detail-heading"')
-    expect(markup).toContain('aria-label="COM1-0212, venue"')
+    expect(markup).toContain('aria-label="COM1-0212, room"')
     expect(markup).toContain('location-identity-icon--venue')
     expect(markup).toMatch(/<h2 id="explore-content-heading"[^>]*class="visually-hidden">Venue details<\/h2>/)
     expect(markup).toContain('>COM1-0212</h3>')
@@ -126,7 +135,7 @@ describe('ExploreContent venue details', () => {
   })
 
   it('omits nearby stops and disables navigation for a venue without coordinates', () => {
-    const unlocatedVenue: VenueLocation = { roomName: 'Tutorial Room' }
+    const unlocatedVenue: Venue = { kind: 'room', roomName: 'Tutorial Room', buildingId: 'as7' }
     const markup = renderVenueDetails({
       code: 'AS7-0214',
       selectedVenue: unlocatedVenue,
@@ -140,7 +149,8 @@ describe('ExploreContent venue details', () => {
   })
 
   it('omits the floor and building line when neither is confirmed', () => {
-    const unknownVenue: VenueLocation = {
+    const unknownVenue: Venue = {
+      kind: 'room',
       roomName: 'Unknown room',
       floor: null,
       location: { x: 103.77, y: 1.3 },
@@ -164,17 +174,17 @@ describe('ExploreContent venue details', () => {
     expect(markup).toMatch(/<img src="[^"]*nusmods-logo\.svg" alt="NUSMods"\/>/)
   })
 
-  it('shows an eatery as a named destination with navigation and no room or NUSMods details', () => {
-    const eatery: VenueLocation = {
-      roomName: 'YIH (Central Square)',
-      displayName: 'YIH (Central Square)',
-      category: 'canteen',
+  it('shows Food as a named destination with navigation and no room or NUSMods details', () => {
+    const food: Venue = {
+      kind: 'food',
+      name: 'YIH (Central Square)',
+      foodType: 'canteen',
       location: { x: 103.77477, y: 1.2985 },
     }
-    const markup = renderVenueDetails({ code: 'yih-central-square', selectedVenue: eatery })
+    const markup = renderVenueDetails({ code: 'yih-central-square', selectedVenue: food })
 
     expect(markup).toContain('aria-label="YIH (Central Square), Canteen"')
-    expect(markup).toContain('location-identity-icon--eatery')
+    expect(markup).toContain('location-identity-icon--food')
     expect(markup).toContain('>YIH (Central Square)</h3>')
     expect(markup).toContain('<p class="venue-detail-name">Canteen</p>')
     expect(markup).toContain('<span>Navigate</span>')

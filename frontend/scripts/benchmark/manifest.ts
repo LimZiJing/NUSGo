@@ -17,7 +17,7 @@ export type PathfindingBenchmarkScenario =
   | 'post-service'
 
 export interface PathfindingBenchmarkEndpoint {
-  readonly kind: 'venue' | 'stop'
+  readonly kind: 'venue' | 'building' | 'stop'
   readonly id: string
 }
 
@@ -105,8 +105,8 @@ function requireNonNegativeInteger(value: unknown, label: string): number {
 }
 
 function validateEndpoint(value: unknown, label: string): PathfindingBenchmarkEndpoint {
-  if (!isRecord(value) || (value.kind !== 'venue' && value.kind !== 'stop')) {
-    throw new Error(`${label} must reference a venue or stop`)
+  if (!isRecord(value) || (value.kind !== 'venue' && value.kind !== 'building' && value.kind !== 'stop')) {
+    throw new Error(`${label} must reference a venue, building or stop`)
   }
   return {
     kind: value.kind,

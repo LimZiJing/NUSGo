@@ -20,12 +20,24 @@ import type { TripRequest } from '../../../domain/trip/types'
 import type { PersonalWaypoint } from '../../../domain/waypoints/personal/personal-waypoint'
 import type { TransitStopInput } from '@nusgo/shared/transit/types'
 import type { Path, ScoredPathCandidate } from '@nusgo/shared/routing/path'
-import type { VenueLocationMap } from '@nusgo/shared/venue/types'
+import type { VenueMap } from '@nusgo/shared/venue/types'
 
-const venues: VenueLocationMap = {
+const venues: VenueMap = {
   'COM1-0210': {
+    kind: 'room',
     roomName: 'Computing 1, Level 2',
     location: { x: 103.77, y: 1.3 },
+  },
+  'TERRACE-LOBBY': {
+    kind: 'room',
+    roomName: 'The Terrace Lobby',
+    location: { x: 103.77458, y: 1.29458 },
+  },
+  'the-terrace-canteen': {
+    kind: 'food',
+    name: 'The Terrace',
+    foodType: 'canteen',
+    location: { x: 103.77458, y: 1.29458 },
   },
 }
 
@@ -144,6 +156,14 @@ describe('PlanLocationSearch results', () => {
     expect(renderSearch({ searchQuery: 'COM1' })).toContain('Origin search results')
   })
 
+  it('keeps Food separate from Rooms in Plan search and uses its name, detail, and icon', () => {
+    const markup = renderSearch({ searchQuery: 'terrace' })
+    expect(markup).toContain('>Rooms<')
+    expect(markup).toContain('>Food<')
+    expect(markup).toContain('aria-label="Set origin to The Terrace, canteen"')
+    expect(markup).toContain('lucide-cooking-pot')
+  })
+
   it('does not repeat a stop code when the short name matches the ID', () => {
     const codeNetwork = createValidTransitNetwork()
     codeNetwork.stops = [{ ...stops[0], shortName: 'stop-a' }, codeNetwork.stops[1]]
@@ -175,6 +195,7 @@ describe('PlanLocationSearch results', () => {
   it('shows the suggestions before anything is typed', () => {
     const markup = renderSearch({
       suggestions: [{
+        kind: 'stop',
         endpoint: { kind: 'stop', id: 'STOP-A' },
         label: 'Central Library',
         detail: '',
@@ -397,7 +418,7 @@ describe('PlanContent location search', () => {
     await user.click(screen.getByRole('button', { name: 'Choose origin' }))
     await user.type(screen.getByRole('searchbox', { name: 'Origin' }), 'COM1')
     const results = screen.getByRole('group', { name: 'Origin search results' })
-    await user.click(within(results).getByRole('button', { name: 'Set origin to COM1-0210, venue' }))
+    await user.click(within(results).getByRole('button', { name: 'Set origin to COM1-0210, room' }))
 
     expect(screen.queryByRole('searchbox')).toBeNull()
     expect(onSearchResult).toHaveBeenCalledOnce()
@@ -462,6 +483,28 @@ describe('PlanContent location search', () => {
     await user.click(screen.getByRole('button', { name: 'Buildings' }))
     expect(screen.getByRole('button', { name: 'Set destination to Central Library, building' })).toBeTruthy()
     expect(screen.queryByRole('button', { name: /bus stop/ })).toBeNull()
+  })
+
+  it('keeps the Rooms and Food filters separate and selects Food by its public name', async () => {
+    const user = userEvent.setup()
+    render(<TripHarness />)
+
+    await user.click(screen.getByRole('button', { name: 'Choose destination' }))
+    await user.type(screen.getByRole('searchbox', { name: 'Destination' }), 'terrace')
+    expect(screen.getByRole('button', { name: 'Set destination to The Terrace, canteen' })).toBeTruthy()
+    expect(screen.getByRole('button', { name: 'Set destination to TERRACE-LOBBY, room' })).toBeTruthy()
+
+    await user.click(screen.getByRole('button', { name: 'Rooms' }))
+    expect(screen.queryByRole('button', { name: 'Set destination to The Terrace, canteen' })).toBeNull()
+    expect(screen.getByRole('button', { name: 'Set destination to TERRACE-LOBBY, room' })).toBeTruthy()
+
+    await user.click(screen.getByRole('button', { name: 'Food' }))
+    const foodResult = screen.getByRole('button', { name: 'Set destination to The Terrace, canteen' })
+    expect(foodResult.querySelector('.location-identity-icon--food')).not.toBeNull()
+    expect(screen.queryByRole('button', { name: 'Set destination to TERRACE-LOBBY, room' })).toBeNull()
+    await user.click(foodResult)
+    expect(screen.getByRole('button', { name: 'Destination: The Terrace. Change destination' })).toBeTruthy()
+    expect(screen.getByRole('button', { name: 'Destination: The Terrace. Change destination' }).querySelector('.location-identity-icon--food')).not.toBeNull()
   })
 
   it('clears the typed search with its inline X control', async () => {
@@ -541,7 +584,7 @@ describe('PlanContent location search', () => {
 
     await user.click(screen.getByRole('button', { name: 'Choose origin' }))
     await user.type(screen.getByRole('searchbox', { name: 'Origin' }), 'COM1')
-    await user.click(screen.getByRole('button', { name: 'Set origin to COM1-0210, venue' }))
+    await user.click(screen.getByRole('button', { name: 'Set origin to COM1-0210, room' }))
     await user.click(screen.getByRole('button', { name: 'Choose destination' }))
     await user.type(screen.getByRole('searchbox', { name: 'Destination' }), 'STOP-A')
     await user.click(screen.getByRole('button', { name: 'Set destination to Central Library, bus stop, STOP-A' }))

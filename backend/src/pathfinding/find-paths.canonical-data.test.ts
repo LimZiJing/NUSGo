@@ -4,7 +4,12 @@ import { createTransitNetworkIndex } from '@nusgo/shared/transit/index'
 import { validateTransitNetwork } from '@nusgo/shared/transit/model'
 import { generateShuttleTimingData } from '@nusgo/shared/transit/timing'
 import { validateBusRouteGeometry } from '@nusgo/shared/transit/geometry'
-import { validateVenueLocationMap } from '@nusgo/shared/venue/validation'
+import {
+  composeVenueData,
+  validateBuildingCatalogue,
+  validateFoodLocationMap,
+  validateVenueSourceMap,
+} from '@nusgo/shared/venue/validation'
 import { createFindPathsService } from './find-paths.ts'
 import type { TestTransitData } from './find-paths.test-support.ts'
 import { validateWalkingStopGraph } from '@nusgo/shared/routing/walking-stop-graph'
@@ -51,7 +56,11 @@ function createWalkingConnections(
 describe('canonical-data path planning regression', () => {
   it('returns a valid Path for PGP to UTown Auditorium 2 within the search budget', { timeout: 5_000 }, async () => {
     const transit = createTransitData()
-    const venues = validateVenueLocationMap(readJson('../../../frontend/public/data/venues.json'))
+    const venues = composeVenueData(
+      validateVenueSourceMap(readJson('../../../frontend/public/data/venues.json')),
+      validateFoodLocationMap(readJson('../../../frontend/public/data/food.json')),
+      validateBuildingCatalogue(readJson('../../../frontend/public/data/buildings.json')),
+    ).venues
     const walkingConnections = createWalkingConnections()
     const routeEngine = {
       matrixWalking: async () => [],
@@ -98,7 +107,11 @@ describe('canonical-data path planning regression', () => {
 
   it('walks from a selected stop to its opposite stop to board D2 for COM3', { timeout: 5_000 }, async () => {
     const transit = createTransitData()
-    const venues = validateVenueLocationMap(readJson('../../../frontend/public/data/venues.json'))
+    const venues = composeVenueData(
+      validateVenueSourceMap(readJson('../../../frontend/public/data/venues.json')),
+      validateFoodLocationMap(readJson('../../../frontend/public/data/food.json')),
+      validateBuildingCatalogue(readJson('../../../frontend/public/data/buildings.json')),
+    ).venues
     const walkingConnections = createWalkingConnections()
     const service = createFindPathsService({
       routeEngine: {
@@ -146,7 +159,11 @@ describe('canonical-data path planning regression', () => {
 
   it('hides detour bus Paths between PGP stops that are a short walk apart', { timeout: 5_000 }, async () => {
     const transit = createTransitData()
-    const venues = validateVenueLocationMap(readJson('../../../frontend/public/data/venues.json'))
+    const venues = composeVenueData(
+      validateVenueSourceMap(readJson('../../../frontend/public/data/venues.json')),
+      validateFoodLocationMap(readJson('../../../frontend/public/data/food.json')),
+      validateBuildingCatalogue(readJson('../../../frontend/public/data/buildings.json')),
+    ).venues
     const walkingConnections = createWalkingConnections()
     const service = createFindPathsService({
       routeEngine: { matrixWalking: async () => [], routeWalking: async ({ origin, destination }) => ({

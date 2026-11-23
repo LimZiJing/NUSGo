@@ -32,7 +32,7 @@ function createContext(overrides: Partial<ResetTargetContext> = {}): ResetTarget
     selectedRouteId: null,
     tripRequest: { origin: null, destination: null },
     venues: {
-      COM1: { roomName: 'Computing 1', location: { x: 103.7, y: 1.3 } },
+      COM1: { kind: 'room', roomName: 'Computing 1', location: { x: 103.7, y: 1.3 } },
     },
     transitIndex: createTransitIndex(network),
     ...overrides,
@@ -42,6 +42,7 @@ function createContext(overrides: Partial<ResetTargetContext> = {}): ResetTarget
 const venueResult: VenueSearchResult = {
   code: 'COM1',
   venue: {
+    kind: 'room',
     roomName: 'Computing 1',
     location: { x: 103.7, y: 1.3 },
   },

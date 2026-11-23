@@ -81,7 +81,7 @@ With provider credentials unset, Express can still serve the app and calculate w
 Express reads the following files from `NUSGO_DATA_DIR`:
 
 - `venues.json`
-- `eateries.json`
+- `food.json`
 - `buildings.json`
 - `shuttle-network.json`
 - `shuttle-routes.geojson`

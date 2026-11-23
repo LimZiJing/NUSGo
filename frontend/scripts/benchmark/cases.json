@@ -374,12 +374,12 @@
     },
     {
       "id": "venue-lt17-uhall",
-      "label": "LT17 venue to UHALL stop",
+      "label": "LT17 building to UHALL stop",
       "group": "normal",
       "scenario": "route-pair",
       "origin": {
-        "kind": "venue",
-        "id": "LT17"
+        "kind": "building",
+        "id": "lt-17"
       },
       "destination": {
         "kind": "stop",
@@ -392,7 +392,7 @@
     },
     {
       "id": "venue-ea-lt3",
-      "label": "Engineering venue to LT3 venue",
+      "label": "Engineering venue to LT3 building",
       "group": "normal",
       "scenario": "route-pair",
       "origin": {
@@ -400,8 +400,8 @@
         "id": "EA-06-04"
       },
       "destination": {
-        "kind": "venue",
-        "id": "LT3"
+        "kind": "building",
+        "id": "lt-3"
       },
       "timingProfile": "fresh-30",
       "expected": {
@@ -449,7 +449,7 @@
     },
     {
       "id": "venue-as7-lt3",
-      "label": "AS7 venue to LT3 venue",
+      "label": "AS7 venue to LT3 building",
       "group": "normal",
       "scenario": "route-pair",
       "origin": {
@@ -457,8 +457,8 @@
         "id": "AS7-0214"
       },
       "destination": {
-        "kind": "venue",
-        "id": "LT3"
+        "kind": "building",
+        "id": "lt-3"
       },
       "timingProfile": "fresh-30",
       "expected": {
@@ -467,7 +467,7 @@
     },
     {
       "id": "stop-kv-venue-lt17",
-      "label": "KV stop to LT17 venue",
+      "label": "KV stop to LT17 building",
       "group": "normal",
       "scenario": "route-pair",
       "origin": {
@@ -475,8 +475,8 @@
         "id": "KV"
       },
       "destination": {
-        "kind": "venue",
-        "id": "LT17"
+        "kind": "building",
+        "id": "lt-17"
       },
       "timingProfile": "fresh-30",
       "expected": {
@@ -485,7 +485,7 @@
     },
     {
       "id": "venue-biz2-lt17",
-      "label": "BIZ2 venue to LT17 venue",
+      "label": "BIZ2 venue to LT17 building",
       "group": "normal",
       "scenario": "route-pair",
       "origin": {
@@ -493,8 +493,8 @@
         "id": "BIZ2-0111"
       },
       "destination": {
-        "kind": "venue",
-        "id": "LT17"
+        "kind": "building",
+        "id": "lt-17"
       },
       "timingProfile": "fresh-30",
       "expected": {

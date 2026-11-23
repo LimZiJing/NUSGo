@@ -15,7 +15,7 @@ Run it against a local production build (`npm run build` followed by `npm run pr
 
 - [ ] The map, trip endpoint controls, and Explore panel are visible without overlap.
 - [ ] Venue search, venue detail, Back, Close, Escape, and map-click behavior work.
-- [ ] Find venue can browse Canteen, Restaurant, and Drinks & snacks with an empty query, search within a selected category, and return to All places. Selecting Frontier shows the Frontier canteen as its own destination, while the Frontier building remains separately selectable; Navigate targets the canteen coordinates.
+- [ ] Find venue searches Food by name and stable ID without a FoodType filter. Selecting Frontier shows the Frontier canteen as its own Food destination, while the Frontier building remains separately selectable; Navigate targets the canteen coordinates.
 - [ ] Selecting a venue flies to it and shows one selected venue marker without a duplicate popup.
 - [ ] In Explore → Community, confirm each category row shows its count and visibility switch. All categories start hidden; each switch changes map visibility and is persisted immediately, with no Save action. Confirm one Suggest a waypoint button sits below the list, that the list scrolls without pushing that button out of view, and that no visible Community Waypoints or Categories heading appears. Category rows remain available with no approved data, while individual points appear only as map markers. Selecting a marker opens matching details with a last-reviewed date and no Source row; Back restores focus to the marker. Community Waypoints remain unavailable as Journey endpoints.
 - [ ] From approved-place details, open Suggest a correction. Confirm the place is identified and prefilled, the reason is required, and Back/Done returns to details with focus on Suggest a correction.
@@ -44,7 +44,7 @@ Run it against a local production build (`npm run build` followed by `npm run pr
 - [ ] In More → Suggest a waypoint at a phone width, use Tab to focus Other floor number and the action buttons; confirm focus stays visible and the number input outline follows the rounded control.
 - [ ] Explore venue search/details and bus route browsing, map-based stop selection, Plan endpoints and Journey, Back, Close, Escape, and map-click behavior continue to work.
 - [ ] In Explore → Community, filters remain usable with the mobile sheet, selecting a list row or marker opens its details, and Back restores focus to the opening control. Confirm the marker action does not alter Plan endpoints.
-- [ ] On mobile, browse each eatery category, search within it, select an eatery, return with Back, and navigate to it; verify the category list scrolls without clipping.
+- [ ] On mobile, search for The Terrace by name and stable ID in Explore, open its Food details, and navigate to it. In Plan, confirm it appears under Food with Canteen detail and the Food icon, while Rooms excludes it. Check Back and keyboard navigation.
 - [ ] In Plan, endpoint controls stay compact at the phone width with controls at least 36px high, validation on the left, and the action group on the right. Check both light and dark themes.
 - [ ] Sheets are non-modal, scroll independently, respect safe-area and software-keyboard insets, and expose accessible names, expanded states, visible focus, and touch-sized controls.
 - [ ] Back, Escape, sheet collapse, and tab changes leave focus on a usable control without trapping it in an inactive sheet.

@@ -1068,7 +1068,7 @@ describe('More surface', () => {
     trigger.remove()
   })
 
-  it('returns focus to More when deleting a waypoint opened from the map', async () => {
+  it('returns to the saved list when deleting a waypoint opened from the map', async () => {
     const waypoint = {
       id: '00000000-0000-4000-8000-000000000003',
       name: 'Quiet bench',
@@ -1093,8 +1093,52 @@ describe('More surface', () => {
     const confirm = vi.spyOn(window, 'confirm').mockReturnValue(true)
     await user.click(screen.getByRole('button', { name: 'Delete waypoint' }))
 
-    expect(document.querySelector('.more-panel-surface')?.getAttribute('data-page')).toBe('settings')
-    expect(document.activeElement).toBe(screen.getByRole('button', { name: 'Back to previous view' }))
+    // #572 asks for a valid list context after deleting the selected detail, whatever page
+    // the detail was opened from — including a map marker tapped while Settings was open.
+    expect(document.querySelector('.more-panel-surface')?.getAttribute('data-page')).toBe('waypoints')
+    expect(confirm).toHaveBeenCalledWith('Delete "Quiet bench"? This cannot be undone.')
+    confirm.mockRestore()
+  })
+
+  it('returns to the saved list when deleting a waypoint opened from a marker with More closed', async () => {
+    const quietBench = {
+      id: '00000000-0000-4000-8000-000000000021',
+      name: 'Quiet bench',
+      category: 'Rest spot',
+      coordinate: { longitude: 103.78, latitude: 1.29 },
+      createdAt: '2026-10-26T00:00:00.000Z',
+      updatedAt: '2026-10-26T00:00:00.000Z',
+    }
+    const teaRoom = {
+      id: '00000000-0000-4000-8000-000000000022',
+      name: 'Tea room',
+      category: 'Rest spot',
+      coordinate: { longitude: 103.79, latitude: 1.3 },
+      createdAt: '2026-10-26T00:00:00.000Z',
+      updatedAt: '2026-10-26T00:00:00.000Z',
+    }
+    localStorage.setItem('navus:personal-waypoints:v1', JSON.stringify({
+      version: 1,
+      waypoints: [quietBench, teaRoom],
+    }))
+    const user = userEvent.setup()
+    render(<App />)
+
+    // More is never opened, so the detail records 'closed' as its return page.
+    const marker = document.createElement('button')
+    document.body.append(marker)
+    const onSelectWaypoint = appHarness.commands.setPersonalWaypoints.mock.calls.at(-1)?.[2]
+    act(() => onSelectWaypoint?.(quietBench.id, marker))
+    expect(document.querySelector('.more-panel-surface')?.getAttribute('data-page')).toBe('waypoint-details')
+
+    marker.remove()
+    const confirm = vi.spyOn(window, 'confirm').mockReturnValue(true)
+    await user.click(screen.getByRole('button', { name: 'Delete waypoint' }))
+
+    // The detail must not restore a closed panel or focus the More button; it lands on the list.
+    expect(document.querySelector('.more-panel-surface')?.getAttribute('data-page')).toBe('waypoints')
+    expect(screen.queryByText('Quiet bench')).toBeNull()
+    expect(document.activeElement).toBe(screen.getByRole('button', { name: 'Show Tea room, Rest spot on map' }))
     confirm.mockRestore()
   })
 

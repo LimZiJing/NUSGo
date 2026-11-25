@@ -291,14 +291,16 @@ function App() {
   const focusPersonalWaypoint = useCallback((waypoint: PersonalWaypoint): void => {
     commands.focusPersonalWaypoint(waypoint)
   }, [commands])
-  const returnFromWaypointDetails = useCallback((focusTarget?: HTMLElement | null): void => {
+  // `returnPage` overrides the recorded origin. Confirming a deletion must land on the list
+  // even when the detail was opened from a map marker while More was closed (#572).
+  const returnFromWaypointDetails = useCallback((focusTarget?: HTMLElement | null, returnPage?: MorePanelPage): void => {
     const returnTarget = personalWaypointDetails?.returnTarget
     // Restore the originating control after the details page has closed.
     pendingWaypointReturnFocusRef.current = focusTarget === undefined
       ? returnTarget?.focusTarget ?? null
       : focusTarget
     setPersonalWaypointDetails(null)
-    setMorePage(returnTarget?.page ?? 'waypoints')
+    setMorePage(returnPage ?? returnTarget?.page ?? 'waypoints')
     setMoreSheetDetent(returnTarget?.detent ?? 'full')
   }, [personalWaypointDetails])
   const openPersonalWaypointDetails = useCallback((
@@ -819,13 +821,13 @@ function App() {
     const returnTarget = personalWaypointDetails?.returnTarget
     if (!removePersonalWaypoint(selectedPersonalWaypointId)) return
     // The deleted detail has no row left, so the restored list takes focus on a surviving record.
-    pendingWaypointRowFocusRef.current = returnTarget?.page === 'waypoints'
+    // A detail opened from a map marker while More was closed also lands on the list: #572 asks
+    // for a valid list context after deletion, whatever page the detail was opened from.
+    pendingWaypointRowFocusRef.current = true
     const focusTarget = returnTarget?.page === 'waypoints' && activePersonalWaypointCategory === null
       ? personalWaypointsInitialFocusRef.current
-      : returnTarget?.page === 'closed'
-        ? moreEntryButtonRef.current
-        : moreInitialFocusRef.current
-    returnFromWaypointDetails(focusTarget)
+      : moreInitialFocusRef.current
+    returnFromWaypointDetails(focusTarget, 'waypoints')
   }
   const goBackInMore = useCallback((): void => {
     if (morePage === 'placing') {

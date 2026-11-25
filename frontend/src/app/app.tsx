@@ -149,6 +149,7 @@ function App() {
   const selectedPersonalWaypointId = personalWaypointDetails?.waypointId ?? null
   const [selectedPersonalWaypointCategory, setSelectedPersonalWaypointCategory] = useState<string | null>(null)
   const pendingWaypointReturnFocusRef = useRef<HTMLElement | null>(null)
+  const pendingWaypointRowFocusRef = useRef(false)
   const [communitySubmissionWaypoint, setCommunitySubmissionWaypoint] = useState<CommunityWaypoint | null>(null)
   const [communitySubmissionCoordinate, setCommunitySubmissionCoordinate] = useState<WaypointCoordinate>(
     DEFAULT_PERSONAL_WAYPOINT_COORDINATE,
@@ -346,14 +347,16 @@ function App() {
   const focusPersonalWaypoint = useCallback((waypoint: PersonalWaypoint): void => {
     commands.focusPersonalWaypoint(waypoint)
   }, [commands])
-  const returnFromWaypointDetails = useCallback((focusTarget?: HTMLElement | null): void => {
+  // `returnPage` overrides the recorded origin. Confirming a deletion must land on the list
+  // even when the detail was opened from a map marker while More was closed (#572).
+  const returnFromWaypointDetails = useCallback((focusTarget?: HTMLElement | null, returnPage?: MorePanelPage): void => {
     const returnTarget = personalWaypointDetails?.returnTarget
     // Restore the originating control after the details page has closed.
     pendingWaypointReturnFocusRef.current = focusTarget === undefined
       ? returnTarget?.focusTarget ?? null
       : focusTarget
     setPersonalWaypointDetails(null)
-    setMorePage(returnTarget?.page ?? 'waypoints')
+    setMorePage(returnPage ?? returnTarget?.page ?? 'waypoints')
     setMoreSheetDetent(returnTarget?.detent ?? 'full')
   }, [personalWaypointDetails])
   const openPersonalWaypointDetails = useCallback((
@@ -1017,15 +1020,17 @@ function App() {
     const waypoint = personalWaypoints.readResult.kind === 'ready'
       ? personalWaypoints.readResult.waypoints.find(({ id }) => id === selectedPersonalWaypointId)
       : undefined
-    if (!waypoint || !window.confirm(`Delete "${waypoint.name}"? This cannot be undone.`)) return
+    if (!waypoint) return
     const returnTarget = personalWaypointDetails?.returnTarget
     if (!removePersonalWaypoint(selectedPersonalWaypointId)) return
+    // The deleted detail has no row left, so the restored list takes focus on a surviving record.
+    // A detail opened from a map marker while More was closed also lands on the list: #572 asks
+    // for a valid list context after deletion, whatever page the detail was opened from.
+    pendingWaypointRowFocusRef.current = true
     const focusTarget = returnTarget?.page === 'waypoints' && activePersonalWaypointCategory === null
       ? personalWaypointsInitialFocusRef.current
-      : returnTarget?.page === 'closed'
-        ? moreEntryButtonRef.current
-        : moreInitialFocusRef.current
-    returnFromWaypointDetails(focusTarget)
+      : moreInitialFocusRef.current
+    returnFromWaypointDetails(focusTarget, 'waypoints')
   }
   const goBackInMore = useCallback((): void => {
     if (morePage === 'community-placing') {
@@ -1159,10 +1164,25 @@ function App() {
 
   useLayoutEffect(() => {
     const pendingReturnFocus = pendingWaypointReturnFocusRef.current
-    if (pendingReturnFocus) {
+    const pendingRowFocus = pendingWaypointRowFocusRef.current
+    if (pendingReturnFocus || pendingRowFocus) {
       pendingWaypointReturnFocusRef.current = null
+      pendingWaypointRowFocusRef.current = false
+      if (pendingRowFocus && isMoreOpen && morePage === 'waypoints') {
+        // Returning from a deleted detail: the deleted row is gone, so prefer a surviving row.
+        // The sheet is portalled to the map shell on mobile, so search from the shell.
+        const survivingTarget = mapShellRef.current?.querySelector<HTMLElement>(
+          '.personal-waypoint-list-rows .saved-list-row-select, .personal-waypoint-empty',
+        )
+        if (survivingTarget) {
+          survivingTarget.focus()
+          moreWasOpenRef.current = isMoreOpen
+          skipMoreFocusRestoreRef.current = false
+          return
+        }
+      }
       // Removing a waypoint can detach its row; fall back to a control in the restored view.
-      if (pendingReturnFocus.isConnected) pendingReturnFocus.focus()
+      if (pendingReturnFocus?.isConnected) pendingReturnFocus.focus()
       else if (isMoreOpen && morePage === 'waypoints' && activePersonalWaypointCategory !== null) {
         personalWaypointCategoryBackRef.current?.focus()
       } else if (isMoreOpen && morePage === 'waypoints') personalWaypointsInitialFocusRef.current?.focus()

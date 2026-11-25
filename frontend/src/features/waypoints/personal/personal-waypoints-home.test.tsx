@@ -72,7 +72,10 @@ function StatefulPersonalWaypointsHome() {
   )
 }
 
-afterEach(cleanup)
+afterEach(() => {
+  cleanup()
+  vi.unstubAllGlobals()
+})
 
 describe('PersonalWaypointsHome', () => {
   it('keeps the panel concise and announces edit mode without visible instructions', async () => {
@@ -220,6 +223,7 @@ describe('PersonalWaypointsHome', () => {
 
   it('restores focus to the page empty state when the last waypoint is removed', async () => {
     const user = userEvent.setup()
+    vi.stubGlobal('confirm', vi.fn().mockReturnValue(true))
     render(<StatefulPersonalWaypointsHome />)
 
     await user.click(screen.getByRole('button', { name: 'Remove Quiet bench, Rest spot' }))

@@ -18,11 +18,15 @@ const waypoint: PersonalWaypoint = {
   updatedAt: '2026-10-26T00:00:00.000Z',
 }
 
-afterEach(cleanup)
+afterEach(() => {
+  cleanup()
+  vi.unstubAllGlobals()
+})
 
 describe('PersonalWaypointDetails', () => {
   it('shows waypoint details and offers Directions before quiet edit and delete actions', async () => {
     const user = userEvent.setup()
+    vi.stubGlobal('confirm', vi.fn().mockReturnValue(true))
     const onDirections = vi.fn()
     const onEdit = vi.fn()
     const onDelete = vi.fn()
@@ -57,6 +61,29 @@ describe('PersonalWaypointDetails', () => {
 
     await user.click(remove)
     expect(onDelete).toHaveBeenCalledOnce()
+  })
+
+  it('names the waypoint in the delete prompt and keeps it when cancelled', async () => {
+    const user = userEvent.setup()
+    const onDelete = vi.fn()
+    const confirm = vi.fn().mockReturnValue(false)
+    vi.stubGlobal('confirm', confirm)
+    render(<PersonalWaypointDetails
+      waypoint={waypoint}
+      canManage
+      onDirections={() => undefined}
+      onEdit={() => undefined}
+      onDelete={onDelete}
+    />)
+
+    const remove = screen.getByRole('button', { name: 'Delete waypoint' })
+    remove.focus()
+    await user.click(remove)
+
+    expect(confirm).toHaveBeenCalledWith('Delete "Quiet bench"? This cannot be undone.')
+    expect(onDelete).not.toHaveBeenCalled()
+    expect(screen.getByRole('heading', { name: 'Quiet bench' })).toBeTruthy()
+    expect(document.activeElement).toBe(remove)
   })
 
   it('explains when the selected waypoint is no longer available', () => {

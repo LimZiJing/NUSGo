@@ -40,6 +40,7 @@ export function MorePanelSurface({
   children,
 }: MorePanelSurfaceProps) {
   const isMenu = page === 'menu'
+  const hasStatus = Boolean(statusMessage)
   const contentScrollRef = useRef<HTMLDivElement>(null)
 
   useLayoutEffect(() => {
@@ -48,12 +49,16 @@ export function MorePanelSurface({
 
   return (
     <div className={`more-panel-body${isMenu ? ' more-panel-body-menu' : ''}`}>
-      {statusMessage && <p
-        key={statusRevision}
+      {/* Keep the live region mounted so a message inserted later is announced; screen readers
+          ignore a role=status that only appears together with its text. */}
+      <p
         className="more-panel-status"
         role="status"
         aria-live="polite"
-      >{statusMessage}</p>}
+        data-empty={hasStatus ? 'false' : 'true'}
+      >
+        {statusMessage && <span key={statusRevision}>{statusMessage}</span>}
+      </p>
       <header className="more-panel-header">
         <BackButton
           mode="header"

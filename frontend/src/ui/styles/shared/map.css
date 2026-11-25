@@ -87,7 +87,7 @@
   pointer-events: none;
 }
 
-@media (min-width: 769px) {
+@media (width > 768px), (width > 640px) and (height <= 420px) {
   .map-control-stack {
     right: auto;
     left: 12px;
@@ -137,6 +137,12 @@
   background: var(--map-marker-neutral);
 }
 
+.community-waypoint-legend-marker {
+  border-radius: var(--radius-sm);
+  background: var(--accent);
+  transform: rotate(45deg);
+}
+
 .bus-marker {
   background: var(--map-marker-neutral);
 }
@@ -147,8 +153,9 @@
   pointer-events: auto;
 }
 
-/* Single source of the glass look for square buttons floating over the map. */
+/* One shared Astryx button treatment for square controls floating over the map. */
 .map-overlay-button {
+  position: relative;
   display: grid;
   width: var(--control-height-lg);
   height: var(--control-height-lg);
@@ -167,27 +174,12 @@
   cursor: pointer;
 }
 
-/* Keep the shared IconButton inside the map's established glass overlay treatment. */
-.button.icon-button.map-overlay-button {
-  display: grid;
-  font: var(--font-size-md)/1.2 var(--sans);
-  width: var(--control-height-lg);
-  height: var(--control-height-lg);
-  flex: 0 0 var(--control-height-lg);
-  place-items: center;
-  padding: 0;
-  border: 1px solid var(--border-control);
-  border-radius: var(--radius-panel);
-  color: var(--text-primary);
-  background: var(--surface-overlay);
-}
-
-.button.icon-button.map-overlay-button > svg {
+.map-overlay-button svg {
   width: 20px;
   height: 20px;
 }
 
-.button.icon-button.map-overlay-button:focus-visible {
+.map-overlay-button:focus-visible {
   outline: 3px solid var(--focus-ring-strong);
   outline-offset: 2px;
 }
@@ -489,8 +481,6 @@
   opacity: 0.65;
 }
 
-.button.icon-button.map-overlay-button[aria-pressed='true'],
-.button.icon-button.map-overlay-button[aria-expanded='true'],
 .map-overlay-button[aria-pressed='true'],
 .map-overlay-button[aria-expanded='true'] {
   border-color: var(--control-border);

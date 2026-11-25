@@ -89,10 +89,16 @@ export function useStopsArrivals<TSnapshot = ShuttleArrivalSnapshot>(
     let refreshTimer: ReturnType<typeof setTimeout> | null = null
     let stopSetTimer: ReturnType<typeof setTimeout> | null = null
     let controller: AbortController | null = null
+    let loading = false
+    let loadingStartedFromForeground = false
+    let refreshAfterCurrentLoad = false
 
-    const load = async (): Promise<void> => {
-      controller?.abort()
+    const load = async (foregroundRefresh = false): Promise<void> => {
+      if (disposed || loading) return
+      loading = true
+      loadingStartedFromForeground = foregroundRefresh
       controller = new AbortController()
+      const requestController = controller
       setState((previous) => ({
         stopKey,
         status: previous.stopKey === stopKey && previous.snapshot ? 'refreshing' : 'loading',
@@ -126,23 +132,42 @@ export function useStopsArrivals<TSnapshot = ShuttleArrivalSnapshot>(
           failedPolls: previous.stopKey === stopKey ? previous.failedPolls + 1 : 1,
           receivedAtMs: previous.stopKey === stopKey ? previous.receivedAtMs : null,
         }))
-      }
-
-      if (!disposed) {
-        refreshTimer = setTimeout(() => { void load() }, SHUTTLE_ARRIVAL_REFRESH_INTERVAL_MS)
+      } finally {
+        loading = false
+        loadingStartedFromForeground = false
+        if (controller === requestController) controller = null
+        if (!disposed) {
+          const delayMs = refreshAfterCurrentLoad ? 0 : SHUTTLE_ARRIVAL_REFRESH_INTERVAL_MS
+          refreshAfterCurrentLoad = false
+          refreshTimer = setTimeout(() => {
+            refreshTimer = null
+            void load()
+          }, delayMs)
+        }
       }
     }
 
     const refreshWhenVisible = (): void => {
       if (document.visibilityState !== 'visible') return
+      if (stopSetTimer) {
+        clearTimeout(stopSetTimer)
+        stopSetTimer = null
+      }
+      if (loading) {
+        if (!loadingStartedFromForeground) refreshAfterCurrentLoad = true
+        return
+      }
       if (refreshTimer) clearTimeout(refreshTimer)
       refreshTimer = null
-      void load()
+      void load(true)
     }
 
     const shouldDebounce = previousStopKeyRef.current !== null && previousStopKeyRef.current !== stopKey
     previousStopKeyRef.current = stopKey
     document.addEventListener('visibilitychange', refreshWhenVisible)
+    document.addEventListener('resume', refreshWhenVisible)
+    window.addEventListener('pageshow', refreshWhenVisible)
+    window.addEventListener('focus', refreshWhenVisible)
     if (shouldDebounce) {
       stopSetTimer = setTimeout(() => { void load() }, STOP_SET_DEBOUNCE_MS)
     } else {
@@ -151,6 +176,9 @@ export function useStopsArrivals<TSnapshot = ShuttleArrivalSnapshot>(
     return () => {
       disposed = true
       document.removeEventListener('visibilitychange', refreshWhenVisible)
+      document.removeEventListener('resume', refreshWhenVisible)
+      window.removeEventListener('pageshow', refreshWhenVisible)
+      window.removeEventListener('focus', refreshWhenVisible)
       controller?.abort()
       if (stopSetTimer) clearTimeout(stopSetTimer)
       if (refreshTimer) clearTimeout(refreshTimer)

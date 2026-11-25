@@ -54,11 +54,14 @@ export type {
 export type { ShuttleTimingData, ShuttleTimingMetadata, ShuttleTimingRecord } from './transit/timing.ts'
 export {
   validateVenueLocationMap,
+  validateEateryLocationMap,
+  mergeVenueAndEateryMaps,
   validateBuildingCatalogue,
   getVenueCount,
   VenueValidationError,
 } from './venue/validation.ts'
-export type { VenueLocation, VenueLocationMap } from './venue/types.ts'
+export { EATERY_CATEGORIES } from './venue/types.ts'
+export type { EateryCategory, EateryLocation, EateryLocationMap, GeoLocation, VenueLocation, VenueLocationMap } from './venue/types.ts'
 export type {
   Building,
   BuildingCatalogue,
@@ -97,6 +100,38 @@ export {
 } from './transit/public-bus-arrivals.ts'
 export type { ShuttleServiceWindow } from './transit/service-hours.ts'
 
+export type { Waypoint, WaypointCoordinate } from './waypoints/waypoint.ts'
+export { SINGAPORE_COORDINATE_BOUNDS } from './waypoints/coordinate-bounds.ts'
+export {
+  COMMUNITY_WAYPOINT_CATEGORIES,
+  COMMUNITY_WAYPOINT_PRINTING_SERVICES,
+  COMMUNITY_WAYPOINT_READABLE_CATEGORIES,
+  COMMUNITY_WAYPOINT_SUBMISSION_TEXT_LIMIT,
+  COMMUNITY_WAYPOINT_TEXT_LIMITS,
+  RETIRED_COMMUNITY_WAYPOINT_CATEGORIES,
+  COMMUNITY_WAYPOINT_VENDING_ITEMS,
+  COMMUNITY_WAYPOINT_VENDING_PREP_OPTIONS,
+} from './waypoints/community.ts'
+export type {
+  ActiveCommunityWaypointCategory,
+  CommunityWaypoint,
+  CommunityWaypointCategory,
+  CommunityWaypointDetailsSuggestion,
+  CommunityWaypointId,
+  CommunityWaypointPrintingService,
+  CommunityWaypointVendingItem,
+  CommunityWaypointVendingPrep,
+} from './waypoints/community.ts'
+export type {
+  CommunityWaypointSubmission,
+  CommunityWaypointSubmissionReceipt,
+  ProposedCommunityWaypointFields,
+} from './waypoints/community-submission.ts'
+export {
+  CommunityWaypointGeoJsonValidationError,
+  parseCommunityWaypointsGeoJson,
+} from './waypoints/community-geojson.ts'
+
 export type {
   TripCoordinate,
   TripEndpoint,
@@ -129,3 +164,52 @@ export type {
   ShuttleServiceEvaluation,
   ShuttleServiceStart,
 } from './transit/service-hours-policy.ts'
+
+export {
+  PUSH_NOTIFICATION_TOPICS,
+  PUSH_NOTIFICATION_TITLE_MAX_LENGTH,
+  PUSH_NOTIFICATION_BODY_MAX_LENGTH,
+  buildStopDeepLink,
+  createAlightReminderPayload,
+  buildStopsViewDeepLink,
+  parsePushNotificationPayload,
+} from './push/notifications.ts'
+export type { PushNotificationPayload, PushNotificationTopic } from './push/notifications.ts'
+export {
+  PUSH_REMINDER_TOPIC,
+  PUSH_REMINDER_ID_MAX_LENGTH,
+  PUSH_REMINDER_LEAD_TIME_OPTIONS_SECONDS,
+  DEFAULT_PUSH_REMINDER_LEAD_TIME_SECONDS,
+  isPushReminderLeadTimeSeconds,
+  parsePushReminderRegistration,
+  parsePushReminderRequest,
+  parsePushReminderResponse,
+  parsePushReminderTarget,
+} from './push/reminders.ts'
+export type {
+  PushReminderLeadTimeSeconds,
+  PushReminderRegistration,
+  PushReminderRequest,
+  PushReminderResponse,
+  PushReminderTarget,
+  PushReminderTopic,
+} from './push/reminders.ts'
+export {
+  PUSH_ENDPOINT_MAX_LENGTH,
+  PUSH_KEY_MAX_LENGTH,
+  PUSH_SERVICE_HOSTS,
+  PUSH_SUBSCRIPTION_BODY_MAX_BYTES,
+  isPushNotificationTopic,
+  normalizePushEndpoint,
+  normalizePushKey,
+  normalizePushRemovalEndpoint,
+  parsePushSubscriptionRegistration,
+  parsePushSubscriptionUnsubscribeRequest,
+} from './push/subscriptions.ts'
+export type {
+  PushPublicKeyResponse,
+  PushSubscriptionKeys,
+  PushSubscriptionRegistration,
+  PushSubscriptionResponse,
+  PushSubscriptionUnsubscribeRequest,
+} from './push/subscriptions.ts'

@@ -18,6 +18,7 @@ interface MobileSheetProps {
   readonly active: boolean
   readonly portalContainer: HTMLElement | null
   readonly detent: MobileSheetDetent
+  readonly isDetentLocked?: boolean
   readonly onDetentChange: (detent: MobileSheetDetent) => void
   readonly onButtonRef: (button: HTMLButtonElement | null) => void
   readonly onPanelRef: (panel: HTMLDivElement | null) => void
@@ -37,6 +38,7 @@ export function MobileSheet({
   active,
   portalContainer,
   detent,
+  isDetentLocked = false,
   onDetentChange,
   onButtonRef,
   onPanelRef,
@@ -67,6 +69,9 @@ export function MobileSheet({
     ? createMobileSheetSnapPoints(metrics.viewportHeight, metrics.tabBarInset, metrics.collapsedHeight)
     : INITIAL_SNAP_POINTS,
   [metrics])
+  const fullSnapPoint = getMobileSheetSnapPoint('full', snapPoints)
+  const drawerSnapPoints = isDetentLocked ? [fullSnapPoint] : snapPoints
+  const drawerSnapPoint = isDetentLocked ? fullSnapPoint : getMobileSheetSnapPoint(detent, snapPoints)
 
   const changeDetent = (nextDetent: MobileSheetDetent): void => {
     if (nextDetent === detent) return
@@ -117,17 +122,21 @@ export function MobileSheet({
       open
       modal={false}
       disablePointerDismissal
-      snapPoints={[...snapPoints]}
-      snapPoint={getMobileSheetSnapPoint(detent, snapPoints)}
+      snapPoints={[...drawerSnapPoints]}
+      snapPoint={drawerSnapPoint}
       snapToSequentialPoints
       onOpenChange={(open, eventDetails) => {
         if (open) return
         // This sheet stays mounted at its collapsed snap point, even after a
         // swipe that Base UI would otherwise turn into a drawer dismissal.
         eventDetails.cancel()
-        if (active) changeDetent('collapsed')
+        if (active && !isDetentLocked) changeDetent('collapsed')
       }}
       onSnapPointChange={(snapPoint, eventDetails) => {
+        if (isDetentLocked) {
+          eventDetails.cancel()
+          return
+        }
         if (snapPoint === null) eventDetails.cancel()
         if (!active) return
         const nextDetent = getMobileSheetDetent(snapPoint, snapPoints)
@@ -153,16 +162,18 @@ export function MobileSheet({
               finalFocus={false}
               ref={setPopupRef}
             >
-              <div className="mobile-sheet-handle-row">
-                <MobileSheetHandle
-                  detent={detent}
-                  label={label}
-                  summary={summary}
-                  controlsId={controlsId}
-                  onButtonRef={onButtonRef}
-                  onDetentChange={changeDetent}
-                />
-              </div>
+              {!isDetentLocked && (
+                <div className="mobile-sheet-handle-row">
+                  <MobileSheetHandle
+                    detent={detent}
+                    label={label}
+                    summary={summary}
+                    controlsId={controlsId}
+                    onButtonRef={onButtonRef}
+                    onDetentChange={changeDetent}
+                  />
+                </div>
+              )}
               <Drawer.Content className="mobile-sheet-content">
                 {children}
               </Drawer.Content>

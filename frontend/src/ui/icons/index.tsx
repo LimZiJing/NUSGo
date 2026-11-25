@@ -5,6 +5,9 @@ import {
   ArrowUpRight,
   ArrowLeft,
   Armchair,
+  Bell,
+  CakeSlice,
+  Printer,
   Building2,
   BusFront,
   CircleAlert,
@@ -14,31 +17,45 @@ import {
   CloudOff,
   Compass,
   Coffee,
+  Copy,
+  CookingPot,
   CircleDot,
+  CupSoda,
   DoorOpen,
+  Droplets,
   Download,
   EllipsisVertical,
   ExternalLink,
   FileText,
+  Flame,
   Footprints,
   GripVertical,
   Info,
   ListFilter,
   Map,
   MapPin,
+  MapPinPlus,
   LocateFixed,
+  Microwave,
   Monitor,
   MoreHorizontal,
   Navigation,
   Palette,
+  Package,
+  Plus,
+  Popcorn,
   Moon,
+  Refrigerator,
   RotateCw,
   Route,
   Search,
   Settings,
+  ShoppingBag,
   Star,
   Sun,
+  Toilet,
   TreePine,
+  Utensils,
   X,
 } from 'lucide-react'
 import type { LucideIcon } from 'lucide-react'
@@ -69,6 +86,10 @@ export function ArmchairIcon(props: IconProps) {
   return renderDecorativeIcon(Armchair, props)
 }
 
+export function PrinterIcon(props: IconProps) {
+  return renderDecorativeIcon(Printer, props)
+}
+
 export function BuildingIcon(props: IconProps) {
   return renderDecorativeIcon(Building2, props)
 }
@@ -79,6 +100,10 @@ export function RoomIcon(props: IconProps) {
 
 export function BusIcon(props: IconProps) {
   return renderDecorativeIcon(BusFront, props)
+}
+
+export function BellIcon(props: IconProps) {
+  return renderDecorativeIcon(Bell, props)
 }
 
 export function ChevronDownIcon(props: IconProps) {
@@ -107,6 +132,31 @@ export function CompassIcon(props: IconProps) {
 
 export function CoffeeIcon(props: IconProps) {
   return renderDecorativeIcon(Coffee, props)
+}
+
+export function CupSodaIcon(props: IconProps) {
+  return renderDecorativeIcon(CupSoda, props)
+}
+
+export function CakeSliceIcon(props: IconProps) {
+  return renderDecorativeIcon(CakeSlice, props)
+}
+
+export function DropletsIcon(props: IconProps) {
+  return renderDecorativeIcon(Droplets, props)
+}
+
+export function PackageIcon(props: IconProps) {
+  return renderDecorativeIcon(Package, props)
+}
+
+/** A shopping bag: goods being carried away, distinct from a delivered parcel. */
+export function ShoppingBagIcon(props: IconProps) {
+  return renderDecorativeIcon(ShoppingBag, props)
+}
+
+export function PopcornIcon(props: IconProps) {
+  return renderDecorativeIcon(Popcorn, props)
 }
 
 export function CircleDotIcon(props: IconProps) {
@@ -145,6 +195,11 @@ export function MapPinIcon(props: IconProps) {
   return renderDecorativeIcon(MapPin, props)
 }
 
+/** A pin with a plus beside it: contributing a new location rather than showing one. */
+export function MapPinPlusIcon(props: IconProps) {
+  return renderDecorativeIcon(MapPinPlus, props)
+}
+
 export function MoreHorizontalIcon(props: IconProps) {
   return renderDecorativeIcon(MoreHorizontal, props)
 }
@@ -159,6 +214,9 @@ export function NavigationIcon(props: IconProps) {
 
 export function PaletteIcon(props: IconProps) {
   return renderDecorativeIcon(Palette, props)
+}
+export function PlusIcon(props: IconProps) {
+  return renderDecorativeIcon(Plus, props)
 }
 
 export function RouteIcon(props: IconProps) {
@@ -179,6 +237,38 @@ export function InfoIcon(props: IconProps) {
 
 export function SunIcon(props: IconProps) {
   return renderDecorativeIcon(Sun, props)
+}
+
+export function ToiletIcon(props: IconProps) {
+  return renderDecorativeIcon(Toilet, props)
+}
+
+export function UtensilsIcon(props: IconProps) {
+  return renderDecorativeIcon(Utensils, props)
+}
+
+/** Two overlapping sheets: photocopying, as distinct from printing a fresh document. */
+export function CopyIcon(props: IconProps) {
+  return renderDecorativeIcon(Copy, props)
+}
+
+/** A pot over heat: food cooked to order. */
+export function CookingPotIcon(props: IconProps) {
+  return renderDecorativeIcon(CookingPot, props)
+}
+
+/** An open flame: food served hot rather than pre-packaged. */
+export function FlameIcon(props: IconProps) {
+  return renderDecorativeIcon(Flame, props)
+}
+
+export function MicrowaveIcon(props: IconProps) {
+  return renderDecorativeIcon(Microwave, props)
+}
+
+/** A fridge: chilled or pre-packaged stock. */
+export function RefrigeratorIcon(props: IconProps) {
+  return renderDecorativeIcon(Refrigerator, props)
 }
 
 export function TreePineIcon(props: IconProps) {

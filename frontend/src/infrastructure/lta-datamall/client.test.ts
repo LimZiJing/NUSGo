@@ -89,4 +89,43 @@ describe('createPublicBusArrivalClient', () => {
       { stopId: 'KR-MRT', stopName: 'Kent Ridge MRT' },
     ])
   })
+
+  it('retries after a shared request is aborted while a second caller is waiting', async () => {
+    const firstController = new AbortController()
+    const fetcher = vi.fn<typeof fetch>()
+      .mockImplementationOnce((_input, init) => new Promise<Response>((_resolve, reject) => {
+        init?.signal?.addEventListener('abort', () => {
+          reject(new DOMException('The request was aborted', 'AbortError'))
+        }, { once: true })
+      }))
+      .mockImplementationOnce(async () => new Response(JSON.stringify({
+        source: 'lta-datamall',
+        observedAt: '2026-01-01T05:00:00+08:00',
+        refreshedAt: '2026-01-01T05:00:00+08:00',
+        expiresAt: '2026-01-01T05:01:00+08:00',
+        stops: {
+          'KR-MRT': {
+            observedAt: '2026-01-01T05:00:00+08:00',
+            expiresAt: '2026-01-01T05:01:00+08:00',
+            services: {},
+          },
+        },
+      }), { status: 200 }))
+    const client = createPublicBusArrivalClient({
+      fetcher,
+      now: () => Date.parse('2026-01-01T05:00:10+08:00'),
+    })
+    const stop = [{ stopId: 'KR-MRT', stopName: 'Kent Ridge MRT' }]
+
+    const firstRequest = client.getArrivals(stop, firstController.signal)
+    const firstRejection = expect(firstRequest).rejects.toMatchObject({ name: 'AbortError' })
+    const resumedRequest = client.getArrivals(stop, new AbortController().signal)
+    firstController.abort()
+
+    await firstRejection
+    const result = await resumedRequest
+
+    expect(fetcher).toHaveBeenCalledTimes(2)
+    expect(result.stops['KR-MRT']).toBeDefined()
+  })
 })

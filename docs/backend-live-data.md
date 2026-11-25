@@ -1,6 +1,6 @@
 # Express live transit data
 
-Express owns provider calls and live transit state. HTTP routes and request validation live in `backend/src/http`. `backend/src/live-data/runtime.ts` composes the providers and manages snapshot lifecycle; provider-independent snapshot generations live in `live-data/bus-arrivals/snapshot.ts`. NUS authentication, mappings, bus-arrival parsing, and service-window loading live in `live-data/providers/nus`; LTA mappings, request selection, response parsing, arrivals, and service schedules live in `live-data/providers/lta`. Reusable concurrency, retry, and timeout controls live in `live-data/upstream`. Shared request and response types live in shared source.
+Express owns provider calls and live transit state. HTTP routes and request validation live in `backend/src/http`. `backend/src/live-data/runtime.ts` composes the providers and manages snapshot lifecycle; provider-independent snapshot generations live in `live-data/bus-arrivals/snapshot.ts`. NUS authentication, mappings, bus-arrival parsing, service-window loading, and ticker-tape announcements live in `live-data/providers/nus`; LTA mappings, request selection, response parsing, arrivals, and service schedules live in `live-data/providers/lta`. Reusable concurrency, retry, and timeout controls live in `live-data/upstream`. Shared request and response types live in shared source.
 
 During local development, Vite forwards `/api` requests to Express at `http://127.0.0.1:3001`; the proxy only forwards requests and contains no API handlers. The browser's arrival clients call the Express endpoints, and Express alone polls NUS or LTA. A separately served frontend uses its configured `VITE_API_ORIGIN` directly. See the [local services guide](local-services.md) for process and data setup.
 
@@ -33,6 +33,14 @@ A stop that did not succeed in the latest cycle is listed in the snapshot's `una
 
 NUS service-window results are cached for ten minutes. LTA stop results use their own short cache and distinguish an upstream failure from a valid response with no estimate.
 
+## Service announcements
+
+Push service notices are derived from the NUS ticker tape (`POST` to the configured bus-proxy `ticker-tapes` endpoint through the existing authenticated client, empty extra body). The response is a historic feed of hundreds of records in `data.TickerTape`; the provider keeps the fields NUSGo uses (id, message, priority, display interval, affected service ids) and drops the author, creation metadata and accident coordinates.
+
+There is no announcement poller. The ticker tape is requested from the arrival refresh-complete hook in `live-data/runtime.ts`, and only when the push publisher supplied `onServiceAnnouncementsRefreshed` — a deployment without push makes no ticker-tape request. The feed caches its result for one minute and shares one in-flight request, so the budget is at most one logical feed refresh per minute (with the configured provider retry policy) even though the arrival cycle runs every 30 seconds over 33 stops. A failed arrival batch still refreshes announcements, because the hook runs independently of whether a snapshot was published. An in-flight announcement request is aborted by `stop()`.
+
+A record is an announcement only when its `Display_From`/`Display_To` interval contains the current time and its status is `Enabled`; priority is `High`, `Medium` or `Low`. An empty affected-service list is a global notice. A non-empty list is matched case-insensitively against canonical route IDs, and a list that names only retired or unknown services resolves to no audience rather than becoming global.
+
 ## Live vehicle positions
 
 Vehicle positions come from NUS active-bus data and run on their own timer, separate from the 30-second arrival cycle. Arrivals and readiness do not depend on vehicles: a vehicle failure never returns 503 for arrivals.
@@ -55,7 +63,7 @@ Vehicle markers snap to the checked-in route geometry and interpolate between fr
 
 Copy backend/.env.example to backend/.env for local settings. NUS live shuttle data requires all four values NUS_BUS_PROXY_BASE_URL, NUS_X_HTD_API, NUS_X_APP_API, and NUS_X_API_KEY; the token URL, app version, and device ID can use their defaults. An initial NUS_UNIVUS_JWT and NUS_USER_ID are optional; Express can obtain a session token when they are absent.
 
-LTA_ACCOUNT_KEY enables public-bus arrivals. Credentials are read only by the backend and must not be exposed through Vite environment variables or frontend builds. Live-data timeout, concurrency, retry count, retry delay, and shuttle refresh interval settings are range-checked by backend configuration.
+LTA_ACCOUNT_KEY enables public-bus arrivals. COMMUNITY_WAYPOINT_GITHUB_TOKEN enables private Community Waypoint issue creation. Keep all credentials backend-only; never expose them through Vite variables or frontend builds. Give the Community Waypoint credential only issue-creation permission for LimZiJing/NUSGo-waypoint-submissions. Live-data timeout, concurrency, retry count, retry delay, and shuttle refresh interval settings are range-checked by backend configuration.
 
 Vehicle settings are NUS_VEHICLE_REFRESH_INTERVAL_MS (default 30000, minimum 15000), NUS_VEHICLE_EXPIRY_MS (default 90000, at least twice the refresh interval), and NUS_VEHICLE_IDLE_TIMEOUT_MS (default 120000). If you raise the refresh interval, raise the expiry too, or startup fails.
 

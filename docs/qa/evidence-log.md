@@ -25,6 +25,52 @@ Application head `0a9ac90a71d0715c0aad092d41a01ee520f87cba`, managed development
 - Clicked Delete again and accepted: only the selected record was removed, the panel returned to My waypoints, and focus landed on the surviving Tea room row at both sizes.
 - Activated the remaining marker with Enter, clicked Delete and accepted: storage contained zero waypoints and focus landed on the empty-state paragraph at both sizes.
 - Both runs completed with zero page errors. These checks cover keyboard marker activation and pointer deletion controls; they do not verify pointer marker hit areas, screen-reader speech, live arrivals or physical devices.
+## Explore default Bus routes (#647) — 2026-11-17
+
+Application revision `ff1e3fe6`; the built local-rehearsal bundle served as static files on loopback, driven through the shared preview browser (Chromium, Windows build 26100) at an actual 390 × 844 and 1280 × 800. Express was not running, so arrivals, service hours and public-bus requests failed with `net::ERR_CONNECTION_REFUSED`; that is expected here and does not affect Explore rendering, which uses the static shuttle network.
+
+- At both sizes the segmented control showed **Bus routes** left of **Find venue**, and Explore opened on Bus routes with A1's 13 ordered stops. Before this change the same first entry showed the venue search field.
+- On desktop, entering Explore and clicking route D2 selected it and rendered its stop timeline. This exercised the new rule that entering Explore starts the route session on every viewport, because nothing else starts one on desktop.
+- With Find venue selected, switching to Stops and back to Explore kept Find venue selected and focus on its segment, rather than reverting to Bus routes.
+- Resizing from 390 × 844 to 1280 × 800 kept the chosen view; the panel moved from the mobile sheet to the persistent desktop column.
+- With routes available but none chosen, the panel read "Choose a bus route to see its stops" on desktop instead of claiming route data was unavailable.
+
+The basemap rendered from OpenFreeMap tiles. Map sprite and font fallbacks logged the usual missing-image warnings. No application error was raised by these interactions. This pass covers the Explore panel, route chips and tab/breakpoint persistence; it does not verify live arrivals, device geolocation or assistive-technology output. It predates Community becoming a third Explore segment, which this pass did not exercise.
+
+`CONTEXT.md` reviewed; the Explore vocabulary already describes Find venue and Bus routes as segmented Explore choices, so no update was needed.
+
+## Landscape side-panel follow-up — 2026-11-11 (#551)
+
+Application HEAD `fc0f00b34241a9371e98cb26c26e42e81979bdc9`; Codex In-app Browser, Chromium-based with exact version unavailable; local rehearsal at `http://localhost:4173/`.
+
+- At 812 × 375, 740 × 360, and 641 × 360, the desktop-style left column held the workflow tabs along its lower edge and the map stayed visible to the right. At 641 × 360, the column narrowed to about 321px, leaving about 320px for the map.
+- At 740 × 360, the Stops list scrolled to its final rows while Nearby/Favourites stayed pinned at the top of the panel. The map's Zoom in control visibly changed map scale. Tab moved focus from Explore to Stops, and Enter activated Stops.
+- At 640 × 360, the mobile sheet and bottom tabs appeared. At 740 × 420 the side panel appeared; at 740 × 421 the mobile sheet appeared; at 812 × 421 the side panel appeared.
+- Selected COM1 and LT 13 in Plan at 812 × 375, then resized to 375 × 812 and back without reloading. Both endpoints and the active Plan tab remained selected.
+- The first browser load showed a pending “Update NUSGo” notice and served the older cached app bundle. After applying that local update, the same endpoint-and-rotation check passed with the current bundle.
+- The browser kept a fine pointer; coarse-pointer emulation and physical-device gestures were unavailable. The backend was unavailable, so live arrivals and a Journey request were not verified. Safe-area behavior, 130% text zoom, and the broader keyboard checklist remain open.
+- `CONTEXT.md` reviewed; no update needed.
+
+## Initial mobile landscape support — 2026-11-11 (#551)
+
+This pass records the initial pointer-dependent layout at `c5749dc9`; its layout results were superseded by the side-panel follow-up above.
+
+Application revision `c5749dc9`; local production rehearsal at `http://127.0.0.1:4173/`; Codex In-app Browser, Chromium-based with exact version unavailable. Browser viewport override was used; its primary pointer remained fine. The managed backend could not start because Docker Desktop's Linux engine was unavailable.
+
+- At 740 × 360, the width-based mobile query matched. The bottom tabs and map controls were visible, the partial sheet left 108px of map exposed, and the expanded Stops list scrolled (`scrollTop` 0 → 1080; 1,633px content). Explore A1's route timeline scrolled to 676.8px of its 679.2px range.
+- In Plan, selected COM1 and LT 13. Both endpoints and the active Plan tab remained after resizing from 740 × 360 to 375 × 812 without reloading.
+- At 812 × 375 with a fine pointer, the mobile query did not match and the desktop column rendered. This browser session could not emulate a coarse pointer, so the new 812 × 375 mobile branch was not browser-tested. The 900 × 420 boundary was also not browser-tested.
+- The backend was unavailable, so live arrivals and a Journey request were not verified. Physical safe-area behavior, real touch input, keyboard navigation and 130% text zoom were not checked; the latter cases remain in the manual checklist.
+- `CONTEXT.md` reviewed; no update needed.
+
+## Alight reminder controls (#503, PR #644) — 2026-11-09
+
+Application head `6df3dcedeadcf2b022cc00c46dadffd8f6821e55`, managed development group at `http://localhost:35758/`, headless Microsoft Edge 157.0.4341.42 driven by Playwright. Fresh contexts used actual viewports 1280 × 800 and 390 × 844, DPR 1. Browser Notification, PushManager and service-worker registration APIs were mocked; API requests returned controlled responses. This is UI verification, not real push-service or screen-off delivery evidence.
+
+- Opened COM3 through its launch link with live API responses returning unavailable. Canonical route D1 and Remind me remained available.
+- Changed Lead time from 2 minutes to 1 minute, clicked Remind me and verified the registration sent COM3/D1 and `leadTimeSeconds: 60`.
+- Verified the watched explanation said once, about 1 minute, with the persistent error region empty. Clicked Stop reminding me, verified the remove request and cleared local reminder preference, and observed Remind me return.
+- Both runs completed with zero page errors. Existing unit tests cover cross-topic key rotation and failures; that lifecycle was not exercised with a real browser push subscription. Physical phones, screen-off delivery, Wear OS and notification-tap delivery remain unverified. Earlier control evidence at `5d4e5d32` predates the canonical-route and runtime corrections and is stale for those changes.
 
 ## Animation performance baseline — 2026-11-02 (#558)
 
@@ -223,3 +269,69 @@ Google Chrome 154.0.8037.57 headless with CDP, local Vite app at `http://127.0.0
 ## Earlier browser evidence
 
 The [responsive layout browser evidence](responsive-layout-browser-evidence.md) preserves earlier headless and device-emulation results. It is historical evidence, not a standing checklist. Record only the targeted checks or release result that applies to each change.
+
+## Community waypoint discovery verification — 2026-11-08
+
+Codex In-App Browser (Chromium-based; exact version unavailable), local Vite app at `http://localhost:32916`, HEAD `5d0ec90f8b0ebebd9291ef55bfd9b08ec0786c44`:
+
+- Historical evidence from before source removal: at 1280 × 800, Explore → Community showed the category filters, map legend, and empty state without overlap. At 1280 × 720, with a temporary approved fixture, the distinct map marker appeared; selecting either the row or marker opened details with category, building/floor, optional notes, source, and last-updated date. This does not verify the source-free detail view.
+- Toggling a category removed its marker and list row; Show all restored them. The fixture was removed and the checked-in collection returned to empty after the smoke check.
+- At 390 × 844, the list and details fit the mobile sheet without overlap. Keyboard activation opened details; Back returned focus to the same list row. The browser console had no errors.
+- Targeted interactions were checked at desktop 1280 × 720 and mobile 390 × 844; this was not the full release checklist.
+
+## Community waypoint submission entry and empty state — 2026-11-08
+
+Codex In-App Browser (Chromium-based; exact version unavailable), local managed Vite app at `http://localhost:32916`, application code HEAD `46fc9a7`:
+
+- At 390 × 844 and 1280 × 800, Explore → Community showed the concise “No places yet” state with one Suggest a place action. Category filters and zero-count chips were absent while the approved dataset was empty. The basemap and existing stop markers rendered at both sizes.
+- At 390 × 844, Tab from the Community selector focused Suggest a place. Enter opened the text-only form; Cancel returned to Community and restored focus to the same action.
+- At 1280 × 800, the form opened from Suggest a place. Adjust on map → Use map centre → Done returned to the form with the selected coordinate updated. Cancel returned to Community and restored focus to Suggest a place.
+- The form displayed its review and privacy notice. No suggestion was submitted; the private API and review queue were not exercised. The browser console had no errors.
+- The earlier discovery pass above is historical evidence for the temporary approved-place marker, filtering, details, previously displayed review information, and correction entry; this pass records the updated empty state and submission entry points. Neither pass is a full release checklist.
+
+## Community submission form redesign verification — 2026-11-09
+
+Codex In-App Browser, local managed Vite app at `http://localhost:32916`, application code HEAD `cd7061c000b3e287bb0adb744b4ee3b944360153`:
+
+- At 390 × 844, Explore → Community showed the top-aligned empty state and Suggest a place action. Tab focused the action and Enter opened the text-only form. The compact fields, separate-coordinate Location card, collapsed Additional details section, and Cancel/Send actions fit the mobile panel.
+- Keyboard Tab and Space opened Additional details. With an invalid floor entered and the section collapsed, Send suggestion reopened it, exposed the inline whole-number error, and moved focus to Floor. Cancel returned focus to Suggest a place. No suggestion was sent.
+- At 1280 × 800, the form remained readable in the desktop panel alongside the map. The map and existing stops remained visible.
+- The submission API, private review queue, and browser console were not exercised in this pass; it is targeted UI evidence, not the full release checklist.
+
+## 2026-11-09 — PR #643 service-notice navigation
+
+Tested application head `7dac6ac3c60a9d9225ca991f33de5ea89322ecf9` in real headless Edge 157.0.4341.42 at actual 1280×800 and 390×844 viewports. A managed static rehearsal preview was used because Docker was unavailable for the development group. The preview stopped after the check.
+
+- Launching `?view=stops` selected Stops, cleared the query after navigation, and did not invent a stop selection.
+- After pointer-clicking Explore, More and Settings, a simulated service-worker service-notice message closed Settings and selected Stops.
+- A simulated stop-specific message still opened the canonical COM 3 details.
+- Both viewports reported zero page errors. API responses and the service-worker container/messages were mocked; this is navigation evidence, not actual delivery or a device notification tap. Android screen-off, Wear OS and physical-device delivery remain unverified.
+
+Full gates at this application head: `npm test` exit 0 (root 31 passed / 2 skipped; shared 32 passed; frontend 1532 passed / 1 skipped; backend 234 Node and 105 Vitest passed), `npm run lint` exit 0, `npm run build` with explicit HTTPS `VITE_API_ORIGIN` exit 0, and `git diff --check` exit 0. The local rehearsal build also passed; builds emitted the existing bundle-size advisory.
+
+## 2026-11-09 — PR #644 integrated reminder and service-notice checks
+
+Tested application head `cfa16e3de8e71dcaf80048f5c4234bdfcbea8f25` in real headless Edge 157.0.4341.42 with actual 1280×800 and 390×844 viewports. This supersedes the earlier `6df3dced` reminder evidence for the integrated application. A managed static rehearsal preview ran and stopped automatically; Docker was unavailable.
+
+- With arrival requests returning 503, COM 3 details still offered canonical D1 enrollment. Pointer actions changed the lead time from 2 minutes to 1 minute; registration sent 60 seconds and displayed the one-shot expiry copy with an initially empty persistent alert region.
+- Pointer cancellation removed the reminder through the API boundary and cleared the stored preference.
+- `?view=stops` launch navigation selected Stops and cleared the query. A simulated service-worker notice over Settings closed Settings and selected Stops; a stop-specific message still opened COM 3.
+- Zero page errors in either viewport. Notification permission, PushManager, service-worker registration/messages and API responses were mocked. This does not verify actual push delivery, screen-off operation, a real notification tap, a physical device or Wear OS.
+
+Full integrated gates: `npm test` exit 0 (root 31 passed / 2 skipped; shared 59 passed; frontend 1581 passed / 1 skipped; backend 296 Node and 105 Vitest passed); `npm run lint` exit 0; `npm run build` with explicit HTTPS `VITE_API_ORIGIN` exit 0; backend typecheck and `git diff --check` exit 0. The rehearsal build passed too. Existing bundle-size advisory only.
+
+## 2026-11-09 — PR #643 final notification focus and mobile visibility
+
+Application head `3922c459ae94f3519edf48e34586663cbe1bbdbb`, real headless Edge 157.0.4341.42, actual 1280×800 and 390×844 viewports. This supersedes the `7dac6ac3` navigation evidence after the focus fix. A managed static rehearsal preview completed and stopped.
+
+Launch `?view=stops` selected Stops, cleared the query and focused its content. Pointer actions opened Explore, More and Settings; a simulated service-worker notice closed Settings and moved focus into Stops. Pressing Tab kept focus within Stops. On mobile, pointer/keyboard actions collapsed Stops, switched to Explore, then a notice reopened Stops at the partial detent with focus inside. A stop-specific message still opened COM 3. Both viewports had zero page errors.
+
+API responses and service-worker container/messages were mocked. No real delivery, notification tap, screen-off, physical-device, Wear OS or screen-reader speech claim is made. Full gates on this application head passed: `npm test` (root 31 passed / 2 skipped; shared 32 passed; frontend 1535 passed / 1 skipped; backend 235 Node and 105 Vitest passed), `npm run lint`, `npm run build` with explicit HTTPS `VITE_API_ORIGIN`, and `git diff --check`. The rehearsal build passed too; existing bundle-size advisory only.
+
+## 2026-11-09 — PR #644 final integrated verification
+
+Application head `a5720b46ec31a63c207ca67c585a2a1106366529`, real headless Edge 157.0.4341.42, actual 1280×800 and 390×844 viewports. This supersedes `cfa16e3d` after the notification focus fix. The managed static rehearsal preview completed and stopped automatically.
+
+With arrivals returning 503, COM 3 still offered canonical D1 enrollment. Pointer actions changed 2 minutes to 1 minute, registered a 60-second one-shot reminder with expiry copy and an initially empty persistent alert, then cancelled and cleared the saved preference. Notice launch and simulated existing-window messages selected Stops; Settings closed without stealing focus back to More. Focus remained in Stops after Tab. On mobile, a notice from Explore reopened a collapsed Stops sheet at the partial detent. A stop-specific message still opened COM 3. Zero page errors in both viewports.
+
+Notification permission, PushManager, service-worker registration/messages and API responses were mocked. Actual push delivery, a real notification tap, screen-off operation, physical devices, Wear OS and screen-reader speech remain unverified. Full gates at this application head passed: `npm test` (root 31 passed / 2 skipped; shared 59 passed; frontend 1584 passed / 1 skipped; backend 297 Node and 105 Vitest passed), `npm run lint`, `npm run build` with explicit HTTPS `VITE_API_ORIGIN`, and `git diff --check`. The local rehearsal build also passed; existing bundle-size advisory only.

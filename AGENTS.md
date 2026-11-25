@@ -12,6 +12,7 @@ Before exploring or changing the repository, read the relevant repository guidan
 6. `docs/agents/issue-tracker.md` and `docs/agents/triage-labels.md` for GitHub issue workflow and labels.
 7. `docs/agents/workflow.md` for the standard Codex task lifecycle and efficiency guardrails.
 8. `docs/agents/task-template.md` for the reusable task kickoff prompt.
+9. `docs/agents/pr-review.md` before opening, reviewing, approving, or merging a pull request.
 
 Keep the document responsibilities distinct: `CONTEXT.md` owns stable domain and product vocabulary, `docs/project-status.md` owns changing implementation status, and this file owns agent behavior.
 
@@ -32,6 +33,7 @@ Task-specific user instructions take precedence over this guidance. If two repos
 - Run and report the exact results of `npm test`, `npm run lint`, `npm run build`, and `git diff --check` when available and applicable. UI or map changes SHOULD include targeted local-browser smoke testing for affected behavior. Full responsive and keyboard testing is required only when those behaviors change materially or before a release. If browser testing is unavailable, document what was not verified and why.
 - Before installing dependencies in a worktree, read `docs/agents/workflow.md` section 2.
 - Do not push, force-push, open a pull request, or make other external changes unless the task explicitly authorizes it.
+- Never approve, request changes on, merge, or enable auto-merge for a pull request without explicit go-ahead on that pull request from a human maintainer who is not its author. Agent review is comments only until then. See [pull request review](docs/agents/pr-review.md).
 
 ## GitHub issue workflow
 
@@ -56,3 +58,39 @@ The selected Matt Pocock skills are installed under `.agents/skills/` and pinned
 - Use `/diagnosing-bugs` for difficult bugs or regressions.
 
 Skills are reusable guidance, not application dependencies. Review their instructions and keep user intent and this file's repository rules authoritative.
+
+## Astryx guidance scope
+
+This project is a Vite/React app with NUSGo-owned controls and theme tokens. The generated Astryx block below is reference material for explicit Astryx evaluation tasks. Follow this guide, `docs/ui/controls.md`, and `docs/agents/coding-standards.md` for ordinary NUSGo implementation. Do not apply Astryx's template, layout, styling, or theme rules to existing screens unless a task specifically authorizes that migration. The Astryx `reset.css` import shown below is intentionally not used by NUSGo; `frontend/src/ui/styles/shared/index.css` imports `astryx.css`, while NUSGo's `base.css` remains authoritative.
+
+<!-- ASTRYX:START -->
+Astryx v0.7.16 · 174 components
+CLI: run every command as `npx astryx <cmd>` (shown below as `astryx ...`).
+
+SETUP (once, in app entry e.g. main.tsx) — without these, components render unstyled:
+  import "@astryxdesign/core/reset.css";
+  import "@astryxdesign/core/astryx.css";
+
+WORKFLOW — start every page from a template, never from scratch:
+1. `astryx build "<idea>"` — names the template to scaffold from and the parts it lacks.
+2. `astryx template <name> <path>` — scaffold it; keep its frame, gap and padding; replace the content.
+3. `astryx template <Block>` for parts it lacks; `astryx component <Name>` to read props before using one.
+Changing an existing page? Keep it: skip step 2 and add blocks/components inside its sections.
+Before you deliver a build, run `astryx doctor --built <dir>`; don't deliver it if it fails.
+
+RULES:
+- No <div> — components handle all layout and spacing.
+- Read `astryx docs layout` before changing a template's frame.
+- Dense data = rows (Table, List/Item), not Card-wrapped lists. Badge = counts only.
+- Style with component props first, then tokens (var(--color-*|--spacing-*|--radius-*)). No raw hex/px. No StyleX/Tailwind compiler here — don't use xstyle/utility classes directly. Some templates use StyleX and need a compiler plugin; see `astryx docs styling-overview`.
+- THEMES: palettes and custom colors go through the theme, never :root overrides. To make or change a theme (colors, fonts, corners, spacing, a look from a picture), prefer the experimental theme editor over hand-written theme files: `astryx experimental theme editor new <name> --like neutral`, then `editor set <name> <thing> <value>` or `editor how "<what you want>"`; wire it with `astryx theme add <name>`; after each change look at it with `astryx experimental theme editor show <name> --png` and open the PNGs it writes (changes nothing in the app); a theme change is not done until you have looked at the pictures. In code, extend an imported theme to customize it; `theme eject <slug>` only forks source. See `astryx docs theme`.
+- SELF-CHECK: re-read the file; replace any raw <div>/<span>, imported .css/@apply, or hardcoded #hex/px with the component or a token.
+
+`astryx help` lists every command. Key ones beyond the workflow:
+  search "<query>"   find any component / hook / doc / template
+  discover <words>   integrations you could add
+  docs <topic>       getting-started, principles, tokens, theme … (`astryx docs` lists all)
+  docs cli           commands and API reference
+  docs authoring     build an integration package, and every field it holds
+  upgrade --from <old version> --apply   run after a dependency bump
+<!-- ASTRYX:END -->

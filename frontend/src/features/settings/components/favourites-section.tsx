@@ -76,7 +76,7 @@ export function FavouritesSection({
   return (
     <div className="settings-favourites">
       {stops.length === 0 ? (
-        <p ref={emptyMessageRef} tabIndex={-1}>Star a stop in Stops to add it to your favourites.</p>
+        <p ref={emptyMessageRef} tabIndex={-1}>No favourites yet.</p>
       ) : (
         <div className="settings-favourite-card">
           <SavedListHeader

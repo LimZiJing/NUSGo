@@ -65,7 +65,11 @@ function AboutCardRow({ children, className = '' }: { readonly children: ReactNo
   return <div className={`settings-about-row ${className}`.trim()}>{children}</div>
 }
 
-export function AboutSection({ dataVersion, transitMetadata, buildingSource }: AboutSectionProps) {
+export function AboutSection({
+  dataVersion,
+  transitMetadata,
+  buildingSource,
+}: AboutSectionProps) {
   const buildVersion = dataVersion === LOCAL_DATA_VERSION
     ? 'Development'
     : `Production · ${dataVersion.slice(0, 7)}`
@@ -139,7 +143,6 @@ export function AboutSection({ dataVersion, transitMetadata, buildingSource }: A
         <div className="settings-about-card">
           <AboutCardRow className="settings-about-feedback">
             <h4>Feedback</h4>
-            <p className="settings-about-meta">Report a bug or share an idea.</p>
             <a
               className="settings-about-action"
               href="https://github.com/LimZiJing/NUSGo/issues/new"

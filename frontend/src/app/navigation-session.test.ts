@@ -60,9 +60,11 @@ function createMapDouble(ready: Promise<void> = Promise.resolve()) {
     setViewportInsets: vi.fn(),
     setPresentationBottomInset: vi.fn(),
     setVisibleCenterZoom: vi.fn(),
-    setPersonalWaypointPlacement: vi.fn(),
+    setWaypointPlacement: vi.fn(),
     setPersonalWaypoints: vi.fn(),
+    setCommunityWaypoints: vi.fn(),
     focusPersonalWaypoint: vi.fn(),
+    focusCommunityWaypoint: vi.fn(),
     panToCoordinate: vi.fn(),
     dismissStopPopup: vi.fn(() => false),
     dismissPopup: vi.fn(() => false),
@@ -269,7 +271,7 @@ describe('navigation session', () => {
       selectedRouteColor: null,
       rememberedMobileRouteId: null,
       exploreState: {
-        mode: 'neutral',
+        mode: 'bus-routes',
         query: '',
         selectedVenue: null,
         selectedBuildingId: null,
@@ -1240,6 +1242,7 @@ describe('navigation session', () => {
     await session.start(new AbortController().signal)
 
     session.setExploreQuery('COM1')
+    // Explore opens on Bus routes, so venue detail stacks on top of that view.
     session.selectVenue(venueResult)
     expect(session.getState().exploreState).toMatchObject({
       mode: 'venue-detail',
@@ -1253,14 +1256,12 @@ describe('navigation session', () => {
 
     session.back()
     expect(session.getState().exploreState).toMatchObject({
-      mode: 'neutral',
+      mode: 'bus-routes',
       query: 'COM1',
       selectedVenue: null,
     })
     expect(dependencies.map.clearVenue).toHaveBeenCalledOnce()
 
-    session.enterMobileRoutes()
-    expect(session.getState().exploreState.mode).toBe('bus-routes')
     session.back()
     expect(session.getState().exploreState.mode).toBe('neutral')
 
@@ -1287,7 +1288,8 @@ describe('navigation session', () => {
       history,
     })
     session.back()
-    expect(session.getState().exploreState.mode).toBe('neutral')
+    // The venue was opened from the default Bus routes view, so Back returns there.
+    expect(session.getState().exploreState.mode).toBe('bus-routes')
   })
 
   it('clears the selected route when leaving mobile routes', async () => {
@@ -1353,7 +1355,7 @@ describe('navigation session', () => {
 
     session.selectVenue(venueResult)
     session.escape()
-    expect(session.getState().exploreState.mode).toBe('neutral')
+    expect(session.getState().exploreState.mode).toBe('bus-routes')
     expect(dependencies.map.clearVenue).toHaveBeenCalledOnce()
 
     session.selectVenue(venueResult)
@@ -1363,7 +1365,8 @@ describe('navigation session', () => {
     expect(dependencies.map.clearVenue).toHaveBeenCalledOnce()
 
     session.back()
-    expect(session.getState().exploreState.mode).toBe('neutral')
+    // Escape only re-wound the Bus routes entry; the default view underneath it is Bus routes.
+    expect(session.getState().exploreState.mode).toBe('bus-routes')
     expect(dependencies.map.clearVenue).toHaveBeenCalledTimes(2)
   })
 

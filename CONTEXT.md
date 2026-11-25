@@ -5,6 +5,7 @@ This document defines the domain and product vocabulary used by NUSGo. It contai
 ## Campus navigation
 
 - **Venue**: A campus location that a person may want to find, such as a building, room, lecture hall, or facility.
+- **Eatery**: A named campus destination for food or drink, categorized as a canteen, restaurant, or drinks & snacks. An Eatery is a place-level destination, not an individual stall or kiosk inside a shared dining place.
 - **Venue floor**: A signed integer relative to ground level. Negative values identify basement floors, zero identifies the ground floor, and positive values identify floors above ground.
 - **Building**: A named NUS structure in the building catalogue, distinct from the rooms inside it and from bus stops, with its own stable identity. A Building is a kind of Venue. Its location is an API centroid, or an accepted but unverified entrance, until a pedestrian entrance has been verified; a Building is never merged with a nearby bus stop.
 - **Transit network**: The set of bus routes, bus stops, and service associations available for campus travel.
@@ -17,7 +18,7 @@ This document defines the domain and product vocabulary used by NUSGo. It contai
 - **Transfer**: A change from one bus boarding to another within a Path. Each boarding needs its own waiting estimate; a walking leg may connect the stops.
 - **Waypoint**: A named map location with a category and WGS84 coordinate, separate from canonical venues and bus stops.
 - **Personal Waypoint**: A private waypoint stored in this browser profile, with an optional note, marker color and icon, and timestamps. The saved record stays local; after the user requests a Journey, only the selected coordinate is sent to the Journey backend.
-- **Community Waypoint**: A reviewed, published shared waypoint with its own source and attribution. It remains separate from Personal Waypoints.
+- **Community Waypoint**: A reviewed, published shared waypoint. Its display label is derived from its category and optional building, floor, and details. It remains separate from Personal Waypoints.
 
 ## Bus transit
 
@@ -36,6 +37,7 @@ This document defines the domain and product vocabulary used by NUSGo. It contai
 - **Live bus**: A bus currently in service on a Bus route, with a vehicle plate, a position, a heading and an observation time. It is distinct from a Bus route and from a scheduled or estimated arrival. A Live bus that has not been refreshed recently is not shown.
 - **Load level**: The crowding of a Live bus, one of low, medium, high or unknown. Unknown is used when no reliable level is available; it is never guessed.
 - **Load estimate**: A Load level presented to users as an estimate, because the upstream source does not document it as a live passenger count.
+- **Service notice**: A notice NUS publishes about bus operations, such as a public-holiday schedule. It applies to every service or to named Bus routes, and it is shown only within its published display interval. NUSGo delivers it as a push notification titled “Service notice,” and the notice is not a Live bus, a Bus route, or an announcement about a single stop.
 
 ## Map presentation
 
@@ -53,12 +55,14 @@ This document defines the domain and product vocabulary used by NUSGo. It contai
 - **Plan**: The product area for choosing trip endpoints and viewing a recommended journey or its planning status.
 - **Website release**: A frontend version that has completed a production deployment to nusgo.app. Its identity is separate from the transit-data compatibility version.
 - **Segmented control**: An in-feature selector. Find venue and Bus routes are Explore choices; Nearby and Favourites are Stops choices.
-- **Find venue**: The Explore workflow for searching venues and opening venue details.
+- **Find venue**: The Explore workflow for searching venues and eateries and opening their details.
 - **Bus routes**: The Explore workflow for browsing internal routes and their ordered stops.
 - **Nearby**: The Stops list of bus stops near the visible map centre, ordered by distance from that centre.
 - **Favourites**: The Stops list of bus stops saved by the person in their browser.
 - **Venue details**: The selected venue's identity and confirmed location information, with actions such as navigation.
 - **Stop details**: The selected bus stop's identity, services, and available arrival information.
+- **Alight reminder**: A one-shot push notification for one route at one stop. It is registered against a browser push endpoint with a lead time, expires two hours after registration, and is removed once a notification is delivered or the rider cancels it. It is distinct from service-update notifications and adds no location tracking.
+- **Lead time**: The remaining live-arrival estimate at which an Alight reminder fires, chosen by the rider from one, two or three minutes and two by default. It is a window entering the live estimate, not a clock time or a promise.
 
 ## Interface controls
 

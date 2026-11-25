@@ -1,6 +1,6 @@
 # Interface controls
 
-This is the specification for NUSGo buttons, chips, and pills. Vocabulary is defined in `CONTEXT.md`; this document owns the variants, sizes, states, tokens, and migration plan. The React primitives live in `frontend/src/ui/`; their styles live in `frontend/src/ui/styles/shared/controls/`.
+This is the specification for NUSGo buttons, chips, and pills. Vocabulary is defined in `CONTEXT.md`; this document owns the variants, sizes, states, tokens, and migration plan. The [Astryx UI inventory](astryx-inventory.md) records compatibility decisions and candidate migration slices. The React primitives live in `frontend/src/ui/`; their styles live in `frontend/src/ui/styles/shared/controls/`.
 
 ## Primitives
 
@@ -8,13 +8,13 @@ This is the specification for NUSGo buttons, chips, and pills. Vocabulary is def
 | --- | --- | --- |
 | `Button` | Actions with a visible label | Variants `primary`, `secondary` (default), `ghost`. Use `label` with optional leading `icon` and `trailingIcon` for a standard centered control, or `children` for a rich row whose content owns its alignment and layout. `type` defaults to `button` and supports `submit` and `reset`; a native form submit button can rely on the form `onSubmit` handler without a click callback. Native button attributes and pointer handlers are forwarded to the underlying button. Also accepts `title`, `expanded` and `controls` (`aria-expanded`, `aria-controls`) for disclosure triggers, and `busy` (`aria-busy`). |
 | `IconButton` | Actions shown as an icon only | `label` is required and becomes `aria-label`. Square at control height. Also accepts variant `plain`: no box at rest, on hover or when pressed (hover only dims the icon; focus keeps the ring), for icon toggles such as a favourite star and for dismiss icons. The caller changes the icon to show a pressed state. |
-| `BackButton` | Back navigation | `mode="header"` composes a plain `IconButton`; `mode="inline"` shows a compact arrow and label; `mode="label-only"` keeps a label-only ghost action. |
+| `BackButton` | Back navigation | `mode="header"` uses a secondary `IconButton` with a left arrow; `mode="inline"` shows a compact arrow and label; `mode="label-only"` keeps a label-only ghost action. |
 | `MenuItem` | A row inside a menu or popover | Ghost row: full width, left-aligned, tinted on hover and focus, no border. |
-| `Chip` | An interactive, selectable choice | Toggles announce state through `aria-pressed`. `RouteChip` is a route-specific wrapper that supplies the official route colour as the chip tone. |
+| `Chip` | An interactive, selectable choice | Toggles announce state through `aria-pressed`. Optional `leading` adds a decorative icon, hidden from assistive technology so the `label` stays the accessible name. `RouteChip` is a route-specific wrapper that supplies the official route colour as the chip tone. |
 | `Pill` | A non-interactive status label | Tones `neutral` and `success`, optional leading dot. `InfoPill` is built on it. |
 | `Select` | Choosing one value from a short list, such as a building | Labelled dropdown with a `listbox`. See [Select](#select). |
 
-`NavigateButton` is a primary `Button` with the navigation icon. `BackButton` uses the shared `IconButton` or `Button` for header, inline and label-only back actions. Inline mode keeps the existing compact arrow-and-label geometry.
+`NavigateButton` is a primary `Button` with the navigation icon. `BackButton` composes the shared `IconButton` for header back actions and `Button` for inline and label-only actions. The header arrow uses the secondary style, so it has the same neutral surface and text colour as other buttons. Inline mode keeps its existing compact arrow-and-label geometry.
 
 Props are platform-neutral. `className` is for layout. Shared variants and tokens own a control's appearance; documented feature surfaces below keep local styling to preserve established layouts.
 
@@ -25,6 +25,8 @@ Props are platform-neutral. `className` is for layout. Shared variants and token
 - **Ghost**: no border or fill; accent-coloured label, with an `--accent-soft` background tint on hover and focus.
 
 `Chip` is pill-shaped: unselected it uses the secondary look (`--surface-control`, primary text, `--control-border`); selected it is a solid accent fill with inverse text. `Pill` uses `--surface-muted` with `--text-muted` at 12px, weight 500, and no border; its `success` tone keeps the success tokens. `RouteChip` stays route-coloured.
+
+A `leading` icon is decorative: it renders inside an `aria-hidden` span and never contributes to the chip's accessible name, so an icon cannot rename a chip for a screen reader. Selected chips render their icon in `--text-inverse` alongside the fill, so an icon never carries state on its own either. Do not use `leading` for meaning that the label does not already state.
 
 ### Sizes
 
@@ -49,13 +51,13 @@ Do not rely on colour alone: selection is always exposed through `aria-pressed`.
 
 ### Tokens
 
-Defined in `frontend/src/ui/styles/shared/tokens.css`; theme-dependent colours come from five theme files (Light, Dark, NUS, Matcha, Sakura). Shared map roles and reusable shadow/ring values are also named in `tokens.css`.
+Defined in `frontend/src/ui/styles/shared/tokens.css`; theme-dependent colours come from the five theme files in `themes/` (Light, Dark, NUS, Matcha, Sakura) plus Rainroom, which lives in `frontend/src/ui/themes/rainroom/index.css`. `theme-tokens.test.ts` finds every theme through the catalog, so both layouts are covered. Shared map roles and reusable shadow/ring values are also named in `tokens.css`.
 
 | Token | Value | Purpose |
 | --- | --- | --- |
 | `--control-height-sm` / `--control-height-lg` | 36px / 44px | Control heights |
 | `--radius-control` / `--radius-control-lg` | 10px / 12px (`--radius-lg`) | Button and menu item corners; the large size uses the second |
-| `--control-border` | Per theme: `color-mix` of `--text-primary` into `--surface` (Light 55%, Dark 45%, NUS 58%, Matcha 65%, Sakura 65%) | Neutral border of secondary controls and selected buttons |
+| `--control-border` | Per theme: `color-mix` of `--text-primary` into `--surface` (Light 55%, Dark 45%, NUS 58%, Matcha 65%, Sakura 65%, Rainroom 45%) | Neutral border of secondary controls and selected buttons |
 | `--accent-selected` | 26% theme accent mixed into `--surface-control` | Fill for selected buttons and open Selects |
 | `--surface-control-hover` | 11% theme primary text mixed into `--surface-control` | Neutral hover surface for secondary controls and chips |
 | `--radius-pill` | 999px | Chips and pills |
@@ -66,7 +68,11 @@ Defined in `frontend/src/ui/styles/shared/tokens.css`; theme-dependent colours c
 
 ### Why `--control-border` exists
 
-A neutral control sits on a similar neutral surface, so its border is what marks the control's boundary. WCAG 1.4.11 asks for 3:1 against the adjacent colour, and the older `--border-control` falls short of that. `--control-border` mixes the primary text colour into the surface, which scales with each theme, and the percentages are chosen so it reaches at least 3:1 against both `--surface` and `--surface-card` in all five themes. Both matter: a control can sit on the page (a button on the navigation column) or on a card (the theme select in Settings → Appearance), and the card is lighter than the page in every theme, so it is the stricter background. `theme-tokens.test.ts` checks both, plus `--text-primary` on `--surface-control` (4.5:1), `--text-inverse` on `--accent` (4.5:1), and `--accent` on `--surface` (3:1 for the primary fill boundary, 4.5:1 for the ghost label). It also checks primary text on `--accent-selected` and `--surface-control-hover` (4.5:1), and accent icons on the selected fill (3:1). If a theme edit breaks a ratio, adjust the token rather than the threshold.
+A neutral control sits on a similar neutral surface, so its border is what marks the control's boundary. WCAG 1.4.11 asks for 3:1 against the adjacent colour, and the older `--border-control` falls short of that. `--control-border` mixes the primary text colour into the surface, which scales with each theme, and the percentages are chosen so it reaches at least 3:1 against both `--surface` and `--surface-card` in every theme. Both matter: a control can sit on the page (a button on the navigation column) or on a card (the theme select in Settings → Appearance), and the card is lighter than the page in every theme, so it is the stricter background. `theme-tokens.test.ts` checks both, plus `--text-primary` on `--surface-control` (4.5:1), `--text-inverse` on `--accent` (4.5:1), and `--accent` on `--surface` (3:1 for the primary fill boundary, 4.5:1 for the ghost label). It also checks primary text on `--accent-selected` and `--surface-control-hover` (4.5:1), and accent icons on the selected fill (3:1). If a theme edit breaks a ratio, adjust the token rather than the threshold.
+
+The test enumerates themes from `THEME_CATALOG` in `frontend/src/ui/themes/catalog.ts`, not by listing the `themes/` directory, and maps each id to `themes/<id>.css` or `../themes/<id>/index.css`. That matters because Rainroom lives outside `themes/`: while the test used `readdirSync`, every per-theme assertion in the file silently skipped it, and its `--control-border` sat at 2.86:1 against `--surface-card` while the suite reported success. A theme in the catalog with no stylesheet at either path now fails the file outright. Add new themes to the catalog and they are covered; there is nothing else to wire up.
+
+Rainroom sits at 45% for that reason: at 40% the mix resolves to `#676e72`, 2.86:1 on its `--surface-card`. 45% clears 3:1 at 3.34:1 and stays above 4:1 on `--surface`.
 
 Light sits at 55% rather than 50% because #629 darkened light `--surface` to `#f1f5f9` for visible layering. At 50% the mix resolves to `#888f98` on that surface — 2.98:1, just under the 3:1 threshold. 55% restores it to 3.41:1.
 
@@ -113,15 +119,14 @@ Allowed: `.button`, `button.primary`, `.panel button.primary`, `button[type='sub
 
 ## Migration checklist
 
-The feature control migration is complete: Explore, Plan, Stops, More, Waypoints and Live buses use the shared Button family for their action controls. The global native-button defaults remain documented above; compact map, route and status controls keep their existing semantic wrappers.
+The feature control migration is complete: Explore, Plan, Stops, More, Waypoints and Live buses use the shared Button family for their action controls. The More, Location and Live buses map overlay buttons use the Astryx-backed `MapOverlayIconButton` adapter; other compact map, route and status controls keep their existing semantic wrappers. The global native-button defaults remain documented above.
 
 - [x] Stops (shared back navigation and feature action rows use the Button family)
 - [x] Explore (uses the shared `BackButton`, `NavigateButton`, `RouteChip` and `InfoPill` wrappers)
 - [x] Plan
-- [x] Map controls (the theme, locate and fit-routes buttons keep their Base UI Button and overlay styling; only a dead `.location-control-popover button` rule was removed)
+- [x] Map controls (More, Location and Live buses use the Astryx-backed `MapOverlayIconButton` adapter; other map controls keep their existing wrappers; a dead `.location-control-popover button` rule was removed)
 - [x] Sheet (the mobile tab bar items keep a bespoke pill style on the `navigation-tab` class, and the sheet handle keeps its own drag-handle styling and 24px row, because neither is a standard button; only the generic `.main-navigation button` selectors were replaced)
 - [x] Popovers (the endpoint locate button is a plain `IconButton`; search result rows keep their own classes because they are rich multi-line rows)
-- [x] Menus (the Plan trip-actions `Clear all` row is a `MenuItem` and its ellipsis trigger is a plain `IconButton`)
-- [x] Saved lists (selectable row copy uses `Button`; row layout remains in `SavedListRow`)
+- [x] Saved lists (selectable row copy uses `Button`; Personal Waypoint list actions use `MenuItem`; row layout remains in `SavedListRow`)
 
 `InfoPill` keeps its 10px metrics because it is non-interactive. Map popup route labels are non-interactive elements with the `route-chip` class.

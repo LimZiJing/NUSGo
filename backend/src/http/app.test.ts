@@ -92,6 +92,8 @@ function fakeLiveData(
     getVehicles,
     getServiceWindows: unused,
     getPublicBusArrivals: unused,
+    // No cached service hours in this fake, which is exactly the "unknown, trust the snapshot" case.
+    getShuttleServiceStatus: () => 'unknown',
     start: () => undefined,
     stop: () => Promise.resolve(),
   }
@@ -155,6 +157,7 @@ describe('Express API request limits', () => {
       { path: '/api/shuttle-vehicles', method: 'GET' },
       { path: '/api/public-bus-arrivals', method: 'GET' },
       { path: '/api/journeys', method: 'POST' },
+      { path: '/api/community-waypoint-submissions', method: 'GET' },
     ] as const
 
     await withServer(null, async (baseUrl) => {

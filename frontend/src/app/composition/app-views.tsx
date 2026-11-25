@@ -29,6 +29,8 @@ export interface AppViewsProps {
     readonly statusRevision: number
     readonly headerAction?: ReactNode
     readonly title: string
+    readonly backButtonLabel: string
+    readonly scrollResetKey: string | null
     readonly initialFocusRef: Ref<HTMLButtonElement>
     readonly onClose: () => void
     readonly onDetentChange: (detent: MobileSheetDetent) => void
@@ -99,13 +101,17 @@ export function AppViews({
           <NavigationPanelShell
             className="explore-sheet"
             label="Explore panel"
-            summary={getExploreSheetSummary(
-              views.explore.state,
-              selectedRoute,
-              views.explore.state.selectedBuildingId
-                ? views.explore.buildings?.byId.get(views.explore.state.selectedBuildingId)?.name
-                : undefined,
-            )}
+            summary={views.explore.community?.active
+              ? views.explore.community.selectedWaypointLabel
+                ? `Explore · ${views.explore.community.selectedWaypointLabel}`
+                : 'Explore · Community Waypoints'
+              : getExploreSheetSummary(
+                views.explore.state,
+                selectedRoute,
+                views.explore.state.selectedBuildingId
+                  ? views.explore.buildings?.byId.get(views.explore.state.selectedBuildingId)?.name
+                  : undefined,
+              )}
             controlsId="explore-content-panel"
             detent={isMobileViewport ? navigation.sheets.explore.detent : 'partial'}
             enabled={isMobileViewport}
@@ -132,6 +138,7 @@ export function AppViews({
             className="more-panel-surface"
             label="More panel"
             controlsId="more-panel-content"
+            isDetentLocked={morePanel.page === 'settings'}
             detent={isMobileViewport ? morePanel.detent : 'partial'}
             enabled={isMobileViewport}
             active={morePanel.open}
@@ -147,6 +154,8 @@ export function AppViews({
             <MorePanelSurface
               page={morePanel.page}
               title={morePanel.title}
+              backButtonLabel={morePanel.backButtonLabel}
+              scrollResetKey={morePanel.scrollResetKey}
               statusMessage={morePanel.statusMessage}
               statusRevision={morePanel.statusRevision}
               headerAction={morePanel.headerAction}

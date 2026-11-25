@@ -1,18 +1,6 @@
 name: deploy-frontend-development
 
 on:
-  push:
-    branches:
-      - main
-    # Files the hosted frontend build reads. backend/ is left out on purpose.
-    paths:
-      - frontend/**
-      - shared/**
-      - scripts/generate-shuttle-timing.mjs
-      - scripts/data-version.sh
-      - package.json
-      - package-lock.json
-      - .github/workflows/deploy-frontend-development.yml
   workflow_dispatch:
 
 permissions:
@@ -26,7 +14,7 @@ concurrency:
 
 jobs:
   deploy:
-    name: Build and deploy the development frontend (GitHub Pages)
+    name: Manually build and deploy the development frontend (GitHub Pages)
     runs-on: ubuntu-latest
     environment:
       name: frontend-development

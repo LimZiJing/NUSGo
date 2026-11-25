@@ -13,6 +13,7 @@ import {
 import { LocationControl } from '../ui/location-control'
 import { PwaNotices } from './pwa-notices'
 import { NearbyCrosshair } from '../ui/nearby-crosshair'
+import { RainroomAtmosphere } from '../ui/themes/rainroom'
 import { isFocusInsideLocationControl } from '../ui/location-control-focus'
 import { createNavigationSession, type NavigationSession } from './navigation-session'
 import {
@@ -21,8 +22,8 @@ import {
 } from './navigation-session-mount'
 import { useNavigationSession } from './use-navigation-session'
 import { deriveExplorePanelStatus } from './explore-panel-status'
+import { getIsMobileViewport } from '../ui/mobile/mobile-viewport'
 import {
-  getIsMobileViewport,
   subscribeToMobileViewport,
   type MobileSheetDetent,
 } from './navigation/navigation-state'
@@ -53,6 +54,8 @@ import { usePlanTripForm } from '../features/plan/hooks/use-plan-trip-form'
 import { useShuttleVehicles } from '../features/live-buses/hooks/use-shuttle-vehicles'
 import { LiveBusToggle } from '../features/live-buses/components/live-bus-toggle'
 import { SettingsContent } from '../features/settings/settings-content'
+import { getSettingsSectionTitle, type SettingsSectionId } from '../features/settings/settings-section'
+import { buildBasePathUrl } from '../infrastructure/data/json'
 import type { MinuteFormat } from '../domain/trip/minute-format'
 import {
   readMinuteFormatPreference,
@@ -75,15 +78,22 @@ import {
   filterPersonalWaypointsByCategoryVisibility,
   getPersonalWaypointCategoryOptions,
 } from '../domain/waypoints/personal/personal-waypoint-category-visibility'
+import { createPushNotificationService } from '../infrastructure/push/push-runtime'
+import { scheduleLaunchPushClick, subscribeToPushClicks, type PushClickTarget } from '../pwa/push-click'
 import { useAppNavigation, useAppNavigationState } from './navigation/use-app-navigation'
 import { useMapOverlayLayout } from './map-layout/use-map-overlay-layout'
 import { useMobilePlanRefit } from './map-layout/use-mobile-plan-refit'
 import { useStopsEntryRefit } from './map-layout/use-stops-entry-refit'
 import { useExploreEntryRefit } from './map-layout/use-explore-entry-refit'
 import { DEFAULT_PERSONAL_WAYPOINT_COORDINATE } from '../domain/waypoints/personal/personal-waypoint'
+import { isValidLocationCoordinates } from '../domain/location/coordinates'
 import { createPersonalWaypointTripEndpoint } from '../domain/trip/personal-waypoint-endpoints'
 import type { PersonalWaypoint } from '../domain/waypoints/personal/personal-waypoint'
-import type { WaypointCoordinate } from '../domain/waypoints/waypoint'
+import { CommunityWaypointPanel } from '../features/waypoints/community/community-waypoint-panel'
+import { CommunityWaypointSubmissionForm } from '../features/waypoints/community/submission/form'
+import { useCommunityWaypointDiscovery } from '../features/waypoints/community/use-community-waypoint-discovery'
+import type { CommunityWaypoint } from '@nusgo/shared/waypoints/community'
+import type { WaypointCoordinate } from '@nusgo/shared/waypoints/waypoint'
 import type { ShuttleArrivalSnapshot } from '../domain/transit/arrivals'
 import type { PublicBusArrivalSnapshot } from '../domain/transit/public-bus-arrivals'
 import type { StopsArrivalLoader } from '../features/stops/hooks/use-stops-arrivals'
@@ -124,11 +134,13 @@ function App() {
   const focusCategoryPickerAfterBackRef = useRef(false)
   const navigationColumnRef = useRef<HTMLElement>(null)
   const pendingViewFocusRef = useRef<NavigationView | null>(null)
+  const [notificationNavigationRevision, setNotificationNavigationRevision] = useState(0)
   const pendingExploreReturnFocusRef = useRef<HTMLElement | null>(null)
   const [basemapUnavailable, setBasemapUnavailable] = useState(false)
   const [session, setSession] = useState<NavigationSession | null>(null)
   const [morePage, setMorePage] = useState<MorePanelPage>('closed')
   const [moreSheetDetent, setMoreSheetDetent] = useState<MobileSheetDetent>('partial')
+  const [selectedSettingsSection, setSelectedSettingsSection] = useState<SettingsSectionId | null>(null)
   const [isEditingPersonalWaypoints, setIsEditingPersonalWaypoints] = useState(false)
   const [hasPersonalWaypointSearchFilter, setHasPersonalWaypointSearchFilter] = useState(false)
   const [personalWaypointEditReturnPage, setPersonalWaypointEditReturnPage] = useState<'waypoints' | 'waypoint-details'>('waypoint-details')
@@ -138,8 +150,19 @@ function App() {
   const [selectedPersonalWaypointCategory, setSelectedPersonalWaypointCategory] = useState<string | null>(null)
   const pendingWaypointReturnFocusRef = useRef<HTMLElement | null>(null)
   const pendingWaypointRowFocusRef = useRef(false)
+  const [communitySubmissionWaypoint, setCommunitySubmissionWaypoint] = useState<CommunityWaypoint | null>(null)
+  const [communitySubmissionCoordinate, setCommunitySubmissionCoordinate] = useState<WaypointCoordinate>(
+    DEFAULT_PERSONAL_WAYPOINT_COORDINATE,
+  )
+  const [communitySubmissionLocationStatus, setCommunitySubmissionLocationStatus] = useState<'locating' | 'ready' | 'required'>('required')
+  const [communitySubmissionLocationAccuracy, setCommunitySubmissionLocationAccuracy] = useState<number | null>(null)
+  const [communitySubmissionReturnPage, setCommunitySubmissionReturnPage] = useState<'menu' | 'explore'>('menu')
+  const [isCommunitySubmissionPending, setIsCommunitySubmissionPending] = useState(false)
+  const communitySubmissionReturnFocusRef = useRef<HTMLElement | null>(null)
+  const communitySubmissionPlacementFocusRef = useRef<HTMLButtonElement | null>(null)
   const [personalWaypointStore] = useState(createLocalPersonalWaypointStore)
   const personalWaypoints = usePersonalWaypointWorkflow(personalWaypointStore)
+  const [pushNotifications] = useState(createPushNotificationService)
   const [personalWaypointCategoryVisibilityStore] = useState(createLocalPersonalWaypointCategoryVisibilityStore)
   const personalWaypointCategoryVisibility = usePersonalWaypointCategoryVisibility(
     personalWaypointCategoryVisibilityStore,
@@ -148,13 +171,16 @@ function App() {
   const updatePersonalWaypointDraft = personalWaypoints.updateDraft
   const cancelPersonalWaypointEdit = personalWaypoints.cancelEdit
   // Coordinate placement needs the full map stage, so keep the More panel inactive while it is open.
-  const isMoreOpen = morePage !== 'closed' && morePage !== 'placing'
+  const waypointPlacementActive = morePage === 'placing' || morePage === 'community-placing'
+  const isMoreOpen = morePage !== 'closed' && !waypointPlacementActive
   const [themePreference, setThemePreference] = useState<ThemePreference>(readThemePreference)
   const [minuteFormat, setMinuteFormat] = useState<MinuteFormat>(readMinuteFormatPreference)
   const [liveBusLayerEnabled, setLiveBusLayerEnabled] = useState(false)
   const [simulatedAtMs, setSimulatedAtMs] = useState<number | null>(null)
   const [testClock] = useState(createJourneyTestClockStore)
   const [services] = useState(() => createAppServices({ journeyTestClock: testClock }))
+  const communityDiscovery = useCommunityWaypointDiscovery(services.loadCommunityWaypoints)
+  const [communityExploreActive, setCommunityExploreActive] = useState(false)
 
   useEffect(() => {
     const applyPreference = (): void => {
@@ -167,6 +193,25 @@ function App() {
   }, [themePreference])
 
   const state = useNavigationSession(session)
+  const currentLocationFix = state.location.status === 'tracking' && state.location.latestFix &&
+    isValidLocationCoordinates(state.location.latestFix.longitude, state.location.latestFix.latitude)
+    ? state.location.latestFix
+    : null
+  if (
+    morePage === 'community-submission' && communitySubmissionWaypoint === null &&
+    communitySubmissionLocationStatus === 'locating'
+  ) {
+    const { status, latestFix } = state.location
+    if (status === 'tracking' && latestFix && isValidLocationCoordinates(latestFix.longitude, latestFix.latitude)) {
+      setCommunitySubmissionCoordinate({ longitude: latestFix.longitude, latitude: latestFix.latitude })
+      setCommunitySubmissionLocationAccuracy(latestFix.accuracy)
+      setCommunitySubmissionLocationStatus('ready')
+    } else if (
+      status === 'denied' || status === 'unavailable' || status === 'timeout' || status === 'invalid'
+    ) {
+      setCommunitySubmissionLocationStatus('required')
+    }
+  }
   const explorePanelStatus = deriveExplorePanelStatus(
     state.resourceStatus,
     state.mapError,
@@ -273,7 +318,7 @@ function App() {
   useEffect(() => {
     commands.setLiveVehicles(liveVehicles.snapshot?.vehicles ?? [], showLiveBusVehicles)
   }, [commands, liveVehicles.snapshot, showLiveBusVehicles])
-  const isCrosshairVisible = !isMoreOpen && morePage !== 'placing' &&
+  const isCrosshairVisible = !isMoreOpen && !waypointPlacementActive &&
     navigationState.state.activeView === 'stops' && stopsPanelState.selectedStopList === 'nearby'
   useLayoutEffect(() => {
     commands.setVisibleCenterZoom(isCrosshairVisible)
@@ -283,11 +328,22 @@ function App() {
       coordinate: { longitude: coordinate[0], latitude: coordinate[1] },
     })
   }, [updatePersonalWaypointDraft])
+  const handleCommunityWaypointMapChange = useCallback((coordinate: readonly [number, number]): void => {
+    setCommunitySubmissionCoordinate({ longitude: coordinate[0], latitude: coordinate[1] })
+    setCommunitySubmissionLocationStatus('ready')
+    setCommunitySubmissionLocationAccuracy(null)
+  }, [])
   // A typed or pasted coordinate can be anywhere, so bring the pin into view as well as moving it.
   const applyTypedWaypointCoordinate = useCallback((coordinate: WaypointCoordinate): void => {
     updatePersonalWaypointDraft({ coordinate })
     commands.panToCoordinate([coordinate.longitude, coordinate.latitude])
   }, [commands, updatePersonalWaypointDraft])
+  const applyTypedCommunityWaypointCoordinate = useCallback((coordinate: WaypointCoordinate): void => {
+    setCommunitySubmissionCoordinate(coordinate)
+    setCommunitySubmissionLocationStatus('ready')
+    setCommunitySubmissionLocationAccuracy(null)
+    commands.panToCoordinate([coordinate.longitude, coordinate.latitude])
+  }, [commands])
   const focusPersonalWaypoint = useCallback((waypoint: PersonalWaypoint): void => {
     commands.focusPersonalWaypoint(waypoint)
   }, [commands])
@@ -331,13 +387,13 @@ function App() {
     openCategoryPicker()
   }, [openCategoryPicker])
   const handlePersonalWaypointMapSelection = useCallback((waypointId: string, trigger: HTMLButtonElement): void => {
-    if (morePage === 'editing-waypoint' || morePage === 'placing') return
+    if (morePage === 'editing-waypoint' || waypointPlacementActive) return
     if (personalWaypointDetails) {
       setPersonalWaypointDetails({ ...personalWaypointDetails, waypointId })
       return
     }
     openPersonalWaypointDetails(waypointId, morePage, moreSheetDetent, trigger)
-  }, [morePage, moreSheetDetent, openPersonalWaypointDetails, personalWaypointDetails])
+  }, [morePage, moreSheetDetent, openPersonalWaypointDetails, personalWaypointDetails, waypointPlacementActive])
   const personalWaypointsForMap = personalWaypoints.readResult.kind === 'ready'
     ? personalWaypoints.readResult.waypoints
     : EMPTY_PERSONAL_WAYPOINTS
@@ -360,34 +416,40 @@ function App() {
     ),
     [personalWaypointCategoryVisibility.hiddenCategories, personalWaypointsForMap],
   )
-  // App composition passes map placement events into the waypoint feature's draft workflow.
+  // App composition routes the temporary map pin to the active waypoint workflow.
   useEffect(() => {
-    const visible = morePage === 'placing' || morePage === 'creating'
+    const isCommunityPlacement = morePage === 'community-placing'
+    const isPersonalPlacement = morePage === 'placing'
+    const visible = isCommunityPlacement || isPersonalPlacement || morePage === 'creating'
+    const selectedCoordinate = isCommunityPlacement
+      ? communitySubmissionCoordinate
+      : personalWaypoints.draft.coordinate
     const coordinate = visible
-      ? [personalWaypoints.draft.coordinate.longitude, personalWaypoints.draft.coordinate.latitude] as const
+      ? [selectedCoordinate.longitude, selectedCoordinate.latitude] as const
       : null
-    commands.setPersonalWaypointPlacement(
+    commands.setWaypointPlacement(
       coordinate,
-      morePage === 'placing',
-      handlePersonalWaypointMapChange,
+      isCommunityPlacement || isPersonalPlacement,
+      isCommunityPlacement ? handleCommunityWaypointMapChange : handlePersonalWaypointMapChange,
     )
   }, [
     commands,
+    communitySubmissionCoordinate,
+    handleCommunityWaypointMapChange,
     handlePersonalWaypointMapChange,
     morePage,
-    personalWaypoints.draft.coordinate.latitude,
-    personalWaypoints.draft.coordinate.longitude,
+    personalWaypoints.draft.coordinate,
   ])
   useEffect(() => () => {
-    commands.setPersonalWaypointPlacement(null, false, handlePersonalWaypointMapChange)
+    commands.setWaypointPlacement(null, false, handlePersonalWaypointMapChange)
   }, [commands, handlePersonalWaypointMapChange])
   useEffect(() => {
     commands.setPersonalWaypoints(
       visiblePersonalWaypointsForMap,
-      morePage !== 'placing' && morePage !== 'editing-waypoint',
+      !waypointPlacementActive && morePage !== 'editing-waypoint',
       handlePersonalWaypointMapSelection,
     )
-  }, [commands, handlePersonalWaypointMapSelection, morePage, visiblePersonalWaypointsForMap])
+  }, [commands, handlePersonalWaypointMapSelection, morePage, visiblePersonalWaypointsForMap, waypointPlacementActive])
   useEffect(() => {
     commands.setPersonalWaypointCollection(personalWaypointCollection)
   }, [commands, personalWaypointCollection])
@@ -403,6 +465,111 @@ function App() {
   })
   const navigation = appNavigation.state
   const activeView = appNavigation.activeView
+  const openStopInStopsFromNotification = appNavigation.openStopDetailsFromMap
+  const openNotificationTarget = useCallback((target: PushClickTarget): void => {
+    // Notification navigation owns focus after closing More; restoring its entry button would
+    // pull keyboard and screen-reader users away from the destination.
+    skipMoreFocusRestoreRef.current = true
+    pendingViewFocusRef.current = 'stops'
+    setNotificationNavigationRevision((revision) => revision + 1)
+    setMorePage('closed')
+    if (target.kind === 'stops') {
+      if (isMobileViewport && navigation.sheets.stops.detent === 'collapsed') {
+        appNavigation.dispatch({ type: 'set-sheet-detent', view: 'stops', detent: 'partial' })
+      }
+      appNavigation.selectView('stops')
+      return
+    }
+    openStopInStopsFromNotification(target.stopId)
+  }, [appNavigation, isMobileViewport, navigation.sheets.stops.detent, openStopInStopsFromNotification])
+  // A notification tap arrives as a service-worker message when a window is open, and as the
+  // launch URL when it is not. Both routes open the affected destination in Stops.
+  useEffect(
+    () => subscribeToPushClicks(openNotificationTarget),
+    [openNotificationTarget],
+  )
+  useEffect(() => scheduleLaunchPushClick({
+    search: window.location.search,
+    open: openNotificationTarget,
+    // Dropping the link after navigation keeps a reload or later visit from reopening the stop.
+    clearQuery: () => window.history.replaceState(null, '', window.location.pathname + window.location.hash),
+  }), [openNotificationTarget])
+  const dispatchNavigation = appNavigation.dispatch
+  const selectNavigationView = appNavigation.selectView
+  const communityWaypoints = communityDiscovery.waypoints
+  const selectCommunityWaypoint = communityDiscovery.selectWaypoint
+  const communityMarkersEnabled = !waypointPlacementActive && !isMoreOpen
+  const handleCommunityWaypointMapSelection = useCallback((
+    waypointId: string,
+    trigger: HTMLButtonElement,
+  ): void => {
+    const waypoint = communityWaypoints.find(({ id }) => id === waypointId)
+    if (!waypoint || !communityMarkersEnabled) return
+    selectCommunityWaypoint(waypointId, trigger)
+    setCommunityExploreActive(true)
+    if (isMobileViewport) {
+      dispatchNavigation({ type: 'set-sheet-detent', view: 'explore', detent: 'full' })
+    }
+    selectNavigationView('explore')
+  }, [communityMarkersEnabled, communityWaypoints, dispatchNavigation, isMobileViewport, selectCommunityWaypoint, selectNavigationView])
+  useEffect(() => {
+    commands.setCommunityWaypoints(
+      communityMarkersEnabled ? communityDiscovery.visibleWaypoints : [],
+      handleCommunityWaypointMapSelection,
+    )
+  }, [commands, communityDiscovery.visibleWaypoints, communityMarkersEnabled, handleCommunityWaypointMapSelection])
+  useEffect(() => () => {
+    commands.setCommunityWaypoints([], handleCommunityWaypointMapSelection)
+  }, [commands, handleCommunityWaypointMapSelection])
+  const beginCommunityWaypointSuggestion = useCallback((
+    returnPage: 'menu' | 'explore' = 'menu',
+    trigger: HTMLButtonElement | null = null,
+  ): void => {
+    const location = state.location.status === 'tracking' && state.location.latestFix &&
+      isValidLocationCoordinates(state.location.latestFix.longitude, state.location.latestFix.latitude)
+      ? state.location.latestFix
+      : null
+    setCommunitySubmissionWaypoint(null)
+    setCommunitySubmissionCoordinate(location
+      ? { longitude: location.longitude, latitude: location.latitude }
+      : DEFAULT_PERSONAL_WAYPOINT_COORDINATE)
+    setCommunitySubmissionLocationStatus(location ? 'ready' : session ? 'locating' : 'required')
+    setCommunitySubmissionLocationAccuracy(location?.accuracy ?? null)
+    setCommunitySubmissionReturnPage(returnPage)
+    setIsCommunitySubmissionPending(false)
+    communitySubmissionReturnFocusRef.current = returnPage === 'explore' ? trigger : null
+    setMoreSheetDetent('full')
+    setMorePage('community-submission')
+    if (!location && session) {
+      const needsLocationRestart = state.location.status === 'stale' ||
+        state.location.status === 'denied' ||
+        state.location.status === 'unavailable' ||
+        state.location.status === 'timeout' ||
+        state.location.status === 'invalid'
+      if (needsLocationRestart) commands.locateUser()
+      else commands.enableLocationTracking()
+    }
+  }, [commands, session, state.location])
+  const beginCommunityCorrection = useCallback((waypointId: string, trigger: HTMLButtonElement): void => {
+    const waypoint = communityWaypoints.find(({ id }) => id === waypointId)
+    if (!waypoint) return
+    setCommunitySubmissionWaypoint(waypoint)
+    setCommunitySubmissionCoordinate(waypoint.coordinate)
+    setCommunitySubmissionLocationStatus('ready')
+    setCommunitySubmissionLocationAccuracy(null)
+    setCommunitySubmissionReturnPage('explore')
+    setIsCommunitySubmissionPending(false)
+    communitySubmissionReturnFocusRef.current = trigger
+    setMoreSheetDetent('full')
+    setMorePage('community-submission')
+  }, [communityWaypoints])
+  const communityContent = (
+    <CommunityWaypointPanel
+      discovery={communityDiscovery}
+      onSuggestCorrection={beginCommunityCorrection}
+      onSuggestWaypoint={(trigger) => beginCommunityWaypointSuggestion('explore', trigger)}
+    />
+  )
   const navigateToPersonalWaypoint = useCallback((waypoint: PersonalWaypoint): void => {
     const endpoint = createPersonalWaypointTripEndpoint(waypoint)
     if (!endpoint) return
@@ -464,7 +631,7 @@ function App() {
   const { mobileSheetMetrics, mapInsets, navigationColumnWidth } = useMapOverlayLayout({
     commands,
     isMobileViewport,
-    waypointPlacementActive: morePage === 'placing',
+    waypointPlacementActive,
     navigation,
     mapShellRef,
     mapPresentationRef,
@@ -545,7 +712,7 @@ function App() {
       'h2[tabindex="-1"], h3[tabindex="-1"], input:not([disabled]), select:not([disabled]), button:not([disabled])',
     )
     target?.focus()
-  }, [activeView, isMoreOpen])
+  }, [activeView, isMoreOpen, notificationNavigationRevision])
 
   useLayoutEffect(() => {
     if (activeView !== 'explore') return
@@ -582,6 +749,29 @@ function App() {
       setMapJourneySelectionRevision((revision) => revision + 1)
     }
   }, [])
+
+  const navigationSessionCallbacksRef = useRef({
+    handleStopSelected: appNavigation.handleStopSelected,
+    openStopDetailsFromMap: appNavigation.openStopDetailsFromMap,
+    handleMapStopInteraction: appNavigation.handleMapStopInteraction,
+    openPlan: appNavigation.openPlan,
+    handleMapJourneyOptionSelected,
+  })
+  useLayoutEffect(() => {
+    navigationSessionCallbacksRef.current = {
+      handleStopSelected: appNavigation.handleStopSelected,
+      openStopDetailsFromMap: appNavigation.openStopDetailsFromMap,
+      handleMapStopInteraction: appNavigation.handleMapStopInteraction,
+      openPlan: appNavigation.openPlan,
+      handleMapJourneyOptionSelected,
+    }
+  }, [
+    appNavigation.handleMapStopInteraction,
+    appNavigation.handleStopSelected,
+    appNavigation.openPlan,
+    appNavigation.openStopDetailsFromMap,
+    handleMapJourneyOptionSelected,
+  ])
 
   useLayoutEffect(() => {
     const candidateKey = pendingMapJourneySelectionRef.current
@@ -628,11 +818,11 @@ function App() {
       loadTransit: services.loadTransit,
       pathfinder: services.pathfinder,
       locationTracker: services.createLocationTracker(),
-      onStopSelected: appNavigation.handleStopSelected,
-      onStopDetailsSelected: appNavigation.openStopDetailsFromMap,
-      onMapStopInteraction: appNavigation.handleMapStopInteraction,
-      onMapStopDestinationSet: appNavigation.openPlan,
-      onMapJourneyOptionSelected: handleMapJourneyOptionSelected,
+      onStopSelected: (stopId) => navigationSessionCallbacksRef.current.handleStopSelected(stopId),
+      onStopDetailsSelected: (stopId) => navigationSessionCallbacksRef.current.openStopDetailsFromMap(stopId),
+      onMapStopInteraction: (stopId) => navigationSessionCallbacksRef.current.handleMapStopInteraction(stopId),
+      onMapStopDestinationSet: () => navigationSessionCallbacksRef.current.openPlan(),
+      onMapJourneyOptionSelected: (candidateKey) => navigationSessionCallbacksRef.current.handleMapJourneyOptionSelected(candidateKey),
       onMapCenterChange: ([longitude, latitude]) => setMapCenter({ longitude, latitude }),
       onMapMovingChange: setIsMapMoving,
     })
@@ -642,11 +832,6 @@ function App() {
       mount.dispose()
     }
   }, [
-    appNavigation.handleMapStopInteraction,
-    appNavigation.handleStopSelected,
-    appNavigation.openStopDetailsFromMap,
-    appNavigation.openPlan,
-    handleMapJourneyOptionSelected,
     services,
   ])
 
@@ -708,6 +893,13 @@ function App() {
       detent: 'partial',
     }),
     onSearchFocus: () => appNavigation.beginMobileSearch('explore'),
+    community: {
+      active: communityExploreActive,
+      selectedWaypointLabel: communityDiscovery.selectedWaypoint?.displayLabel ?? null,
+      content: communityContent,
+      onModeChange: setCommunityExploreActive,
+      onOpen: communityDiscovery.showCategoryPanel,
+    },
   }
   // Mode is captured when the stop opens from Explore, so the label matches where Back returns.
   const stopBackLabel = appNavigation.stopReturnTarget !== 'explore'
@@ -716,6 +908,14 @@ function App() {
       ? 'Back to bus routes'
       : 'Back to Find venue'
   const dispatchAppNavigation = appNavigation.dispatch
+  const selectRouteFromStops = appNavigation.selectRouteFromStops
+  const handleRouteSelectionFromStops = useCallback(
+    (routeId: string, stopId: string): void => {
+      setCommunityExploreActive(false)
+      selectRouteFromStops(routeId, stopId)
+    },
+    [selectRouteFromStops],
+  )
   const handleStopsDetentChange = useCallback((detent: MobileSheetDetent): void => {
     if (detent !== 'collapsed' && isFocusInsideLocationControl(locationControlRef.current)) {
       focusTripControlAfterOverlayRef.current = true
@@ -735,7 +935,7 @@ function App() {
       mapCenter={mapCenter}
       location={state.location}
       active={navigationState.state.activeView === 'stops'}
-      panelActive={!isMoreOpen && morePage !== 'placing' && navigation.activeView === 'stops'}
+      panelActive={!isMoreOpen && !waypointPlacementActive && navigation.activeView === 'stops'}
       isMobileViewport={isMobileViewport}
       detent={navigation.sheets.stops.detent}
       portalContainer={sheetPortalContainer}
@@ -744,6 +944,7 @@ function App() {
       loadArrivals={loadStopsArrivals}
       loadPublicArrivals={loadPublicBusArrivals}
       loadServiceWindows={loadStopsServiceWindows}
+      pushNotifications={pushNotifications}
       requestLocation={session ? requestNearbyLocation : null}
       locateFromControl={commands.locateUser}
       enableLocationTracking={commands.enableLocationTracking}
@@ -752,11 +953,12 @@ function App() {
       backLabel={stopBackLabel}
       onBackToStops={appNavigation.backFromStopDetails}
       onSelectOppositeStop={appNavigation.handleStopSelected}
-      onSelectRoute={appNavigation.selectRouteFromStops}
+      onSelectRoute={handleRouteSelectionFromStops}
       onNavigateToStop={appNavigation.navigateToStop}
     />
   )
   const selectView = (view: AppViewsProps['navigation']['activeView']): void => {
+    if (isCommunitySubmissionPending) return
     if (isMoreOpen) {
       skipMoreFocusRestoreRef.current = true
       setMorePage('closed')
@@ -775,6 +977,7 @@ function App() {
   }
   const openSettings = (): void => {
     setIsEditingPersonalWaypoints(false)
+    setSelectedSettingsSection(null)
     setMoreSheetDetent('full')
     setMorePage('settings')
   }
@@ -830,6 +1033,25 @@ function App() {
     returnFromWaypointDetails(focusTarget, 'waypoints')
   }
   const goBackInMore = useCallback((): void => {
+    if (morePage === 'community-placing') {
+      pendingWaypointReturnFocusRef.current = communitySubmissionPlacementFocusRef.current
+      setMorePage('community-submission')
+      setMoreSheetDetent('full')
+      return
+    }
+    if (morePage === 'community-submission') {
+      if (isCommunitySubmissionPending) return
+      if (communitySubmissionReturnPage === 'explore') {
+        pendingWaypointReturnFocusRef.current = communitySubmissionReturnFocusRef.current
+        communitySubmissionReturnFocusRef.current = null
+        setMorePage('closed')
+        setMoreSheetDetent('partial')
+      } else {
+        setMorePage('menu')
+        setMoreSheetDetent('partial')
+      }
+      return
+    }
     if (morePage === 'placing') {
       const returnPage = placementReturnPage
       if (!returnPage) setIsEditingPersonalWaypoints(false)
@@ -857,6 +1079,10 @@ function App() {
       setMoreSheetDetent('partial')
       return
     }
+    if (morePage === 'settings' && selectedSettingsSection !== null) {
+      setSelectedSettingsSection(null)
+      return
+    }
     if (morePage === 'release-notes' || morePage === 'settings') {
       setMorePage('menu')
       setMoreSheetDetent('partial')
@@ -879,9 +1105,22 @@ function App() {
     placementReturnPage,
     returnFromWaypointDetails,
     activePersonalWaypointCategory,
+    communitySubmissionReturnPage,
+    isCommunitySubmissionPending,
+    selectedSettingsSection,
   ])
   const closeMore = goBackInMore
   const toggleMore = (): void => {
+    if (morePage === 'community-submission') {
+      if (isCommunitySubmissionPending) return
+      if (communitySubmissionReturnPage === 'explore') {
+        pendingWaypointReturnFocusRef.current = communitySubmissionReturnFocusRef.current
+        communitySubmissionReturnFocusRef.current = null
+      }
+      setMorePage('closed')
+      setMoreSheetDetent('partial')
+      return
+    }
     if (morePage === 'waypoint-details') {
       returnFromWaypointDetails()
       return
@@ -995,7 +1234,7 @@ function App() {
       className="map-shell"
       ref={assignMapShellRef}
       data-more-open={isMoreOpen ? 'true' : 'false'}
-      data-waypoint-placing={morePage === 'placing' ? 'true' : 'false'}
+      data-waypoint-placing={waypointPlacementActive ? 'true' : 'false'}
       style={{ '--desktop-navigation-width': `${navigationColumnWidth}px` } as CSSProperties}
     >
       <p className="visually-hidden" role="alert" aria-label="Personal waypoint status" aria-atomic="true">
@@ -1015,9 +1254,40 @@ function App() {
           onContinue={() => setMorePage(placementReturnPage ?? 'creating')}
           onCancel={cancelWaypointPlacement}
         />}
+        {morePage === 'community-placing' && <PersonalWaypointPlacement
+          coordinate={communitySubmissionCoordinate}
+          showCurrentLocationAction
+          onUseMapCentre={mapCenter && !isMapMoving
+            ? () => {
+              setCommunitySubmissionCoordinate(mapCenter)
+              setCommunitySubmissionLocationStatus('ready')
+              setCommunitySubmissionLocationAccuracy(null)
+            }
+            : undefined}
+          onUseCurrentLocation={currentLocationFix
+            ? () => {
+              setCommunitySubmissionCoordinate({
+                latitude: currentLocationFix.latitude,
+                longitude: currentLocationFix.longitude,
+              })
+              setCommunitySubmissionLocationStatus('ready')
+              setCommunitySubmissionLocationAccuracy(currentLocationFix.accuracy)
+            }
+            : undefined}
+          onApplyCoordinate={applyTypedCommunityWaypointCoordinate}
+          onContinue={() => {
+            pendingWaypointReturnFocusRef.current = communitySubmissionPlacementFocusRef.current
+            setMorePage('community-submission')
+          }}
+          onCancel={() => {
+            pendingWaypointReturnFocusRef.current = communitySubmissionPlacementFocusRef.current
+            setMorePage('community-submission')
+          }}
+        />}
         {isCrosshairVisible && (
           <NearbyCrosshair insets={mapInsets} />
         )}
+        <RainroomAtmosphere />
         <div className="map-control-stack">
           {JourneyTestTimeControl && (
             <Suspense fallback={null}>
@@ -1071,6 +1341,7 @@ function App() {
             style={{ '--bus-stop-selected-color': selectedRouteColor } as CSSProperties}
           >
             <div><span className="legend-marker venue-marker" /> Venues</div>
+            <div><span className="legend-marker community-waypoint-legend-marker" /> Community Waypoints</div>
             <div className="bus-stop-legend-item">
               <span className="bus-stop-legend-marker bus-stop-legend-marker-selected" aria-hidden="true" />
               On selected route
@@ -1087,7 +1358,7 @@ function App() {
       <MobileSheetMetricsContext.Provider value={mobileSheetMetrics}>
         <AppViews
           isMobileViewport={isMobileViewport}
-          waypointPlacementActive={morePage === 'placing'}
+          waypointPlacementActive={waypointPlacementActive}
           sheetPortalContainer={sheetPortalContainer}
           navigation={navigation}
           onSelectView={selectView}
@@ -1103,9 +1374,19 @@ function App() {
               : morePage === 'waypoint-details' ? 'Waypoint details'
               : morePage === 'creating' ? 'Add waypoint'
                 : morePage === 'placing' ? 'Adjust location'
+                  : morePage === 'community-submission'
+                    ? communitySubmissionWaypoint ? 'Suggest a correction' : 'Suggest a waypoint'
+                    : morePage === 'community-placing' ? 'Adjust location'
                   : morePage === 'editing-waypoint' ? 'Edit waypoint'
-                    : morePage === 'settings' ? 'Settings'
+                    : morePage === 'settings'
+                      ? selectedSettingsSection === null ? 'Settings' : getSettingsSectionTitle(selectedSettingsSection)
                       : morePage === 'release-notes' ? 'Release notes' : 'More',
+            backButtonLabel: morePage === 'settings' && selectedSettingsSection !== null
+              ? 'Back to Settings'
+              : 'Back to previous view',
+            scrollResetKey: morePage === 'settings'
+              ? selectedSettingsSection ?? 'home'
+              : morePage,
             initialFocusRef: moreInitialFocusRef,
             onClose: closeMore,
             onDetentChange: setMoreSheetDetent,
@@ -1114,6 +1395,7 @@ function App() {
                 ? personalWaypoints.readResult.waypoints.length
                 : null}
               onOpenWaypoints={openWaypoints}
+              onSuggestCommunityWaypoint={() => beginCommunityWaypointSuggestion()}
               onOpenSettings={openSettings}
               onOpenReleaseNotes={openReleaseNotes}
             /> : morePage === 'waypoints' ? <PersonalWaypointsHome
@@ -1183,9 +1465,28 @@ function App() {
                   }
                 }
               }}
-            /> : morePage === 'release-notes' ? <ReleaseNotes /> : morePage === 'settings' ? (
+            /> : morePage === 'community-submission' || morePage === 'community-placing' ? (
+              <CommunityWaypointSubmissionForm
+                waypoint={communitySubmissionWaypoint}
+                coordinate={communitySubmissionCoordinate}
+                locationStatus={communitySubmissionLocationStatus}
+                locationAccuracy={communitySubmissionLocationAccuracy}
+                buildingIndex={state.buildings}
+                venues={state.venues}
+                onAdjustLocation={(trigger) => {
+                  communitySubmissionPlacementFocusRef.current = trigger
+                  setMorePage('community-placing')
+                }}
+                onSubmit={services.submitCommunityWaypoint}
+                onBack={goBackInMore}
+                onPendingChange={setIsCommunitySubmissionPending}
+              />
+            ) : morePage === 'release-notes' ? <ReleaseNotes /> : morePage === 'settings' ? (
               <SettingsContent
+                communityWaypointDownloadUrl={buildBasePathUrl('data/community-waypoints.geojson')}
                 themePreference={themePreference}
+                activeSection={selectedSettingsSection}
+                onActiveSectionChange={setSelectedSettingsSection}
                 onThemePreferenceChange={changeThemePreference}
                 minuteFormat={minuteFormat}
                 onMinuteFormatChange={changeMinuteFormat}
@@ -1196,6 +1497,7 @@ function App() {
                 transitMetadata={state.transitIndex?.network.metadata ?? null}
                 buildingSource={state.buildings?.source ?? null}
                 dataVersion={__NUSGO_DATA_VERSION__}
+                pushNotifications={pushNotifications}
               />
             ) : null,
           }}

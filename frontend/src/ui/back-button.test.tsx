@@ -11,8 +11,10 @@ describe('BackButton', () => {
     render(<BackButton mode="header" label="Back to previous view" title="Back" onClick={vi.fn()} />)
 
     const button = screen.getByRole('button', { name: 'Back to previous view' })
-    expect(button.className).toContain('icon-button')
+    expect(button.className).toBe('button icon-button')
+    expect(button.getAttribute('data-variant')).toBe('secondary')
     expect(button.getAttribute('title')).toBe('Back')
+    expect(button.textContent).toBe('')
     expect(button.querySelector('svg')).not.toBeNull()
   })
 

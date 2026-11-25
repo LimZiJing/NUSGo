@@ -1,8 +1,10 @@
 import { useEffect, useRef, useState, type FormEvent, type KeyboardEvent } from 'react'
+import { Button } from '@astryxdesign/core/Button'
+import { TextInput } from '@astryxdesign/core/TextInput'
 import { parseCoordinateInput } from '../../../domain/waypoints/parse-coordinate-input'
-import type { WaypointCoordinate } from '../../../domain/waypoints/waypoint'
-import { Button } from '../../../ui/button'
-import { LocateIcon, MapPinIcon } from '../../../ui/icons'
+import type { WaypointCoordinate } from '@nusgo/shared/waypoints/waypoint'
+import { MapPinIcon } from '../../../ui/icons'
+import { getIsMobileViewport } from '../../../ui/mobile/mobile-viewport'
 
 function formatSelectedCoordinate(coordinate: WaypointCoordinate): string {
   const latitude = `${Math.abs(coordinate.latitude).toFixed(6)}° ${coordinate.latitude < 0 ? 'S' : 'N'}`
@@ -18,13 +20,17 @@ const OUTSIDE_SINGAPORE_NOTE = 'This point is outside Singapore. Check latitude 
 
 export function PersonalWaypointPlacement({
   coordinate,
+  showCurrentLocationAction,
   onUseMapCentre,
+  onUseCurrentLocation,
   onApplyCoordinate,
   onContinue,
   onCancel,
 }: {
   readonly coordinate: WaypointCoordinate
+  readonly showCurrentLocationAction?: boolean
   readonly onUseMapCentre?: () => void
+  readonly onUseCurrentLocation?: () => void
   /** Called with a coordinate the person typed or pasted; it has passed validation. */
   readonly onApplyCoordinate: (coordinate: WaypointCoordinate) => void
   readonly onContinue: () => void
@@ -50,8 +56,10 @@ export function PersonalWaypointPlacement({
   }, [])
   useEffect(() => {
     if (editing) {
-      inputRef.current?.focus()
-      inputRef.current?.select()
+      if (!getIsMobileViewport()) {
+        inputRef.current?.focus()
+        inputRef.current?.select()
+      }
     } else if (returnFocusToEdit.current) {
       returnFocusToEdit.current = false
       editButtonRef.current?.focus()
@@ -74,7 +82,7 @@ export function PersonalWaypointPlacement({
     const result = parseCoordinateInput(inputValue)
     if (!result.ok) {
       setError(result.message)
-      inputRef.current?.focus()
+      if (!getIsMobileViewport()) inputRef.current?.focus()
       return false
     }
     onApplyCoordinate(result.coordinate)
@@ -113,20 +121,26 @@ export function PersonalWaypointPlacement({
           </strong>
           {editing
             ? <form className="personal-waypoint-coordinate-entry" data-owns-escape="true" onSubmit={submit} noValidate>
-              <input
+              <TextInput
                 ref={inputRef}
+                id="personal-waypoint-coordinate-input"
+                label="Selected location"
+                isLabelHidden
                 type="text"
+                inputMode="decimal"
+                htmlName="coordinate"
                 value={inputValue}
                 placeholder="1.2966, 103.7764"
-                aria-labelledby="personal-waypoint-selected-location-label"
-                aria-description="Latitude, then longitude, in decimal degrees"
-                aria-invalid={Boolean(error)}
-                aria-errormessage={error ? 'personal-waypoint-coordinate-error' : undefined}
-                autoCapitalize="off"
+                hasSpellCheck={false}
                 autoComplete="off"
-                spellCheck={false}
+                autoCapitalize="off"
                 enterKeyHint="done"
-                onChange={(event) => { setTyped(event.target.value); setError(null) }}
+                status={error ? { type: 'error' } : undefined}
+                containerClassName="personal-waypoint-coordinate-astryx-field"
+                controlClassName="personal-waypoint-coordinate-astryx-control"
+                aria-description="Latitude, then longitude, in decimal degrees"
+                aria-describedby={error ? 'personal-waypoint-coordinate-error' : undefined}
+                onChange={(value) => { setTyped(value); setError(null) }}
                 onKeyDown={handleKeyDown}
               />
             </form>
@@ -137,20 +151,28 @@ export function PersonalWaypointPlacement({
         <Button
           ref={editButtonRef}
           label={editing ? 'Close' : 'Edit'}
-          ariaLabel={editing ? 'Close coordinate entry' : 'Edit coordinates'}
+          aria-label={editing ? 'Close coordinate entry' : 'Edit coordinates'}
           variant="ghost"
           onClick={editing ? closeEdit : openEdit}
         />
       </div>
       {error && <p id="personal-waypoint-coordinate-error" className="personal-waypoint-error" role="alert">{error}</p>}
       <p className="personal-waypoint-coordinate-note" role="status">{visibleWarning}</p>
-      <Button
-        className="personal-waypoint-use-centre"
-        label="Use map centre"
-        icon={<LocateIcon size={16} />}
-        disabled={!onUseMapCentre}
-        onClick={() => onUseMapCentre?.()}
-      />
+      <div className="personal-waypoint-placement-location-actions">
+        <Button
+          className="personal-waypoint-use-centre personal-waypoint-location-action"
+          label="Use map centre"
+          isDisabled={!onUseMapCentre}
+          onClick={() => onUseMapCentre?.()}
+        />
+        {showCurrentLocationAction && <Button
+          className="personal-waypoint-use-current-location personal-waypoint-location-action"
+          label="Use current location"
+          isDisabled={!onUseCurrentLocation}
+          tooltip={!onUseCurrentLocation ? 'Current location is unavailable' : undefined}
+          onClick={() => onUseCurrentLocation?.()}
+        />}
+      </div>
     </div>
     <div className="personal-waypoint-actions">
       <Button label="Cancel" onClick={onCancel} />

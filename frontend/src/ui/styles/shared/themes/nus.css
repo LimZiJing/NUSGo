@@ -2,8 +2,8 @@
   --brand-blue: #003d7c;
   --brand-orange: #ef7c00;
 
-  --surface: #fff3e7;
-  --surface-raised: #fffaf4;
+  --surface: #fffaf4;
+  --surface-raised: #fff3e7;
   --surface-muted: #f9dfc2;
   --surface-subtle: #f5d1aa;
   --surface-inverse: var(--brand-blue);

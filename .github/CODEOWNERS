@@ -1,0 +1,3 @@
+# Every pull request needs review from a maintainer who is not its author. See docs/agents/pr-review.md.
+# Takes effect only when branch protection on main enables "Require review from Code Owners".
+* @ewonglh @LimZiJing

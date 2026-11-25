@@ -3,6 +3,7 @@
 import { cleanup, render, screen } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import { afterEach, describe, expect, it, vi } from 'vitest'
+import { OTHER_THEMES } from '../../../ui/themes/catalog'
 import { AppearanceSection } from './appearance-section'
 
 afterEach(cleanup)
@@ -20,7 +21,7 @@ describe('Appearance settings', () => {
       />,
     )
 
-    expect((screen.getByRole('radio', { name: 'System' }) as HTMLInputElement).checked).toBe(true)
+    expect(screen.getByRole('radio', { name: 'System' }).getAttribute('aria-checked')).toBe('true')
     expect(screen.getByRole('radio', { name: 'Light' })).toBeTruthy()
     expect(screen.getByRole('radio', { name: 'Dark' })).toBeTruthy()
     expect(screen.getByRole('button', { name: /Other themes Choose/ })).toBeTruthy()
@@ -32,7 +33,7 @@ describe('Appearance settings', () => {
   it('shows the selected palette in a dropdown and exposes choices in a listbox', async () => {
     const user = userEvent.setup()
     const onChange = vi.fn()
-    const { container } = render(
+    render(
       <AppearanceSection
         preference="matcha"
         onChange={onChange}
@@ -47,15 +48,30 @@ describe('Appearance settings', () => {
     expect(trigger.getAttribute('data-size')).toBe('lg')
     expect(trigger.querySelector('[data-theme-choice="matcha"]')).toBeTruthy()
     expect(screen.queryByRole('listbox')).toBeNull()
-    expect(container.querySelector('.settings-theme-disclosure')).toBeNull()
-
     await user.click(trigger)
     const choices = screen.getByRole('listbox', { name: 'Other themes' })
-    expect(choices.querySelectorAll('[role="option"]')).toHaveLength(3)
+    expect(choices.querySelectorAll('[role="option"]')).toHaveLength(4)
     expect(screen.getByRole('option', { name: 'Matcha' }).getAttribute('aria-selected')).toBe('true')
     expect(screen.getByRole('option', { name: 'Matcha' }).querySelector('.select-option-check')).toBeTruthy()
 
     await user.click(screen.getByRole('option', { name: 'NUS' }))
     expect(onChange).toHaveBeenCalledExactlyOnceWith('nus')
+  })
+
+  it.each(OTHER_THEMES)('selects $label from the theme dropdown', async ({ id, label }) => {
+    const user = userEvent.setup()
+    const onChange = vi.fn()
+    render(
+      <AppearanceSection
+        preference="system"
+        onChange={onChange}
+        minuteFormat="prime"
+        onMinuteFormatChange={() => undefined}
+      />,
+    )
+
+    await user.click(screen.getByRole('button', { name: /Other themes Choose/ }))
+    await user.click(screen.getByRole('option', { name: label }))
+    expect(onChange).toHaveBeenCalledExactlyOnceWith(id)
   })
 })
